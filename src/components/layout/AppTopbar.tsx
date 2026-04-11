@@ -2,7 +2,6 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Search, Bell } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useLocation } from 'react-router-dom';
 
 const pageTitles: Record<string, string> = {
@@ -26,12 +25,12 @@ export function AppTopbar() {
   const title = pageTitles[location.pathname] || 'Dojo Manager';
 
   return (
-    <header className="h-14 border-b border-border flex items-center justify-between px-4 bg-card/50 backdrop-blur-sm shrink-0">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-        <h2 className="text-sm font-semibold text-foreground hidden sm:block">{title}</h2>
-      </div>
+    <header className="h-14 border-b border-border flex items-center justify-between px-3 sm:px-4 bg-card/50 backdrop-blur-sm shrink-0">
       <div className="flex items-center gap-3">
+        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+        <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
+      </div>
+      <div className="flex items-center gap-2 sm:gap-3">
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
