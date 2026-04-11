@@ -190,3 +190,28 @@ export const receitaDespesaMensal = [
   { mes: 'Mar', receita: 15500, despesa: 16200 },
   { mes: 'Abr', receita: 15400, despesa: 18170 },
 ];
+
+// === Heatmap de Frequência (semanas x dias) ===
+export const frequenciaHeatmap = [
+  { semana: 'Sem 1', Seg: 90, Ter: 75, Qua: 88, Qui: 70, Sex: 85, Sab: 40 },
+  { semana: 'Sem 2', Seg: 85, Ter: 80, Qua: 92, Qui: 78, Sex: 80, Sab: 35 },
+  { semana: 'Sem 3', Seg: 78, Ter: 82, Qua: 86, Qui: 74, Sex: 90, Sab: 50 },
+  { semana: 'Sem 4', Seg: 92, Ter: 88, Qua: 80, Qui: 85, Sex: 82, Sab: 45 },
+];
+
+// === Evolução do Ranking por mês ===
+export const rankingEvolucao = [
+  { mes: 'Jan', 'Thiago Ribeiro': 1, 'Ana Costa': 3, 'Marina Silva': 2, 'Lucas Mendes': 2, 'Isabela Lima': 1 },
+  { mes: 'Fev', 'Thiago Ribeiro': 1, 'Ana Costa': 2, 'Marina Silva': 3, 'Lucas Mendes': 1, 'Isabela Lima': 2 },
+  { mes: 'Mar', 'Thiago Ribeiro': 1, 'Ana Costa': 2, 'Marina Silva': 3, 'Lucas Mendes': 1, 'Isabela Lima': 2 },
+  { mes: 'Abr', 'Thiago Ribeiro': 1, 'Ana Costa': 2, 'Marina Silva': 3, 'Lucas Mendes': 1, 'Isabela Lima': 2 },
+];
+
+// === Vendas por Categoria ===
+export const vendasPorCategoria = [
+  { categoria: 'Vestimenta', total: 2450 },
+  { categoria: 'Faixas', total: 890 },
+  { categoria: 'Proteção', total: 1670 },
+  { categoria: 'Acessórios', total: 520 },
+  { categoria: 'Suplementos', total: 340 },
+];
