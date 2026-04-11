@@ -1,5 +1,6 @@
 import { PageHeader } from '@/components/shared/PageHeader';
 import { KpiCard } from '@/components/shared/KpiCard';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import { despesas, receitas, receitaDespesaMensal } from '@/mocks/data';
 import { DollarSign, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -90,5 +91,3 @@ export default function FinanceiroGerencialPage() {
     </div>
   );
 }
-
-import { StatusBadge } from '@/components/shared/StatusBadge';
