@@ -1,19 +1,60 @@
+import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { reservas, contratosAluguel } from '@/mocks/data';
+import { reservas as reservasMock, contratosAluguel } from '@/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function AluguelPage() {
+  const [reservas, setReservas] = useState(reservasMock);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [locatario, setLocatario] = useState('');
+  const [espaco, setEspaco] = useState('Tatame Principal');
+  const [dataInicio, setDataInicio] = useState('');
+  const [horaInicio, setHoraInicio] = useState('');
+  const [horaFim, setHoraFim] = useState('');
+  const [valor, setValor] = useState('');
+
+  const handleSalvar = () => {
+    if (!locatario.trim() || !dataInicio || !horaInicio || !horaFim || !valor) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+    
+    setReservas(prev => [
+      {
+        id: `res${Date.now()}`,
+        locatario,
+        espaco,
+        dataInicio: dataInicio.split('-').reverse().join('/'), 
+        horaInicio,
+        horaFim,
+        status: 'agendado',
+        valor: parseFloat(valor) || 0,
+        conflito: false
+      },
+      ...prev
+    ]);
+    toast.success('Reserva confirmada com sucesso!');
+    setDialogOpen(false);
+    setLocatario('');
+    setDataInicio('');
+    setHoraInicio('');
+    setHoraFim('');
+    setValor('');
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Aluguel da Academia"
         subtitle="Reservas, contratos e agenda de espaços"
-        actions={<Button size="sm"><Plus className="h-4 w-4 mr-1" />Nova Reserva</Button>}
+        actions={<Button size="sm" onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-1" />Nova Reserva</Button>}
       />
 
       <Tabs defaultValue="reservas">
@@ -106,6 +147,82 @@ export default function AluguelPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Form nova reserva */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Nova Reserva</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+            <div className="sm:col-span-2">
+              <label className="text-xs text-muted-foreground mb-1 block">Locatário / Cliente *</label>
+              <input
+                type="text"
+                value={locatario}
+                onChange={e => setLocatario(e.target.value)}
+                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
+                placeholder="Nome do cliente"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs text-muted-foreground mb-1 block">Espaço *</label>
+              <select
+                value={espaco}
+                onChange={e => setEspaco(e.target.value)}
+                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
+              >
+                <option value="Tatame Principal">Tatame Principal</option>
+                <option value="Área de Musculação">Área de Musculação</option>
+                <option value="Sala Multiuso">Sala Multiuso</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs text-muted-foreground mb-1 block">Data *</label>
+              <input
+                type="date"
+                value={dataInicio}
+                onChange={e => setDataInicio(e.target.value)}
+                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Hora Início *</label>
+              <input
+                type="time"
+                value={horaInicio}
+                onChange={e => setHoraInicio(e.target.value)}
+                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Hora Fim *</label>
+              <input
+                type="time"
+                value={horaFim}
+                onChange={e => setHoraFim(e.target.value)}
+                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs text-muted-foreground mb-1 block">Valor Aluguel (R$) *</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={valor}
+                onChange={e => setValor(e.target.value)}
+                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
+                placeholder="Ex. 150.00"
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
+            <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSalvar}>Confirmar Reserva</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -65,7 +65,7 @@ export function AppSidebar() {
                   onClick={handleNavClick}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{item.title}</span>}
+                  {(!collapsed || isMobile) && <span>{item.title}</span>}
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -81,7 +81,7 @@ export function AppSidebar() {
         <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
           <Award className="h-4 w-4 text-primary-foreground" />
         </div>
-        {!collapsed && (
+        {(!collapsed || isMobile) && (
           <div>
             <h1 className="text-sm font-bold text-foreground tracking-tight">Gêmeos Academia</h1>
             <p className="text-[10px] text-muted-foreground">Sistema Administrativo</p>
