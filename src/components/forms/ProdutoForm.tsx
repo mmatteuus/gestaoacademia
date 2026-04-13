@@ -48,7 +48,7 @@ export function ProdutoForm({ produto, onSubmit, onCancel }: ProdutoFormProps) {
           <FormField control={form.control} name="nome" render={({ field }) => (
             <FormItem className="col-span-1 sm:col-span-2">
               <FormLabel className="text-xs">Nome do Produto</FormLabel>
-              <FormControl><Input {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -57,7 +57,7 @@ export function ProdutoForm({ produto, onSubmit, onCancel }: ProdutoFormProps) {
             <FormItem>
               <FormLabel className="text-xs">Categoria</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="h-9 text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger className="h-9 text-base md:text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                 <SelectContent>{categorias.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
               <FormMessage />
@@ -67,7 +67,7 @@ export function ProdutoForm({ produto, onSubmit, onCancel }: ProdutoFormProps) {
           <FormField control={form.control} name="preco" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Preço (R$)</FormLabel>
-              <FormControl><Input type="number" step="0.01" {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input type="number" step="0.01" {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -75,7 +75,7 @@ export function ProdutoForm({ produto, onSubmit, onCancel }: ProdutoFormProps) {
           <FormField control={form.control} name="estoque" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Estoque Atual</FormLabel>
-              <FormControl><Input type="number" {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input type="number" {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -83,7 +83,7 @@ export function ProdutoForm({ produto, onSubmit, onCancel }: ProdutoFormProps) {
           <FormField control={form.control} name="estoqueMinimo" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Estoque Mínimo</FormLabel>
-              <FormControl><Input type="number" {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input type="number" {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -92,7 +92,7 @@ export function ProdutoForm({ produto, onSubmit, onCancel }: ProdutoFormProps) {
         <FormField control={form.control} name="descricao" render={({ field }) => (
           <FormItem>
             <FormLabel className="text-xs">Descrição</FormLabel>
-            <FormControl><Textarea {...field} rows={3} className="text-sm bg-secondary/50 resize-none" /></FormControl>
+            <FormControl><Textarea {...field} rows={3} className="text-base md:text-sm bg-secondary/50 resize-none" /></FormControl>
             <FormMessage />
           </FormItem>
         )} />

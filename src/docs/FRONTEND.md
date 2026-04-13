@@ -1,4 +1,4 @@
-# Dojo Manager — Frontend Admin System
+# Gêmeos Academia — Frontend Admin System
 
 ## Visão Geral
 Sistema administrativo premium para academia de artes marciais. Frontend-only com dados mockados, preparado para integração futura com backend.

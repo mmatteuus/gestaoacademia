@@ -49,7 +49,7 @@ export function TurmaForm({ turma, onSubmit, onCancel }: TurmaFormProps) {
           <FormField control={form.control} name="nome" render={({ field }) => (
             <FormItem className="col-span-1 sm:col-span-2">
               <FormLabel className="text-xs">Nome da Turma</FormLabel>
-              <FormControl><Input {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -58,7 +58,7 @@ export function TurmaForm({ turma, onSubmit, onCancel }: TurmaFormProps) {
             <FormItem>
               <FormLabel className="text-xs">Modalidade</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="h-9 text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger className="h-9 text-base md:text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                 <SelectContent>{modalidades.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
               <FormMessage />
@@ -68,7 +68,7 @@ export function TurmaForm({ turma, onSubmit, onCancel }: TurmaFormProps) {
           <FormField control={form.control} name="professor" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Professor</FormLabel>
-              <FormControl><Input {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -76,7 +76,7 @@ export function TurmaForm({ turma, onSubmit, onCancel }: TurmaFormProps) {
           <FormField control={form.control} name="horario" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Horário</FormLabel>
-              <FormControl><Input {...field} placeholder="08:00 - 09:30" className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input {...field} placeholder="08:00 - 09:30" className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -84,7 +84,7 @@ export function TurmaForm({ turma, onSubmit, onCancel }: TurmaFormProps) {
           <FormField control={form.control} name="capacidade" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Capacidade</FormLabel>
-              <FormControl><Input type="number" {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input type="number" {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />

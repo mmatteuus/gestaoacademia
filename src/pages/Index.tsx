@@ -1,16 +1,44 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from "react-router-dom";
+import { Users, User, ArrowRight } from "lucide-react";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-50">
+      <div className="text-center max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+        <div className="mb-6 flex justify-center">
+          <div className="bg-primary/10 p-4 rounded-full">
+            <span className="text-4xl text-primary" role="img" aria-label="Kimono">🥋</span>
+          </div>
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Gêmeos Academia</h1>
+        <p className="text-gray-500 mb-8">Sistema de gestão administrativa.</p>
+        
+        <div className="space-y-4">
+          <Link 
+            to="/alunos" 
+            className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg border border-gray-200 group"
+          >
+            <div className="flex items-center gap-3">
+              <Users className="text-primary" />
+              <span className="font-medium text-gray-700">Gestão de Alunos</span>
+            </div>
+            <ArrowRight className="text-gray-400 group-hover:text-primary transition-colors" size={18} />
+          </Link>
+          
+          <Link 
+            to="/turmas" 
+            className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg border border-gray-200 group"
+          >
+            <div className="flex items-center gap-3">
+              <User className="text-primary" />
+              <span className="font-medium text-gray-700">Gestão de Turmas</span>
+            </div>
+            <ArrowRight className="text-gray-400 group-hover:text-primary transition-colors" size={18} />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;

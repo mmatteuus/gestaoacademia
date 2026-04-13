@@ -25,7 +25,7 @@ const pageTitles: Record<string, string> = {
 export function AppTopbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const title = pageTitles[location.pathname] || 'Dojo Manager';
+  const title = pageTitles[location.pathname] || 'Gêmeos Academia';
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +69,7 @@ export function AppTopbar() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onFocus={() => setSearchOpen(true)}
-            className="pl-9 w-72 h-8 text-xs bg-secondary/50 border-border/50 focus:bg-secondary"
+            className="pl-9 w-72 h-9 text-sm bg-secondary/50 border-border/50 focus:bg-secondary"
           />
           {searchOpen && hasResults && (
             <div className="absolute top-full mt-1 right-0 w-80 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50">
@@ -99,7 +99,7 @@ export function AppTopbar() {
               placeholder="Buscar alunos, turmas, produtos..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="pl-9 h-9 text-xs bg-secondary/50"
+              className="pl-9 h-10 text-base md:text-sm bg-secondary/50"
               autoFocus
             />
           </div>

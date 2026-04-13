@@ -83,7 +83,7 @@ export function AppSidebar() {
         </div>
         {!collapsed && (
           <div>
-            <h1 className="text-sm font-bold text-foreground tracking-tight">Dojo Manager</h1>
+            <h1 className="text-sm font-bold text-foreground tracking-tight">Gêmeos Academia</h1>
             <p className="text-[10px] text-muted-foreground">Sistema Administrativo</p>
           </div>
         )}

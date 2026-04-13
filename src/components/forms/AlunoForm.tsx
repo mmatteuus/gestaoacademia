@@ -67,7 +67,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
           <FormField control={form.control} name="nome" render={({ field }) => (
             <FormItem className="col-span-1 sm:col-span-2">
               <FormLabel className="text-xs">Nome Completo</FormLabel>
-              <FormControl><Input {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -75,7 +75,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
           <FormField control={form.control} name="email" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Email</FormLabel>
-              <FormControl><Input type="email" {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input type="email" {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -83,7 +83,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
           <FormField control={form.control} name="telefone" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Telefone</FormLabel>
-              <FormControl><Input {...field} placeholder="(11) 99999-9999" className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input {...field} placeholder="(11) 99999-9999" className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -91,7 +91,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
           <FormField control={form.control} name="cpf" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">CPF</FormLabel>
-              <FormControl><Input {...field} placeholder="000.000.000-00" className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input {...field} placeholder="000.000.000-00" className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -99,7 +99,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
           <FormField control={form.control} name="dataNascimento" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Data de Nascimento</FormLabel>
-              <FormControl><Input type="date" {...field} className="h-9 text-sm bg-secondary/50" /></FormControl>
+              <FormControl><Input type="date" {...field} className="h-9 text-base md:text-sm bg-secondary/50" /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -108,7 +108,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
             <FormItem>
               <FormLabel className="text-xs">Categoria</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="h-9 text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger className="h-9 text-base md:text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                 <SelectContent>{categorias.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
               <FormMessage />
@@ -119,7 +119,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
             <FormItem>
               <FormLabel className="text-xs">Faixa Atual</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="h-9 text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger className="h-9 text-base md:text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                 <SelectContent>{faixas.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
               </Select>
               <FormMessage />
@@ -130,7 +130,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
             <FormItem>
               <FormLabel className="text-xs">Status</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="h-9 text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger className="h-9 text-base md:text-sm bg-secondary/50"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                 <SelectContent>{statuses.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
               <FormMessage />
@@ -141,7 +141,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
             <FormItem>
               <FormLabel className="text-xs">Responsável (opcional)</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="h-9 text-sm bg-secondary/50"><SelectValue placeholder="Nenhum" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger className="h-9 text-base md:text-sm bg-secondary/50"><SelectValue placeholder="Nenhum" /></SelectTrigger></FormControl>
                 <SelectContent>
                   <SelectItem value="">Nenhum</SelectItem>
                   {responsaveis.map(r => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)}
@@ -155,7 +155,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
         <FormField control={form.control} name="observacoes" render={({ field }) => (
           <FormItem>
             <FormLabel className="text-xs">Observações</FormLabel>
-            <FormControl><Textarea {...field} rows={3} className="text-sm bg-secondary/50 resize-none" /></FormControl>
+            <FormControl><Textarea {...field} rows={3} className="text-base md:text-sm bg-secondary/50 resize-none" /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
