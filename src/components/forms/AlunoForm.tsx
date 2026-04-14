@@ -54,7 +54,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
       categoria: aluno?.categoria ?? '',
       faixaAtual: aluno?.faixaAtual ?? 'Branca',
       status: aluno?.status ?? 'pre-cadastro',
-      responsavelId: aluno?.responsavelId ?? '',
+      responsavelId: aluno?.responsavelId || 'none',
       turmaIds: aluno?.turmaIds ?? [],
       observacoes: aluno?.observacoes ?? '',
     },
