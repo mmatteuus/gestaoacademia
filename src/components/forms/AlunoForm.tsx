@@ -143,7 +143,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl><SelectTrigger className="h-9 text-base md:text-sm bg-secondary/50"><SelectValue placeholder="Nenhum" /></SelectTrigger></FormControl>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {responsaveis.map(r => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
