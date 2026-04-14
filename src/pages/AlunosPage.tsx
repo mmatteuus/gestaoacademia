@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { alunos as alunosMock, cobrancas, graduacoesAlunos } from '@/mocks/data';
+import { alunos as alunosMock, cobrancas, graduacoesAlunos, responsaveis } from '@/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil, UserCheck } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -22,6 +22,24 @@ const statusFilter: { label: string; value: AlunoStatus | 'todos' }[] = [
   { label: 'Inativo', value: 'inativo' },
   { label: 'Pré-cadastro', value: 'pre-cadastro' },
 ];
+
+function isMinor(dataNascimento: string): boolean {
+  const birth = new Date(dataNascimento);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age < 18;
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground w-24 shrink-0">{label}</span>
+      <span className="text-xs text-foreground">{value}</span>
+    </div>
+  );
+}
 
 export default function AlunosPage() {
   const [alunosList, setAlunosList] = useState<Aluno[]>(alunosMock);
@@ -57,9 +75,11 @@ export default function AlunosPage() {
     setFormOpen(false);
   };
 
-  // Data for detail drawer
   const alunoCobrancas = selectedAluno ? cobrancas.filter(c => c.alunoId === selectedAluno.id) : [];
   const alunoGraduacao = selectedAluno ? graduacoesAlunos.find(g => g.alunoId === selectedAluno.id) : null;
+  const alunoResponsavel = selectedAluno?.responsavelId ? responsaveis.find(r => r.id === selectedAluno.responsavelId) : null;
+  const showResponsavel = selectedAluno ? isMinor(selectedAluno.dataNascimento) : false;
+  const tabCount = showResponsavel ? 4 : 3;
 
   return (
     <div className="space-y-6">
@@ -172,10 +192,13 @@ export default function AlunosPage() {
                 </div>
               </SheetHeader>
               <Tabs defaultValue="perfil" className="mt-6">
-                <TabsList className="bg-muted/50 w-full grid grid-cols-3">
+                <TabsList className={`bg-muted/50 w-full grid grid-cols-${tabCount}`}>
                   <TabsTrigger value="perfil" className="text-xs">Perfil</TabsTrigger>
                   <TabsTrigger value="financeiro" className="text-xs">Financeiro</TabsTrigger>
                   <TabsTrigger value="graduacao" className="text-xs">Graduação</TabsTrigger>
+                  {showResponsavel && (
+                    <TabsTrigger value="responsavel" className="text-xs">Responsável</TabsTrigger>
+                  )}
                 </TabsList>
 
                 <TabsContent value="perfil" className="mt-4 space-y-3">
@@ -186,6 +209,14 @@ export default function AlunosPage() {
                   <InfoRow label="Categoria" value={selectedAluno.categoria} />
                   <InfoRow label="Faixa" value={selectedAluno.faixaAtual} />
                   <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground w-24">Status</span><StatusBadge status={selectedAluno.status} /></div>
+                  {showResponsavel && (
+                    <div className="mt-2 p-2 rounded-md bg-muted/30 border border-border">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">⚠️ Aluno menor de idade</p>
+                      <p className="text-xs text-foreground">
+                        {alunoResponsavel ? `Responsável: ${alunoResponsavel.nome}` : 'Nenhum responsável vinculado'}
+                      </p>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="financeiro" className="mt-4 space-y-3">
@@ -238,7 +269,7 @@ export default function AlunosPage() {
                       </div>
                       {alunoGraduacao.status === 'elegivel' && (
                         <div className="text-xs bg-warning/10 border border-warning/20 rounded-lg p-3 text-warning">
-                          ✨ Este aluno atingiu o mínimo de aulas e está elegível para graduação. Aguardando aprovação do professor.
+                          ✨ Este aluno atingiu o mínimo de aulas e está elegível para graduação.
                         </div>
                       )}
                       {alunoGraduacao.status === 'aprovado' && (
@@ -251,6 +282,50 @@ export default function AlunosPage() {
                     <EmptyState title="Sem dados de graduação" description="Graduação não configurada para este aluno." className="py-8" />
                   )}
                 </TabsContent>
+
+                {showResponsavel && (
+                  <TabsContent value="responsavel" className="mt-4 space-y-4">
+                    {alunoResponsavel ? (
+                      <div className="bg-muted/30 rounded-lg p-4 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <UserCheck className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{alunoResponsavel.nome}</p>
+                            <p className="text-xs text-muted-foreground">Responsável legal</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <InfoRow label="Email" value={alunoResponsavel.email} />
+                          <InfoRow label="Telefone" value={alunoResponsavel.telefone} />
+                          <InfoRow label="CPF" value={alunoResponsavel.cpf} />
+                        </div>
+                        {alunoResponsavel.alunoIds.length > 1 && (
+                          <div className="pt-2 border-t border-border">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">Outros alunos vinculados</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {alunoResponsavel.alunoIds
+                                .filter(id => id !== selectedAluno.id)
+                                .map(id => {
+                                  const outro = alunosList.find(a => a.id === id);
+                                  return outro ? (
+                                    <span key={id} className="text-xs bg-secondary px-2 py-0.5 rounded-md text-foreground">{outro.nome}</span>
+                                  ) : null;
+                                })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <EmptyState
+                        title="Sem responsável vinculado"
+                        description="Este aluno é menor de idade mas não possui um responsável cadastrado."
+                        className="py-8"
+                      />
+                    )}
+                  </TabsContent>
+                )}
               </Tabs>
             </>
           )}
@@ -265,15 +340,6 @@ export default function AlunosPage() {
           <AlunoForm aluno={editingAluno} onSubmit={handleFormSubmit} onCancel={() => setFormOpen(false)} />
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-muted-foreground w-24 shrink-0">{label}</span>
-      <span className="text-xs text-foreground">{value}</span>
     </div>
   );
 }
