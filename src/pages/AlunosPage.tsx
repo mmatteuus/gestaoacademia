@@ -192,7 +192,7 @@ export default function AlunosPage() {
                 </div>
               </SheetHeader>
               <Tabs defaultValue="perfil" className="mt-6">
-                <TabsList className={`bg-muted/50 w-full grid grid-cols-${tabCount}`}>
+                <TabsList className={`bg-muted/50 w-full grid ${showResponsavel ? 'grid-cols-4' : 'grid-cols-3'}`}>
                   <TabsTrigger value="perfil" className="text-xs">Perfil</TabsTrigger>
                   <TabsTrigger value="financeiro" className="text-xs">Financeiro</TabsTrigger>
                   <TabsTrigger value="graduacao" className="text-xs">Graduação</TabsTrigger>
