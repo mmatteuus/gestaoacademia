@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import DashboardPage from "./pages/DashboardPage";
 import AlunosPage from "./pages/AlunosPage";
-import ResponsaveisPage from "./pages/ResponsaveisPage";
+
 import TurmasPage from "./pages/TurmasPage";
 import FrequenciaPage from "./pages/FrequenciaPage";
 import GraduacaoPage from "./pages/GraduacaoPage";
@@ -29,7 +29,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/alunos" element={<AlunosPage />} />
-            <Route path="/responsaveis" element={<ResponsaveisPage />} />
+            
             <Route path="/turmas" element={<TurmasPage />} />
             <Route path="/frequencia" element={<FrequenciaPage />} />
             <Route path="/graduacao" element={<GraduacaoPage />} />

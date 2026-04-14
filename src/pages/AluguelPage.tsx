@@ -31,10 +31,11 @@ export default function AluguelPage() {
         id: `res${Date.now()}`,
         locatario,
         espaco,
-        dataInicio: dataInicio.split('-').reverse().join('/'), 
+        dataInicio: dataInicio.split('-').reverse().join('/'),
+        dataFim: dataInicio.split('-').reverse().join('/'),
         horaInicio,
         horaFim,
-        status: 'agendado',
+        status: 'confirmada' as const,
         valor: parseFloat(valor) || 0,
         conflito: false
       },

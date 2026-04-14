@@ -29,7 +29,7 @@ export default function CampeonatosPage() {
         nome,
         data,
         local: local || 'A definir',
-        status: 'agendado',
+        status: 'planejado' as const,
         modalidade: 'Geral', // mocked
         participantes: [],
       },
