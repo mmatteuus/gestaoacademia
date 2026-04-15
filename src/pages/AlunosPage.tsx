@@ -86,10 +86,17 @@ export default function AlunosPage() {
   const alunoCobrancas = selectedAluno ? cobrancas.filter(c => c.alunoId === selectedAluno.id) : [];
   const alunoGraduacao = selectedAluno ? graduacoesAlunos.find(g => g.alunoId === selectedAluno.id) : null;
   const alunoResponsavel = selectedAluno?.responsavelId ? responsaveis.find(r => r.id === selectedAluno.responsavelId) : null;
-  const showResponsavel = selectedAluno ? isMinor(selectedAluno.dataNascimento) : false;
+  const showResponsavel = !!alunoResponsavel || (selectedAluno ? isMinor(selectedAluno.dataNascimento) : false);
+
+  const getWhatsAppLink = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    return `https://wa.me/55${cleanPhone}`;
+  };
 
   return (
     <div className="space-y-6">
+
+
       <PageHeader
         title="Alunos"
         subtitle={`${alunosList.length} alunos cadastrados`}
@@ -206,41 +213,62 @@ export default function AlunosPage() {
                 </TabsList>
 
                 <TabsContent value="perfil" className="mt-4 space-y-3">
-                  <InfoRow label="Email" value={selectedAluno.email} />
-                  <InfoRow label="Telefone" value={selectedAluno.telefone} />
+                  <div className="flex items-center justify-between">
+                    <InfoRow label="Email" value={selectedAluno.email} />
+                  </div>
+                  <div className="flex items-center justify-between group">
+                    <InfoRow label="Telefone" value={selectedAluno.telefone} />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      asChild
+                    >
+                      <a href={getWhatsAppLink(selectedAluno.telefone)} target="_blank" rel="noopener noreferrer">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.198-.672-.24-.943.039-.273.297-.792.967-.971 1.166-.173.198-.347.223-.644.075-.297-.15-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.472.13-.622.149-.149.347-.397.522-.6.173.015.347.025.522.025.174 0 .347-.01.52-.01.198 0 .397.025.596.1.198.075.397.198.57.347.174.149.297.347.372.595.075.149.025.372-.024.57-.049.173-.173.595-.248.795-.075.198-.174.347-.347.521-.149.174-.32.521-.398.694-.075.173-.323.397-.595.595Zm-2.717-2.879c-.148.075-.322.124-.495.124-.174 0-.347-.05-.495-.124-.149-.075-.297-.223-.372-.372-.074-.149-.124-.322-.124-.495 0-.173.05-.347.124-.495.075-.149.223-.297.372-.372.149-.074.322-.124.495-.124.173 0 .347.05.495.124.149.075.297.223.372.372.074.149.124.322.124.495 0 .173-.05.347-.124.495-.075.149-.223.297-.372.372Z"/>
+                          <path d="M20.074 3.511c-3.828-3.828-8.922-3.71-12.627.994L3.511 8.44l2.299-.574c2.832 1.755 6.256 1.755 9.088 0l5.833-2.299-2.299 2.299c1.755 2.832 1.755 6.256 0 9.088l-.574 2.299 4.934-4.934c3.71-3.71 3.904-8.799-.994-12.627ZM17.972 14.93c-.372.372-.992.372-1.364 0-.372-.372-.372-.992 0-1.364.372-.372.992-.372 1.364 0 .372.372.372.992 0 1.364Zm2.299-3.462c-.372.372-.992.372-1.364 0-.372-.372-.372-.992 0-1.364.372-.372.992-.372 1.364 0 .372.372.372.992 0 1.364Z"/>
+                        </svg>
+                      </a>
+                    </Button>
+                  </div>
                   <InfoRow label="CPF" value={selectedAluno.cpf} />
                   <InfoRow label="Nascimento" value={selectedAluno.dataNascimento} />
                   <InfoRow label="Categoria" value={selectedAluno.categoria} />
                   <InfoRow label="Faixa" value={selectedAluno.faixaAtual} />
                   <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground w-24">Status</span><StatusBadge status={selectedAluno.status} /></div>
+                  
                   {showResponsavel && (
-                    <div className="mt-2 p-3 rounded-lg bg-muted/30 border border-border space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Responsável</span>
-                      </div>
-                      {alunoResponsavel ? (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-foreground">{alunoResponsavel.nome}</span>
-                            <a
-                              href={`https://wa.me/55${alunoResponsavel.telefone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white px-2.5 py-1.5 rounded-md transition-colors"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
+                    <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Responsável</span>
+                        {alunoResponsavel && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            asChild
+                          >
+                            <a href={getWhatsAppLink(alunoResponsavel.telefone)} target="_blank" rel="noopener noreferrer">
+                              <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
                                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.198-.672-.24-.943.039-.273.297-.792.967-.971 1.166-.173.198-.347.223-.644.075-.297-.15-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.472.13-.622.149-.149.347-.397.522-.6.173.015.347.025.522.025.174 0 .347-.01.52-.01.198 0 .397.025.596.1.198.075.397.198.57.347.174.149.297.347.372.595.075.149.025.372-.024.57-.049.173-.173.595-.248.795-.075.198-.174.347-.347.521-.149.174-.32.521-.398.694-.075.173-.323.397-.595.595Zm-2.717-2.879c-.148.075-.322.124-.495.124-.174 0-.347-.05-.495-.124-.149-.075-.297-.223-.372-.372-.074-.149-.124-.322-.124-.495 0-.173.05-.347.124-.495.075-.149.223-.297.372-.372.149-.074.322-.124.495-.124.173 0 .347.05.495.124.149.075.297.223.372.372.074.149.124.322.124.495 0 .173-.05.347-.124.495-.075.149-.223.297-.372.372Z"/>
                                 <path d="M20.074 3.511c-3.828-3.828-8.922-3.71-12.627.994L3.511 8.44l2.299-.574c2.832 1.755 6.256 1.755 9.088 0l5.833-2.299-2.299 2.299c1.755 2.832 1.755 6.256 0 9.088l-.574 2.299 4.934-4.934c3.71-3.71 3.904-8.799-.994-12.627ZM17.972 14.93c-.372.372-.992.372-1.364 0-.372-.372-.372-.992 0-1.364.372-.372.992-.372 1.364 0 .372.372.372.992 0 1.364Zm2.299-3.462c-.372.372-.992.372-1.364 0-.372-.372-.372-.992 0-1.364.372-.372.992-.372 1.364 0 .372.372.372.992 0 1.364Z"/>
                               </svg>
-                              WhatsApp
                             </a>
-                          </div>
+                          </Button>
+                        )}
+                      </div>
+                      {alunoResponsavel ? (
+                        <div className="space-y-2">
+                          <p className="text-sm font-semibold text-foreground">{alunoResponsavel.nome}</p>
                           <div className="space-y-1 text-xs">
                             <InfoRow label="Telefone" value={alunoResponsavel.telefone} />
+                            <InfoRow label="Email" value={alunoResponsavel.email} />
+                            <InfoRow label="CPF" value={alunoResponsavel.cpf} />
                           </div>
-                        </>
+                        </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground">Nenhum responsável vinculado</p>
+                        <p className="text-xs text-muted-foreground italic">Nenhum responsável vinculado.</p>
                       )}
                     </div>
                   )}

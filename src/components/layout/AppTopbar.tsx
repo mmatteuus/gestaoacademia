@@ -9,7 +9,6 @@ import { alunos, turmas, produtos } from '@/services/mocks/data';
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
   '/alunos': 'Alunos',
-  '/responsaveis': 'Responsáveis',
   '/turmas': 'Turmas',
   '/frequencia': 'Frequência',
   '/graduacao': 'Graduação',
