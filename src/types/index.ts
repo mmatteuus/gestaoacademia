@@ -18,7 +18,6 @@ export interface Aluno {
   observacoes?: string;
 }
 
-// === Responsável ===
 export interface Responsavel {
   id: string;
   nome: string;
@@ -28,7 +27,6 @@ export interface Responsavel {
   alunoIds: string[];
 }
 
-// === Turma ===
 export interface Turma {
   id: string;
   nome: string;
@@ -40,7 +38,6 @@ export interface Turma {
   alunoIds: string[];
 }
 
-// === Frequência ===
 export interface RegistroFrequencia {
   id: string;
   alunoId: string;
@@ -57,11 +54,11 @@ export interface SessaoAula {
   presencas: { alunoId: string; presente: boolean }[];
 }
 
-// === Graduação ===
 export type GraduacaoStatus = 'nao-elegivel' | 'elegivel' | 'aprovado' | 'graduado';
 
 export interface RegraGraduacao {
   id: string;
+  modalidade?: string;
   faixaOrigem: string;
   faixaDestino: string;
   categoria: string;
@@ -88,7 +85,6 @@ export interface HistoricoGraduacao {
   aprovadoPor: string;
 }
 
-// === Ranking ===
 export interface RankingEntry {
   alunoId: string;
   nomeAluno: string;
@@ -101,7 +97,6 @@ export interface RankingEntry {
   temporada: string;
 }
 
-// === Campeonato ===
 export interface Campeonato {
   id: string;
   nome: string;
@@ -121,8 +116,8 @@ export interface ParticipanteCampeonato {
   pontuacao?: number;
 }
 
-// === Financeiro ===
 export type CobrancaStatus = 'aberta' | 'parcial' | 'paga' | 'vencida' | 'cancelada' | 'estornada';
+export type FormaPagamento = 'PIX' | 'Cartão' | 'Dinheiro' | 'Transferência' | 'Boleto';
 
 export interface Cobranca {
   id: string;
@@ -135,6 +130,9 @@ export interface Cobranca {
   dataVencimento: string;
   dataPagamento?: string;
   status: CobrancaStatus;
+  formaPagamento?: FormaPagamento;
+  observacoes?: string;
+  comprovanteId?: string;
 }
 
 export interface Despesa {
@@ -155,7 +153,6 @@ export interface Receita {
   origem: string;
 }
 
-// === Produtos ===
 export interface Produto {
   id: string;
   nome: string;
@@ -173,10 +170,13 @@ export interface Venda {
   itens: { produtoId: string; nomeProduto: string; quantidade: number; precoUnitario: number }[];
   total: number;
   compradorNome: string;
-  formaPagamento: string;
+  formaPagamento: Exclude<FormaPagamento, 'Boleto'>;
+  observacoes?: string;
+  parcelado?: boolean;
+  quantidadeParcelas?: number;
+  comprovanteId?: string;
 }
 
-// === Aluguel ===
 export interface Reserva {
   id: string;
   espaco: string;
@@ -201,7 +201,17 @@ export interface ContratoAluguel {
   status: 'ativo' | 'encerrado' | 'cancelado';
 }
 
-// === Dashboard ===
+export interface PagamentoContratoAluguel {
+  id: string;
+  contratoId: string;
+  dataPagamento: string;
+  valor: number;
+  formaPagamento: Exclude<FormaPagamento, 'Boleto'>;
+  observacoes?: string;
+  referencia?: string;
+  comprovanteId?: string;
+}
+
 export interface KPI {
   label: string;
   valor: string | number;

@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { ComprovanteDialog } from '@/components/shared/ComprovanteDialog';
 import { cobrancas as cobrancasMock } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Search, DollarSign, AlertTriangle, CreditCard } from 'lucide-react';
+import { Search, DollarSign, AlertTriangle, CreditCard, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Cobranca, CobrancaStatus } from '@/types';
+import type { Cobranca, CobrancaStatus, FormaPagamento } from '@/types';
 
 const statusTabs: { label: string; value: CobrancaStatus | 'todas' }[] = [
   { label: 'Todas', value: 'todas' },
@@ -19,6 +20,8 @@ const statusTabs: { label: string; value: CobrancaStatus | 'todas' }[] = [
   { label: 'Parciais', value: 'parcial' },
 ];
 
+const formasPagamento: FormaPagamento[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência', 'Boleto'];
+
 export default function FinanceiroPage() {
   const [cobrancasList, setCobrancasList] = useState<Cobranca[]>(cobrancasMock);
   const [filtro, setFiltro] = useState<CobrancaStatus | 'todas'>('todas');
@@ -26,49 +29,84 @@ export default function FinanceiroPage() {
   const [pagamentoOpen, setPagamentoOpen] = useState(false);
   const [cobrancaSel, setCobrancaSel] = useState<Cobranca | null>(null);
   const [valorPagamento, setValorPagamento] = useState('');
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('PIX');
+  const [observacoes, setObservacoes] = useState('');
+  const [comprovanteOpen, setComprovanteOpen] = useState(false);
+  const [comprovanteFields, setComprovanteFields] = useState<{ label: string; value: string }[]>([]);
+  const [comprovanteSubtitle, setComprovanteSubtitle] = useState('');
 
-  const filtered = cobrancasList.filter(c => {
+  const filtered = cobrancasList.filter((c) => {
     const matchStatus = filtro === 'todas' || c.status === filtro;
     const matchBusca = c.nomeAluno.toLowerCase().includes(busca.toLowerCase());
     return matchStatus && matchBusca;
   });
 
-  const totalAberto = cobrancasList.filter(c => c.status === 'aberta' || c.status === 'parcial').reduce((s, c) => s + (c.valor - c.valorPago), 0);
-  const totalVencido = cobrancasList.filter(c => c.status === 'vencida').reduce((s, c) => s + c.valor, 0);
+  const totalAberto = cobrancasList
+    .filter((c) => c.status === 'aberta' || c.status === 'parcial')
+    .reduce((soma, cobranca) => soma + (cobranca.valor - cobranca.valorPago), 0);
+
+  const totalVencido = cobrancasList
+    .filter((c) => c.status === 'vencida')
+    .reduce((soma, cobranca) => soma + c.valor, 0);
+
+  const abrirComprovante = (cobranca: Cobranca) => {
+    setComprovanteSubtitle(`${cobranca.nomeAluno} • ${cobranca.descricao}`);
+    setComprovanteFields([
+      { label: 'Aluno', value: cobranca.nomeAluno },
+      { label: 'Descrição', value: cobranca.descricao },
+      { label: 'Valor total', value: `R$ ${cobranca.valor.toFixed(2)}` },
+      { label: 'Valor pago', value: `R$ ${cobranca.valorPago.toFixed(2)}` },
+      { label: 'Data do pagamento', value: cobranca.dataPagamento || 'Não registrado' },
+      { label: 'Forma de pagamento', value: cobranca.formaPagamento || 'Não informada' },
+      { label: 'Observações', value: cobranca.observacoes || 'Sem observações' },
+      { label: 'Comprovante', value: cobranca.comprovanteId || 'Não gerado' },
+    ]);
+    setComprovanteOpen(true);
+  };
 
   const handleRegistrarPagamento = (cobranca: Cobranca) => {
     setCobrancaSel(cobranca);
     setValorPagamento((cobranca.valor - cobranca.valorPago).toFixed(2));
+    setFormaPagamento(cobranca.formaPagamento || 'PIX');
+    setObservacoes(cobranca.observacoes || '');
     setPagamentoOpen(true);
   };
 
   const handleConfirmarPagamento = () => {
     if (!cobrancaSel) return;
+
     const valor = parseFloat(valorPagamento);
-    if (isNaN(valor) || valor <= 0) {
+    if (Number.isNaN(valor) || valor <= 0) {
       toast.error('Informe um valor válido');
       return;
     }
+
     const restante = cobrancaSel.valor - cobrancaSel.valorPago;
     if (valor > restante) {
       toast.error(`Valor máximo: R$ ${restante.toFixed(2)}`);
       return;
     }
-    setCobrancasList(prev => prev.map(c => {
-      if (c.id !== cobrancaSel.id) return c;
-      const novoPago = c.valorPago + valor;
-      const novoStatus: CobrancaStatus = novoPago >= c.valor ? 'paga' : 'parcial';
-      return {
-        ...c,
-        valorPago: novoPago,
-        status: novoStatus,
-        dataPagamento: novoStatus === 'paga' ? new Date().toISOString().split('T')[0] : c.dataPagamento,
-      };
-    }));
-    toast.success(`Pagamento de R$ ${valor.toFixed(2)} registrado`);
+
+    const dataPagamento = new Date().toISOString().split('T')[0];
+    const comprovanteId = `CP-${Date.now()}`;
+    const atualizado = {
+      ...cobrancaSel,
+      valorPago: cobrancaSel.valorPago + valor,
+      status: cobrancaSel.valorPago + valor >= cobrancaSel.valor ? 'paga' as CobrancaStatus : 'parcial' as CobrancaStatus,
+      dataPagamento,
+      formaPagamento,
+      observacoes,
+      comprovanteId,
+    };
+
+    setCobrancasList((prev) => prev.map((c) => (c.id === cobrancaSel.id ? atualizado : c)));
     setPagamentoOpen(false);
     setCobrancaSel(null);
+    toast.success(`Pagamento de R$ ${valor.toFixed(2)} registrado`);
+    abrirComprovante(atualizado);
   };
+
+  const comprovanteTitle = useMemo(() => 'Comprovante de Pagamento', []);
 
   return (
     <div className="space-y-6">
@@ -83,11 +121,13 @@ export default function FinanceiroPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Buscar por aluno..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-9 h-9 text-xs bg-secondary/50" />
+          <Input placeholder="Buscar por aluno..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9 h-9 text-xs bg-secondary/50" />
         </div>
         <div className="flex gap-1.5 flex-wrap">
-          {statusTabs.map(s => (
-            <Button key={s.value} variant={filtro === s.value ? 'default' : 'secondary'} size="sm" className="text-xs h-8" onClick={() => setFiltro(s.value)}>{s.label}</Button>
+          {statusTabs.map((status) => (
+            <Button key={status.value} variant={filtro === status.value ? 'default' : 'secondary'} size="sm" className="text-xs h-8" onClick={() => setFiltro(status.value)}>
+              {status.label}
+            </Button>
           ))}
         </div>
       </div>
@@ -96,10 +136,9 @@ export default function FinanceiroPage() {
         <EmptyState title="Nenhuma cobrança encontrada" description="Tente ajustar os filtros de busca." />
       ) : (
         <>
-          {/* Desktop table */}
           <div className="hidden sm:block bg-card border border-border rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-xs min-w-[600px]">
+              <table className="w-full text-xs min-w-[720px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
                     <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Aluno</th>
@@ -107,28 +146,33 @@ export default function FinanceiroPage() {
                     <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Valor</th>
                     <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Vencimento</th>
                     <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Ação</th>
+                    <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(c => (
-                    <tr key={c.id} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
-                      <td className="py-3 px-4 text-foreground font-medium">{c.nomeAluno}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{c.descricao}</td>
-                      <td className="py-3 px-4">
-                        <span className="text-foreground">R$ {c.valor.toFixed(2)}</span>
-                        {c.valorPago > 0 && c.valorPago < c.valor && (
-                          <p className="text-muted-foreground text-[10px]">Pago: R$ {c.valorPago.toFixed(2)}</p>
-                        )}
+                  {filtered.map((cobranca) => (
+                    <tr key={cobranca.id} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
+                      <td className="py-3 px-4 text-foreground font-medium">{cobranca.nomeAluno}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{cobranca.descricao}</td>
+                      <td className="py-3 px-4 text-foreground">
+                        R$ {cobranca.valor.toFixed(2)}
+                        {cobranca.valorPago > 0 && <p className="text-[10px] text-muted-foreground">Pago: R$ {cobranca.valorPago.toFixed(2)}</p>}
                       </td>
-                      <td className="py-3 px-4 text-muted-foreground">{c.dataVencimento}</td>
-                      <td className="py-3 px-4"><StatusBadge status={c.status} /></td>
+                      <td className="py-3 px-4 text-muted-foreground">{cobranca.dataVencimento}</td>
+                      <td className="py-3 px-4"><StatusBadge status={cobranca.status} /></td>
                       <td className="py-3 px-4">
-                        {(c.status === 'aberta' || c.status === 'parcial' || c.status === 'vencida') && (
-                          <Button size="sm" variant="secondary" className="text-[10px] h-7" onClick={() => handleRegistrarPagamento(c)}>
-                            <CreditCard className="h-3 w-3 mr-1" />Pagar
-                          </Button>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {(cobranca.status === 'aberta' || cobranca.status === 'parcial' || cobranca.status === 'vencida') && (
+                            <Button size="sm" variant="secondary" className="text-[10px] h-7" onClick={() => handleRegistrarPagamento(cobranca)}>
+                              <CreditCard className="h-3 w-3 mr-1" />Pagar
+                            </Button>
+                          )}
+                          {cobranca.valorPago > 0 && (
+                            <Button size="sm" variant="ghost" className="text-[10px] h-7" onClick={() => abrirComprovante(cobranca)}>
+                              <Receipt className="h-3 w-3 mr-1" />Comprovante
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -137,38 +181,41 @@ export default function FinanceiroPage() {
             </div>
           </div>
 
-          {/* Mobile cards */}
           <div className="sm:hidden space-y-3">
-            {filtered.map(c => (
-              <div key={c.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
+            {filtered.map((cobranca) => (
+              <div key={cobranca.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{c.nomeAluno}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{c.descricao}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{cobranca.nomeAluno}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{cobranca.descricao}</p>
                   </div>
-                  <StatusBadge status={c.status} />
+                  <StatusBadge status={cobranca.status} />
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-foreground font-medium">R$ {c.valor.toFixed(2)}</span>
-                    {c.valorPago > 0 && c.valorPago < c.valor && (
-                      <span className="text-muted-foreground ml-2">Pago: R$ {c.valorPago.toFixed(2)}</span>
-                    )}
+                    <span className="text-foreground font-medium">R$ {cobranca.valor.toFixed(2)}</span>
+                    {cobranca.valorPago > 0 && <span className="text-muted-foreground ml-2">Pago: R$ {cobranca.valorPago.toFixed(2)}</span>}
                   </div>
-                  <span className="text-muted-foreground">{c.dataVencimento}</span>
+                  <span className="text-muted-foreground">{cobranca.dataVencimento}</span>
                 </div>
-                {(c.status === 'aberta' || c.status === 'parcial' || c.status === 'vencida') && (
-                  <Button size="sm" className="w-full text-xs h-8 mt-1" onClick={() => handleRegistrarPagamento(c)}>
-                    <CreditCard className="h-3 w-3 mr-1" />Registrar Pagamento
-                  </Button>
-                )}
+                <div className="grid grid-cols-1 gap-2 pt-1">
+                  {(cobranca.status === 'aberta' || cobranca.status === 'parcial' || cobranca.status === 'vencida') && (
+                    <Button size="sm" className="w-full text-xs h-8" onClick={() => handleRegistrarPagamento(cobranca)}>
+                      <CreditCard className="h-3 w-3 mr-1" />Registrar Pagamento
+                    </Button>
+                  )}
+                  {cobranca.valorPago > 0 && (
+                    <Button size="sm" variant="secondary" className="w-full text-xs h-8" onClick={() => abrirComprovante(cobranca)}>
+                      <Receipt className="h-3 w-3 mr-1" />Ver Comprovante
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </>
       )}
 
-      {/* Dialog de pagamento */}
       <Dialog open={pagamentoOpen} onOpenChange={setPagamentoOpen}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>
@@ -181,17 +228,20 @@ export default function FinanceiroPage() {
                 <p className="text-muted-foreground">Cobrança: <span className="text-foreground">{cobrancaSel.descricao}</span></p>
                 <p className="text-muted-foreground">Valor total: <span className="text-foreground">R$ {cobrancaSel.valor.toFixed(2)}</span></p>
                 <p className="text-muted-foreground">Já pago: <span className="text-foreground">R$ {cobrancaSel.valorPago.toFixed(2)}</span></p>
-                <p className="text-muted-foreground">Restante: <span className="text-primary font-semibold">R$ {(cobrancaSel.valor - cobrancaSel.valorPago).toFixed(2)}</span></p>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Valor do pagamento (R$)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={valorPagamento}
-                  onChange={e => setValorPagamento(e.target.value)}
-                  className="h-9 text-sm bg-secondary/50"
-                />
+                <Input type="number" step="0.01" value={valorPagamento} onChange={(e) => setValorPagamento(e.target.value)} className="h-9 text-sm bg-secondary/50" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Forma de pagamento</label>
+                <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value as FormaPagamento)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground">
+                  {formasPagamento.map((forma) => <option key={forma} value={forma}>{forma}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Observações</label>
+                <textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} className="w-full rounded-md border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground resize-none" placeholder="Ex.: pagamento referente ao mês atual" />
               </div>
             </div>
           )}
@@ -201,6 +251,8 @@ export default function FinanceiroPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ComprovanteDialog open={comprovanteOpen} onOpenChange={setComprovanteOpen} title={comprovanteTitle} subtitle={comprovanteSubtitle} fields={comprovanteFields} />
     </div>
   );
 }
