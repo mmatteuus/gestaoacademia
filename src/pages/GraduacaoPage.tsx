@@ -1,7 +1,7 @@
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { graduacoesAlunos, regrasGraduacao, historicoGraduacoes, alunos } from '@/mocks/data';
+import { graduacoesAlunos, regrasGraduacao, historicoGraduacoes, alunos } from '@/services/mocks/data';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 

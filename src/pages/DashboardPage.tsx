@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { KpiSkeleton, ChartSkeleton } from '@/components/shared/PageSkeleton';
-import { alunos, cobrancas, alertas, atividadesRecentes, graduacoesAlunos, frequenciaMensal, receitaDespesaMensal, receitas, despesas, vendas } from '@/mocks/data';
+import { alunos, cobrancas, alertas, atividadesRecentes, graduacoesAlunos, frequenciaMensal, receitaDespesaMensal, receitas, despesas, vendas } from '@/services/mocks/data';
 import { Users, AlertTriangle, Award, DollarSign, TrendingDown, Package, Building2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
 

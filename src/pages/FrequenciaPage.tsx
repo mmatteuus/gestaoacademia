@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { sessoesAula as sessoesMock, turmas, alunos } from '@/mocks/data';
+import { sessoesAula as sessoesMock, turmas, alunos } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CheckCircle2, XCircle, CalendarCheck, Plus } from 'lucide-react';

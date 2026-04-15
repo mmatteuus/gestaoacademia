@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { reservas as reservasMock, contratosAluguel } from '@/mocks/data';
+import { reservas as reservasMock, contratosAluguel } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';

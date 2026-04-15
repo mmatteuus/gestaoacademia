@@ -4,7 +4,7 @@ import { Search, Bell, X, Users, BookOpen, Package } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { alunos, turmas, produtos } from '@/mocks/data';
+import { alunos, turmas, produtos } from '@/services/mocks/data';
 
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',

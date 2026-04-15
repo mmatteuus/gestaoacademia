@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { ranking } from '@/mocks/data';
+import { ranking } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, Minus, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';

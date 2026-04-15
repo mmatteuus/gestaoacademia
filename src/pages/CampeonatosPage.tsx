@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { campeonatos as campeonatosMock } from '@/mocks/data';
+import { campeonatos as campeonatosMock } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Plus, Trophy } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';

@@ -1,41 +1,31 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { responsaveis as responsaveisMock, alunos } from '@/mocks/data';
+import { responsaveis as responsaveisMock, alunos } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { ResponsavelForm } from '@/features/responsaveis/forms/ResponsavelForm';
+import type { Responsavel } from '@/types';
+import type { ResponsavelFormValues } from '@/features/responsaveis/types/responsavel.types';
+import { fromFormToResponsavelCreate } from '@/features/responsaveis/adapters/responsaveis.adapter';
 
 export default function ResponsaveisPage() {
   const [responsaveis, setResponsaveis] = useState(responsaveisMock);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefone, setTelefone] = useState('');
 
-  const handleSalvar = () => {
-    if (!nome.trim() || !telefone.trim()) {
-      toast.error('Preencha os campos obrigatórios (Nome e Telefone)');
-      return;
-    }
-    
-    setResponsaveis(prev => [
-      {
-        id: `r${Date.now()}`,
-        nome,
-        telefone,
-        email,
-        cpf: '000.000.000-00', // mocked
-        alunoIds: [], // mocked
-      },
-      ...prev
-    ]);
+  const handleSalvar = (values: ResponsavelFormValues) => {
+    const base = fromFormToResponsavelCreate(values);
+    const newResponsavel: Responsavel = {
+      id: `r${Date.now()}`,
+      ...base,
+      cpf: '000.000.000-00',
+      alunoIds: [],
+    };
+    setResponsaveis((prev) => [newResponsavel, ...prev]);
     toast.success('Responsável cadastrado com sucesso!');
     setDialogOpen(false);
-    setNome('');
-    setEmail('');
-    setTelefone('');
   };
 
   return (
@@ -80,42 +70,11 @@ export default function ResponsaveisPage() {
           <DialogHeader>
             <DialogTitle className="text-foreground">Novo Responsável</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Nome Completo *</label>
-              <input
-                type="text"
-                value={nome}
-                onChange={e => setNome(e.target.value)}
-                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
-                placeholder="Ex Silva"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Telefone *</label>
-              <input
-                type="tel"
-                value={telefone}
-                onChange={e => setTelefone(e.target.value)}
-                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground"
-                placeholder="exemplo@email.com"
-              />
-            </div>
-          </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
-            <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSalvar}>Salvar</Button>
-          </DialogFooter>
+          <ResponsavelForm
+            onCancel={() => setDialogOpen(false)}
+            onSubmit={handleSalvar}
+            submitLabel="Salvar"
+          />
         </DialogContent>
       </Dialog>
     </div>

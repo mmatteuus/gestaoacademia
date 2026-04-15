@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { turmas as turmasMock, alunos } from '@/mocks/data';
+import { turmas as turmasMock, alunos } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Users, Pencil } from 'lucide-react';

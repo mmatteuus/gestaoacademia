@@ -2,7 +2,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { despesas, receitas, receitaDespesaMensal } from '@/mocks/data';
+import { despesas, receitas, receitaDespesaMensal } from '@/services/mocks/data';
 import { DollarSign, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';

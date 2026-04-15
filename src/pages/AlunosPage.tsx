@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { alunos as alunosMock, cobrancas, graduacoesAlunos, responsaveis } from '@/mocks/data';
+import { alunos as alunosMock, cobrancas, graduacoesAlunos, responsaveis } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil, UserCheck } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -13,6 +13,8 @@ import { Progress } from '@/components/ui/progress';
 import { AlunoForm } from '@/components/forms/AlunoForm';
 import { toast } from 'sonner';
 import type { Aluno, AlunoStatus } from '@/types';
+import type { AlunoFormValues } from '@/features/alunos/types/aluno.types';
+import { fromFormToAlunoPatch } from '@/features/alunos/adapters/alunos.adapter';
 
 const statusFilter: { label: string; value: AlunoStatus | 'todos' }[] = [
   { label: 'Todos', value: 'todos' },
@@ -63,13 +65,19 @@ export default function AlunosPage() {
   const handleCreate = () => { setEditingAluno(undefined); setFormOpen(true); };
   const handleEdit = (aluno: Aluno) => { setEditingAluno(aluno); setFormOpen(true); setSelectedAluno(null); };
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (values: AlunoFormValues) => {
+    const patch = fromFormToAlunoPatch(values);
     if (editingAluno) {
-      setAlunosList(prev => prev.map(a => a.id === editingAluno.id ? { ...a, ...data } : a));
+      setAlunosList((prev) => prev.map((a) => (a.id === editingAluno.id ? { ...a, ...patch } : a)));
       toast.success('Aluno atualizado com sucesso');
     } else {
-      const newAluno: Aluno = { ...data, id: `a${Date.now()}`, turmaIds: data.turmaIds || [], dataMatricula: new Date().toISOString().split('T')[0] };
-      setAlunosList(prev => [...prev, newAluno]);
+      const newAluno: Aluno = {
+        ...patch,
+        id: `a${Date.now()}`,
+        turmaIds: patch.turmaIds || [],
+        dataMatricula: new Date().toISOString().split('T')[0],
+      };
+      setAlunosList((prev) => [...prev, newAluno]);
       toast.success('Aluno cadastrado com sucesso');
     }
     setFormOpen(false);
@@ -79,7 +87,6 @@ export default function AlunosPage() {
   const alunoGraduacao = selectedAluno ? graduacoesAlunos.find(g => g.alunoId === selectedAluno.id) : null;
   const alunoResponsavel = selectedAluno?.responsavelId ? responsaveis.find(r => r.id === selectedAluno.responsavelId) : null;
   const showResponsavel = selectedAluno ? isMinor(selectedAluno.dataNascimento) : false;
-  const tabCount = showResponsavel ? 4 : 3;
 
   return (
     <div className="space-y-6">
@@ -192,13 +199,10 @@ export default function AlunosPage() {
                 </div>
               </SheetHeader>
               <Tabs defaultValue="perfil" className="mt-6">
-                <TabsList className={`bg-muted/50 w-full grid ${showResponsavel ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                <TabsList className="bg-muted/50 w-full grid grid-cols-3">
                   <TabsTrigger value="perfil" className="text-xs">Perfil</TabsTrigger>
                   <TabsTrigger value="financeiro" className="text-xs">Financeiro</TabsTrigger>
                   <TabsTrigger value="graduacao" className="text-xs">Graduação</TabsTrigger>
-                  {showResponsavel && (
-                    <TabsTrigger value="responsavel" className="text-xs">Responsável</TabsTrigger>
-                  )}
                 </TabsList>
 
                 <TabsContent value="perfil" className="mt-4 space-y-3">
@@ -210,11 +214,34 @@ export default function AlunosPage() {
                   <InfoRow label="Faixa" value={selectedAluno.faixaAtual} />
                   <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground w-24">Status</span><StatusBadge status={selectedAluno.status} /></div>
                   {showResponsavel && (
-                    <div className="mt-2 p-2 rounded-md bg-muted/30 border border-border">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">⚠️ Aluno menor de idade</p>
-                      <p className="text-xs text-foreground">
-                        {alunoResponsavel ? `Responsável: ${alunoResponsavel.nome}` : 'Nenhum responsável vinculado'}
-                      </p>
+                    <div className="mt-2 p-3 rounded-lg bg-muted/30 border border-border space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Responsável</span>
+                      </div>
+                      {alunoResponsavel ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-foreground">{alunoResponsavel.nome}</span>
+                            <a
+                              href={`https://wa.me/55${alunoResponsavel.telefone.replace(/\D/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white px-2.5 py-1.5 rounded-md transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.198-.672-.24-.943.039-.273.297-.792.967-.971 1.166-.173.198-.347.223-.644.075-.297-.15-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.472.13-.622.149-.149.347-.397.522-.6.173.015.347.025.522.025.174 0 .347-.01.52-.01.198 0 .397.025.596.1.198.075.397.198.57.347.174.149.297.347.372.595.075.149.025.372-.024.57-.049.173-.173.595-.248.795-.075.198-.174.347-.347.521-.149.174-.32.521-.398.694-.075.173-.323.397-.595.595Zm-2.717-2.879c-.148.075-.322.124-.495.124-.174 0-.347-.05-.495-.124-.149-.075-.297-.223-.372-.372-.074-.149-.124-.322-.124-.495 0-.173.05-.347.124-.495.075-.149.223-.297.372-.372.149-.074.322-.124.495-.124.173 0 .347.05.495.124.149.075.297.223.372.372.074.149.124.322.124.495 0 .173-.05.347-.124.495-.075.149-.223.297-.372.372Z"/>
+                                <path d="M20.074 3.511c-3.828-3.828-8.922-3.71-12.627.994L3.511 8.44l2.299-.574c2.832 1.755 6.256 1.755 9.088 0l5.833-2.299-2.299 2.299c1.755 2.832 1.755 6.256 0 9.088l-.574 2.299 4.934-4.934c3.71-3.71 3.904-8.799-.994-12.627ZM17.972 14.93c-.372.372-.992.372-1.364 0-.372-.372-.372-.992 0-1.364.372-.372.992-.372 1.364 0 .372.372.372.992 0 1.364Zm2.299-3.462c-.372.372-.992.372-1.364 0-.372-.372-.372-.992 0-1.364.372-.372.992-.372 1.364 0 .372.372.372.992 0 1.364Z"/>
+                              </svg>
+                              WhatsApp
+                            </a>
+                          </div>
+                          <div className="space-y-1 text-xs">
+                            <InfoRow label="Telefone" value={alunoResponsavel.telefone} />
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Nenhum responsável vinculado</p>
+                      )}
                     </div>
                   )}
                 </TabsContent>
@@ -282,50 +309,6 @@ export default function AlunosPage() {
                     <EmptyState title="Sem dados de graduação" description="Graduação não configurada para este aluno." className="py-8" />
                   )}
                 </TabsContent>
-
-                {showResponsavel && (
-                  <TabsContent value="responsavel" className="mt-4 space-y-4">
-                    {alunoResponsavel ? (
-                      <div className="bg-muted/30 rounded-lg p-4 space-y-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <UserCheck className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{alunoResponsavel.nome}</p>
-                            <p className="text-xs text-muted-foreground">Responsável legal</p>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <InfoRow label="Email" value={alunoResponsavel.email} />
-                          <InfoRow label="Telefone" value={alunoResponsavel.telefone} />
-                          <InfoRow label="CPF" value={alunoResponsavel.cpf} />
-                        </div>
-                        {alunoResponsavel.alunoIds.length > 1 && (
-                          <div className="pt-2 border-t border-border">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">Outros alunos vinculados</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {alunoResponsavel.alunoIds
-                                .filter(id => id !== selectedAluno.id)
-                                .map(id => {
-                                  const outro = alunosList.find(a => a.id === id);
-                                  return outro ? (
-                                    <span key={id} className="text-xs bg-secondary px-2 py-0.5 rounded-md text-foreground">{outro.nome}</span>
-                                  ) : null;
-                                })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <EmptyState
-                        title="Sem responsável vinculado"
-                        description="Este aluno é menor de idade mas não possui um responsável cadastrado."
-                        className="py-8"
-                      />
-                    )}
-                  </TabsContent>
-                )}
               </Tabs>
             </>
           )}

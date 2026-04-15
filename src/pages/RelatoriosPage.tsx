@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { alunos, cobrancas, graduacoesAlunos, ranking, vendas, frequenciaMensal, receitaDespesaMensal, frequenciaHeatmap, rankingEvolucao, vendasPorCategoria } from '@/mocks/data';
+import { alunos, cobrancas, graduacoesAlunos, ranking, vendas, frequenciaMensal, receitaDespesaMensal, frequenciaHeatmap, rankingEvolucao, vendasPorCategoria } from '@/services/mocks/data';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   PieChart, Pie, Cell, LineChart, Line, Legend, FunnelChart, Funnel, LabelList
