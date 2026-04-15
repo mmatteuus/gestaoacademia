@@ -2,17 +2,18 @@ import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { alunos as alunosMock, cobrancas, graduacoesAlunos, responsaveis, sessoesAula, turmas as turmasMock } from '@/services/mocks/data';
+import { cobrancas, graduacoesAlunos, responsaveis, sessoesAula } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { AlunoForm } from '@/components/forms/AlunoForm';
+import { useAcademiaData } from '@/features/academia/AcademiaDataProvider';
 import { toast } from 'sonner';
-import type { Aluno, AlunoStatus, Turma } from '@/types';
+import type { Aluno, AlunoStatus } from '@/types';
 import type { AlunoFormValues } from '@/features/alunos/types/aluno.types';
 import { fromFormToAlunoPatch } from '@/features/alunos/adapters/alunos.adapter';
 
@@ -44,34 +45,17 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function AlunosPage() {
-  const [alunosList, setAlunosList] = useState<Aluno[]>(alunosMock);
-  const [turmasList, setTurmasList] = useState<Turma[]>(turmasMock);
+  const { alunosList, turmasList, addAluno, updateAluno, addAlunoToTurma, removeAlunoFromTurma } = useAcademiaData();
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<AlunoStatus | 'todos'>('todos');
-  const [selectedAluno, setSelectedAluno] = useState<Aluno | null>(null);
+  const [selectedAlunoId, setSelectedAlunoId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingAluno, setEditingAluno] = useState<Aluno | undefined>(undefined);
+  const [editingAlunoId, setEditingAlunoId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 6;
 
-  const reconcileTurmas = (alunoId: string, turmaIds: string[]) => {
-    setTurmasList((prev) =>
-      prev.map((turma) => {
-        const shouldContainAluno = turmaIds.includes(turma.id);
-        const alreadyContainsAluno = turma.alunoIds.includes(alunoId);
-
-        if (shouldContainAluno && !alreadyContainsAluno) {
-          return { ...turma, alunoIds: [...turma.alunoIds, alunoId] };
-        }
-
-        if (!shouldContainAluno && alreadyContainsAluno) {
-          return { ...turma, alunoIds: turma.alunoIds.filter((id) => id !== alunoId) };
-        }
-
-        return turma;
-      })
-    );
-  };
+  const selectedAluno = selectedAlunoId ? alunosList.find((aluno) => aluno.id === selectedAlunoId) ?? null : null;
+  const editingAluno = editingAlunoId ? alunosList.find((aluno) => aluno.id === editingAlunoId) : undefined;
 
   const filtered = alunosList.filter((aluno) => {
     const matchBusca = aluno.nome.toLowerCase().includes(busca.toLowerCase());
@@ -79,27 +63,25 @@ export default function AlunosPage() {
     return matchBusca && matchStatus;
   });
 
-  const totalPages = Math.ceil(filtered.length / perPage);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
   const handleCreate = () => {
-    setEditingAluno(undefined);
+    setEditingAlunoId(null);
     setFormOpen(true);
   };
 
   const handleEdit = (aluno: Aluno) => {
-    setEditingAluno(aluno);
+    setEditingAlunoId(aluno.id);
     setFormOpen(true);
-    setSelectedAluno(null);
+    setSelectedAlunoId(null);
   };
 
   const handleFormSubmit = (values: AlunoFormValues) => {
     const patch = fromFormToAlunoPatch(values);
 
     if (editingAluno) {
-      const alunoAtualizado = { ...editingAluno, ...patch };
-      setAlunosList((prev) => prev.map((item) => (item.id === editingAluno.id ? alunoAtualizado : item)));
-      reconcileTurmas(editingAluno.id, alunoAtualizado.turmaIds || []);
+      updateAluno({ ...editingAluno, ...patch, turmaIds: patch.turmaIds || [] });
       toast.success('Aluno atualizado com sucesso.');
     } else {
       const newAluno: Aluno = {
@@ -108,8 +90,7 @@ export default function AlunosPage() {
         turmaIds: patch.turmaIds || [],
         dataMatricula: new Date().toISOString().split('T')[0],
       };
-      setAlunosList((prev) => [...prev, newAluno]);
-      reconcileTurmas(newAluno.id, newAluno.turmaIds || []);
+      addAluno(newAluno);
       toast.success('Aluno cadastrado com sucesso.');
     }
 
@@ -118,33 +99,24 @@ export default function AlunosPage() {
 
   const handleAdicionarTurma = (turmaId: string) => {
     if (!selectedAluno) return;
-    if (selectedAluno.turmaIds.includes(turmaId)) {
-      toast.error('Este aluno já está vinculado a esta turma.');
+    const result = addAlunoToTurma(selectedAluno.id, turmaId);
+    if (!result.ok) {
+      toast.error(result.message || 'Não foi possível adicionar o aluno à turma.');
       return;
     }
-
     const turma = turmasList.find((item) => item.id === turmaId);
-    const novosTurmaIds = [...selectedAluno.turmaIds, turmaId];
-
-    setAlunosList((prev) =>
-      prev.map((aluno) =>
-        aluno.id === selectedAluno.id
-          ? { ...aluno, turmaIds: novosTurmaIds }
-          : aluno
-      )
-    );
-
-    setSelectedAluno((prev) => (prev ? { ...prev, turmaIds: novosTurmaIds } : prev));
-
-    setTurmasList((prev) =>
-      prev.map((item) =>
-        item.id === turmaId && !item.alunoIds.includes(selectedAluno.id)
-          ? { ...item, alunoIds: [...item.alunoIds, selectedAluno.id] }
-          : item
-      )
-    );
-
     toast.success(`Aluno adicionado à turma ${turma?.nome || 'selecionada'}.`);
+  };
+
+  const handleRemoverTurma = (turmaId: string) => {
+    if (!selectedAluno) return;
+    const result = removeAlunoFromTurma(selectedAluno.id, turmaId);
+    if (!result.ok) {
+      toast.error(result.message || 'Não foi possível remover o aluno da turma.');
+      return;
+    }
+    const turma = turmasList.find((item) => item.id === turmaId);
+    toast.success(`Aluno removido da turma ${turma?.nome || 'selecionada'}.`);
   };
 
   const alunoCobrancas = selectedAluno ? cobrancas.filter((cobranca) => cobranca.alunoId === selectedAluno.id) : [];
@@ -255,7 +227,7 @@ export default function AlunosPage() {
                     <tr
                       key={aluno.id}
                       className="cursor-pointer border-b border-border/50 transition-colors hover:bg-accent/30"
-                      onClick={() => setSelectedAluno(aluno)}
+                      onClick={() => setSelectedAlunoId(aluno.id)}
                     >
                       <td className="px-4 py-3">
                         <span className="font-medium text-foreground">{aluno.nome}</span>
@@ -278,7 +250,7 @@ export default function AlunosPage() {
                 <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage((prev) => prev - 1)}>
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
-                <span className="px-2 text-xs text-muted-foreground">{page}/{totalPages || 1}</span>
+                <span className="px-2 text-xs text-muted-foreground">{page}/{totalPages}</span>
                 <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page >= totalPages} onClick={() => setPage((prev) => prev + 1)}>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
@@ -288,7 +260,7 @@ export default function AlunosPage() {
 
           <div className="space-y-3 sm:hidden">
             {paginated.map((aluno) => (
-              <div key={aluno.id} className="cursor-pointer rounded-lg border border-border bg-card p-4 transition-colors active:bg-accent/30" onClick={() => setSelectedAluno(aluno)}>
+              <div key={aluno.id} className="cursor-pointer rounded-lg border border-border bg-card p-4 transition-colors active:bg-accent/30" onClick={() => setSelectedAlunoId(aluno.id)}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-foreground">{aluno.nome}</p>
@@ -311,7 +283,7 @@ export default function AlunosPage() {
                 <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage((prev) => prev - 1)}>
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
-                <span className="px-2 text-xs text-muted-foreground">{page}/{totalPages || 1}</span>
+                <span className="px-2 text-xs text-muted-foreground">{page}/{totalPages}</span>
                 <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page >= totalPages} onClick={() => setPage((prev) => prev + 1)}>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
@@ -321,7 +293,7 @@ export default function AlunosPage() {
         </>
       )}
 
-      <Sheet open={!!selectedAluno} onOpenChange={() => setSelectedAluno(null)}>
+      <Sheet open={!!selectedAluno} onOpenChange={() => setSelectedAlunoId(null)}>
         <SheetContent className="w-full overflow-y-auto border-l border-border bg-card sm:max-w-lg">
           {selectedAluno && (
             <>
@@ -433,9 +405,12 @@ export default function AlunosPage() {
                       <div className="mt-2 flex flex-wrap gap-2">
                         {turmasDoAluno.length > 0 ? (
                           turmasDoAluno.map((turma) => (
-                            <span key={turma.id} className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">
-                              {turma.nome}
-                            </span>
+                            <div key={turma.id} className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground">
+                              <span className="px-1">{turma.nome}</span>
+                              <button type="button" onClick={() => handleRemoverTurma(turma.id)} className="rounded-full p-0.5 hover:bg-black/10" aria-label={`Remover ${turma.nome}`}>
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
                           ))
                         ) : (
                           <span className="text-xs text-muted-foreground">Nenhuma turma vinculada ainda.</span>
