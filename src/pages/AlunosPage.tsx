@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { alunos as alunosMock, cobrancas, graduacoesAlunos, responsaveis, sessoesAula, turmas } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -119,6 +119,11 @@ export default function AlunosPage() {
 
   const totalPresencas = frequenciasAluno.filter((item) => item.presente).length;
   const percentualFrequencia = frequenciasAluno.length > 0 ? Math.round((totalPresencas / frequenciasAluno.length) * 100) : 0;
+
+  const getWhatsAppLink = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    return `https://wa.me/55${cleanPhone}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -277,7 +282,15 @@ export default function AlunosPage() {
 
                 <TabsContent value="perfil" className="mt-4 space-y-3">
                   <InfoRow label="Email" value={selectedAluno.email} />
-                  <InfoRow label="Telefone" value={selectedAluno.telefone} />
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <InfoRow label="Telefone" value={selectedAluno.telefone} />
+                    <Button variant="secondary" size="sm" className="h-8 rounded-full px-3 text-xs" asChild>
+                      <a href={getWhatsAppLink(selectedAluno.telefone)} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                  </div>
                   <InfoRow label="CPF" value={selectedAluno.cpf} />
                   <InfoRow label="Nascimento" value={selectedAluno.dataNascimento} />
                   <InfoRow label="Categoria" value={selectedAluno.categoria} />
@@ -309,43 +322,41 @@ export default function AlunosPage() {
 
                 <TabsContent value="graduacao" className="mt-4 space-y-4">
                   {alunoGraduacao ? (
-                    <>
-                      <div className="space-y-3 rounded-lg bg-muted/30 p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Faixa atual</p>
-                            <p className="text-sm font-semibold text-foreground">{alunoGraduacao.faixaAtual}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Próxima faixa</p>
-                            <p className="text-sm font-semibold text-primary">{alunoGraduacao.proximaFaixa}</p>
-                          </div>
+                    <div className="space-y-3 rounded-lg bg-muted/30 p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Faixa atual</p>
+                          <p className="text-sm font-semibold text-foreground">{alunoGraduacao.faixaAtual}</p>
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>{alunoGraduacao.aulasRealizadas}/{alunoGraduacao.aulasNecessarias} aulas</span>
-                            <span>
-                              {alunoGraduacao.aulasNecessarias > 0
-                                ? Math.min(100, Math.round((alunoGraduacao.aulasRealizadas / alunoGraduacao.aulasNecessarias) * 100))
-                                : 100}
-                              %
-                            </span>
-                          </div>
-                          <Progress
-                            value={
-                              alunoGraduacao.aulasNecessarias > 0
-                                ? Math.min(100, (alunoGraduacao.aulasRealizadas / alunoGraduacao.aulasNecessarias) * 100)
-                                : 100
-                            }
-                            className="h-2 bg-muted"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Status:</span>
-                          <StatusBadge status={alunoGraduacao.status} />
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Próxima faixa</p>
+                          <p className="text-sm font-semibold text-primary">{alunoGraduacao.proximaFaixa}</p>
                         </div>
                       </div>
-                    </>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{alunoGraduacao.aulasRealizadas}/{alunoGraduacao.aulasNecessarias} aulas</span>
+                          <span>
+                            {alunoGraduacao.aulasNecessarias > 0
+                              ? Math.min(100, Math.round((alunoGraduacao.aulasRealizadas / alunoGraduacao.aulasNecessarias) * 100))
+                              : 100}
+                            %
+                          </span>
+                        </div>
+                        <Progress
+                          value={
+                            alunoGraduacao.aulasNecessarias > 0
+                              ? Math.min(100, (alunoGraduacao.aulasRealizadas / alunoGraduacao.aulasNecessarias) * 100)
+                              : 100
+                          }
+                          className="h-2 bg-muted"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Status:</span>
+                        <StatusBadge status={alunoGraduacao.status} />
+                      </div>
+                    </div>
                   ) : (
                     <EmptyState title="Sem dados de graduação" description="Graduação não configurada para este aluno." className="py-8" />
                   )}
@@ -394,7 +405,15 @@ export default function AlunosPage() {
                     {alunoResponsavel ? (
                       <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
                         <p className="text-sm font-semibold text-foreground">{alunoResponsavel.nome}</p>
-                        <InfoRow label="Telefone" value={alunoResponsavel.telefone} />
+                        <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/70 p-3">
+                          <InfoRow label="Telefone" value={alunoResponsavel.telefone} />
+                          <Button variant="secondary" size="sm" className="h-8 rounded-full px-3 text-xs" asChild>
+                            <a href={getWhatsAppLink(alunoResponsavel.telefone)} target="_blank" rel="noopener noreferrer">
+                              <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                              WhatsApp
+                            </a>
+                          </Button>
+                        </div>
                         <InfoRow label="Email" value={alunoResponsavel.email || 'Não informado'} />
                         <InfoRow label="CPF" value={alunoResponsavel.cpf} />
                       </div>
