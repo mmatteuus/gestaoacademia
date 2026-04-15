@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { alunos as alunosMock, cobrancas, graduacoesAlunos, responsaveis, sessoesAula, turmas } from '@/services/mocks/data';
+import { alunos as alunosMock, cobrancas, graduacoesAlunos, responsaveis, sessoesAula, turmas as turmasMock } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { AlunoForm } from '@/components/forms/AlunoForm';
 import { toast } from 'sonner';
-import type { Aluno, AlunoStatus } from '@/types';
+import type { Aluno, AlunoStatus, Turma } from '@/types';
 import type { AlunoFormValues } from '@/features/alunos/types/aluno.types';
 import { fromFormToAlunoPatch } from '@/features/alunos/adapters/alunos.adapter';
 
@@ -45,6 +45,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export default function AlunosPage() {
   const [alunosList, setAlunosList] = useState<Aluno[]>(alunosMock);
+  const [turmasList, setTurmasList] = useState<Turma[]>(turmasMock);
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<AlunoStatus | 'todos'>('todos');
   const [selectedAluno, setSelectedAluno] = useState<Aluno | null>(null);
@@ -52,6 +53,25 @@ export default function AlunosPage() {
   const [editingAluno, setEditingAluno] = useState<Aluno | undefined>(undefined);
   const [page, setPage] = useState(1);
   const perPage = 6;
+
+  const reconcileTurmas = (alunoId: string, turmaIds: string[]) => {
+    setTurmasList((prev) =>
+      prev.map((turma) => {
+        const shouldContainAluno = turmaIds.includes(turma.id);
+        const alreadyContainsAluno = turma.alunoIds.includes(alunoId);
+
+        if (shouldContainAluno && !alreadyContainsAluno) {
+          return { ...turma, alunoIds: [...turma.alunoIds, alunoId] };
+        }
+
+        if (!shouldContainAluno && alreadyContainsAluno) {
+          return { ...turma, alunoIds: turma.alunoIds.filter((id) => id !== alunoId) };
+        }
+
+        return turma;
+      })
+    );
+  };
 
   const filtered = alunosList.filter((aluno) => {
     const matchBusca = aluno.nome.toLowerCase().includes(busca.toLowerCase());
@@ -77,7 +97,9 @@ export default function AlunosPage() {
     const patch = fromFormToAlunoPatch(values);
 
     if (editingAluno) {
-      setAlunosList((prev) => prev.map((item) => (item.id === editingAluno.id ? { ...item, ...patch } : item)));
+      const alunoAtualizado = { ...editingAluno, ...patch };
+      setAlunosList((prev) => prev.map((item) => (item.id === editingAluno.id ? alunoAtualizado : item)));
+      reconcileTurmas(editingAluno.id, alunoAtualizado.turmaIds || []);
       toast.success('Aluno atualizado com sucesso.');
     } else {
       const newAluno: Aluno = {
@@ -87,10 +109,42 @@ export default function AlunosPage() {
         dataMatricula: new Date().toISOString().split('T')[0],
       };
       setAlunosList((prev) => [...prev, newAluno]);
+      reconcileTurmas(newAluno.id, newAluno.turmaIds || []);
       toast.success('Aluno cadastrado com sucesso.');
     }
 
     setFormOpen(false);
+  };
+
+  const handleAdicionarTurma = (turmaId: string) => {
+    if (!selectedAluno) return;
+    if (selectedAluno.turmaIds.includes(turmaId)) {
+      toast.error('Este aluno já está vinculado a esta turma.');
+      return;
+    }
+
+    const turma = turmasList.find((item) => item.id === turmaId);
+    const novosTurmaIds = [...selectedAluno.turmaIds, turmaId];
+
+    setAlunosList((prev) =>
+      prev.map((aluno) =>
+        aluno.id === selectedAluno.id
+          ? { ...aluno, turmaIds: novosTurmaIds }
+          : aluno
+      )
+    );
+
+    setSelectedAluno((prev) => (prev ? { ...prev, turmaIds: novosTurmaIds } : prev));
+
+    setTurmasList((prev) =>
+      prev.map((item) =>
+        item.id === turmaId && !item.alunoIds.includes(selectedAluno.id)
+          ? { ...item, alunoIds: [...item.alunoIds, selectedAluno.id] }
+          : item
+      )
+    );
+
+    toast.success(`Aluno adicionado à turma ${turma?.nome || 'selecionada'}.`);
   };
 
   const alunoCobrancas = selectedAluno ? cobrancas.filter((cobranca) => cobranca.alunoId === selectedAluno.id) : [];
@@ -105,7 +159,7 @@ export default function AlunosPage() {
       .filter((sessao) => sessao.presencas.some((presenca) => presenca.alunoId === selectedAluno.id))
       .map((sessao) => {
         const presenca = sessao.presencas.find((item) => item.alunoId === selectedAluno.id);
-        const turma = turmas.find((item) => item.id === sessao.turmaId);
+        const turma = turmasList.find((item) => item.id === sessao.turmaId);
         return {
           id: sessao.id,
           data: sessao.data,
@@ -115,7 +169,17 @@ export default function AlunosPage() {
         };
       })
       .sort((a, b) => b.data.localeCompare(a.data));
-  }, [selectedAluno]);
+  }, [selectedAluno, turmasList]);
+
+  const turmasDoAluno = useMemo(() => {
+    if (!selectedAluno) return [];
+    return turmasList.filter((turma) => selectedAluno.turmaIds.includes(turma.id));
+  }, [selectedAluno, turmasList]);
+
+  const turmasDisponiveis = useMemo(() => {
+    if (!selectedAluno) return [];
+    return turmasList.filter((turma) => !selectedAluno.turmaIds.includes(turma.id));
+  }, [selectedAluno, turmasList]);
 
   const totalPresencas = frequenciasAluno.filter((item) => item.presente).length;
   const percentualFrequencia = frequenciasAluno.length > 0 ? Math.round((totalPresencas / frequenciasAluno.length) * 100) : 0;
@@ -363,6 +427,45 @@ export default function AlunosPage() {
                 </TabsContent>
 
                 <TabsContent value="frequencia" className="mt-4 space-y-4">
+                  <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Turmas vinculadas</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {turmasDoAluno.length > 0 ? (
+                          turmasDoAluno.map((turma) => (
+                            <span key={turma.id} className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">
+                              {turma.nome}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Nenhuma turma vinculada ainda.</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">Adicionar a uma turma existente</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {turmasDisponiveis.length > 0 ? (
+                          turmasDisponiveis.map((turma) => (
+                            <Button
+                              key={turma.id}
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 rounded-full px-3 text-xs"
+                              onClick={() => handleAdicionarTurma(turma.id)}
+                            >
+                              <Plus className="mr-1 h-3.5 w-3.5" />
+                              {turma.nome}
+                            </Button>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Este aluno já está vinculado em todas as turmas disponíveis.</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   {frequenciasAluno.length === 0 ? (
                     <EmptyState title="Sem histórico de frequência" description="Ainda não há aulas lançadas para este aluno." className="py-8" />
                   ) : (
