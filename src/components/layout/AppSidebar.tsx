@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, BookOpen, CalendarCheck,
+  LayoutDashboard, Users, UserCheck, BookOpen, CalendarCheck,
   Award, Trophy, Medal, DollarSign, Package, Building2,
   BarChart3, TrendingUp,
 } from 'lucide-react';
@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Alunos', url: '/alunos', icon: Users },
+  { title: 'Responsáveis', url: '/responsaveis', icon: UserCheck },
   { title: 'Turmas', url: '/turmas', icon: BookOpen },
   { title: 'Frequência', url: '/frequencia', icon: CalendarCheck },
   { title: 'Graduação', url: '/graduacao', icon: Award },
@@ -38,7 +39,6 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const isMobile = useIsMobile();
-  const isActive = (path: string) => location.pathname === path;
 
   const handleNavClick = () => {
     if (isMobile) {
