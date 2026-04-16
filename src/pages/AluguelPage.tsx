@@ -5,12 +5,20 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ComprovanteDialog } from '@/components/shared/ComprovanteDialog';
 import { useOperacionalData } from '@/features/operacional/OperacionalDataProvider';
 import { Button } from '@/components/ui/button';
-import { Plus, AlertTriangle, Receipt } from 'lucide-react';
+import { Plus, AlertTriangle, Receipt, Phone } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { ContratoAluguel, FormaPagamento, PagamentoContratoAluguel, Reserva } from '@/types';
+
+type PagamentoContratoDetalhado = PagamentoContratoAluguel & {
+  recipientPhone?: string;
+};
+
+type ReservaDetalhada = Reserva & {
+  locatarioTelefone?: string;
+};
 
 const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência'];
 
@@ -20,6 +28,7 @@ export default function AluguelPage() {
   const [pagamentoOpen, setPagamentoOpen] = useState(false);
   const [comprovanteOpen, setComprovanteOpen] = useState(false);
   const [locatario, setLocatario] = useState('');
+  const [locatarioTelefone, setLocatarioTelefone] = useState('');
   const [espaco, setEspaco] = useState('Tatame Principal');
   const [dataInicio, setDataInicio] = useState('');
   const [horaInicio, setHoraInicio] = useState('');
@@ -30,12 +39,16 @@ export default function AluguelPage() {
   const [formaPagamento, setFormaPagamento] = useState<Exclude<FormaPagamento, 'Boleto'>>('PIX');
   const [observacoes, setObservacoes] = useState('');
   const [referencia, setReferencia] = useState('');
+  const [pagamentoTelefone, setPagamentoTelefone] = useState('');
   const [comprovanteFields, setComprovanteFields] = useState<{ label: string; value: string }[]>([]);
   const [comprovanteSubtitle, setComprovanteSubtitle] = useState('');
+  const [comprovantePhone, setComprovantePhone] = useState('');
+  const [comprovanteRecipient, setComprovanteRecipient] = useState('');
 
   const pagamentosPorContrato = useMemo(() => {
-    return pagamentosContratoList.reduce<Record<string, PagamentoContratoAluguel[]>>((acc, pagamento) => {
-      acc[pagamento.contratoId] = [...(acc[pagamento.contratoId] || []), pagamento];
+    return pagamentosContratoList.reduce<Record<string, PagamentoContratoDetalhado[]>>((acc, pagamento) => {
+      const pagamentoDetalhado = pagamento as PagamentoContratoDetalhado;
+      acc[pagamento.contratoId] = [...(acc[pagamento.contratoId] || []), pagamentoDetalhado];
       return acc;
     }, {});
   }, [pagamentosContratoList]);
@@ -46,9 +59,10 @@ export default function AluguelPage() {
       return;
     }
 
-    const reserva: Reserva = {
+    const reserva: ReservaDetalhada = {
       id: `res${Date.now()}`,
       locatario,
+      locatarioTelefone: locatarioTelefone.trim(),
       espaco,
       dataInicio: dataInicio.split('-').reverse().join('/'),
       dataFim: dataInicio.split('-').reverse().join('/'),
@@ -68,6 +82,7 @@ export default function AluguelPage() {
     toast.success(result.message || 'Reserva confirmada com sucesso!');
     setDialogOpen(false);
     setLocatario('');
+    setLocatarioTelefone('');
     setDataInicio('');
     setHoraInicio('');
     setHoraFim('');
@@ -80,13 +95,16 @@ export default function AluguelPage() {
     setFormaPagamento('PIX');
     setObservacoes('');
     setReferencia('Mensalidade atual');
+    setPagamentoTelefone('');
     setPagamentoOpen(true);
   };
 
   const abrirComprovante = (contrato: ContratoAluguel, pagamento: PagamentoContratoAluguel) => {
+    const pagamentoDetalhado = pagamento as PagamentoContratoDetalhado;
     setComprovanteSubtitle(`${contrato.locatario} • ${contrato.espaco}`);
     setComprovanteFields([
       { label: 'Locatário', value: contrato.locatario },
+      { label: 'Telefone', value: pagamentoDetalhado.recipientPhone || 'Não informado' },
       { label: 'Espaço', value: contrato.espaco },
       { label: 'Período do contrato', value: `${contrato.dataInicio} a ${contrato.dataFim}` },
       { label: 'Valor pago', value: `R$ ${pagamento.valor.toFixed(2)}` },
@@ -96,6 +114,8 @@ export default function AluguelPage() {
       { label: 'Observações', value: pagamento.observacoes || 'Sem observações' },
       { label: 'Comprovante', value: pagamento.comprovanteId || 'Não gerado' },
     ]);
+    setComprovantePhone(pagamentoDetalhado.recipientPhone || '');
+    setComprovanteRecipient(contrato.locatario);
     setComprovanteOpen(true);
   };
 
@@ -107,7 +127,7 @@ export default function AluguelPage() {
       return;
     }
 
-    const pagamento: PagamentoContratoAluguel = {
+    const pagamento: PagamentoContratoDetalhado = {
       id: `pg${Date.now()}`,
       contratoId: contratoSel.id,
       dataPagamento: new Date().toISOString().split('T')[0],
@@ -116,6 +136,7 @@ export default function AluguelPage() {
       observacoes,
       referencia,
       comprovanteId: `AL-${Date.now()}`,
+      recipientPhone: pagamentoTelefone.trim(),
     };
 
     const result = addPagamentoContrato(pagamento);
@@ -147,26 +168,30 @@ export default function AluguelPage() {
           {reservasList.length === 0 ? (
             <EmptyState title="Nenhuma reserva" />
           ) : (
-            reservasList.map((reserva) => (
-              <div key={reserva.id} className={cn('bg-card border rounded-lg p-4 hover:bg-accent/30 transition-colors', reserva.conflito ? 'border-destructive/50' : 'border-border')}>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <span className="truncate">{reserva.locatario}</span>
-                      {reserva.conflito && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{reserva.espaco}</p>
+            reservasList.map((reserva) => {
+              const reservaDetalhada = reserva as ReservaDetalhada;
+              return (
+                <div key={reserva.id} className={cn('bg-card border rounded-lg p-4 hover:bg-accent/30 transition-colors', reserva.conflito ? 'border-destructive/50' : 'border-border')}>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <span className="truncate">{reserva.locatario}</span>
+                        {reserva.conflito && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{reserva.espaco}</p>
+                    </div>
+                    <StatusBadge status={reserva.status} />
                   </div>
-                  <StatusBadge status={reserva.status} />
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
+                    <span>{reserva.dataInicio}</span>
+                    <span>{reserva.horaInicio} - {reserva.horaFim}</span>
+                    <span>{reservaDetalhada.locatarioTelefone || 'Telefone não informado'}</span>
+                    <span className="text-foreground font-medium">R$ {reserva.valor.toFixed(2)}</span>
+                  </div>
+                  {reserva.conflito && <div className="mt-2 text-[10px] text-destructive bg-destructive/10 rounded px-2 py-1">Conflito de horário detectado neste espaço</div>}
                 </div>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
-                  <span>{reserva.dataInicio}</span>
-                  <span>{reserva.horaInicio} - {reserva.horaFim}</span>
-                  <span className="text-foreground font-medium">R$ {reserva.valor.toFixed(2)}</span>
-                </div>
-                {reserva.conflito && <div className="mt-2 text-[10px] text-destructive bg-destructive/10 rounded px-2 py-1">Conflito de horário detectado neste espaço</div>}
-              </div>
-            ))
+              );
+            })
           )}
         </TabsContent>
 
@@ -236,6 +261,13 @@ export default function AluguelPage() {
               <input type="text" value={locatario} onChange={(e) => setLocatario(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground" placeholder="Nome do cliente" />
             </div>
             <div className="sm:col-span-2">
+              <label className="text-xs text-muted-foreground mb-1 block">Telefone do cliente</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input type="text" value={locatarioTelefone} onChange={(e) => setLocatarioTelefone(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 pl-9 pr-3 text-base md:text-sm text-foreground" placeholder="(63) 99999-9999" />
+              </div>
+            </div>
+            <div className="sm:col-span-2">
               <label className="text-xs text-muted-foreground mb-1 block">Espaço *</label>
               <select value={espaco} onChange={(e) => setEspaco(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground">
                 <option value="Tatame Principal">Tatame Principal</option>
@@ -280,6 +312,13 @@ export default function AluguelPage() {
                 <p className="text-muted-foreground">Valor do contrato: <span className="text-foreground">R$ {contratoSel.valor.toFixed(2)}</span></p>
               </div>
               <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Telefone para envio do comprovante</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input value={pagamentoTelefone} onChange={(e) => setPagamentoTelefone(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 pl-9 pr-3 text-sm text-foreground" placeholder="(63) 99999-9999" />
+                </div>
+              </div>
+              <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Valor pago</label>
                 <input type="number" min="0" step="0.01" value={valorPagamento} onChange={(e) => setValorPagamento(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground" />
               </div>
@@ -306,7 +345,15 @@ export default function AluguelPage() {
         </DialogContent>
       </Dialog>
 
-      <ComprovanteDialog open={comprovanteOpen} onOpenChange={setComprovanteOpen} title="Comprovante de Pagamento do Aluguel" subtitle={comprovanteSubtitle} fields={comprovanteFields} />
+      <ComprovanteDialog
+        open={comprovanteOpen}
+        onOpenChange={setComprovanteOpen}
+        title="Comprovante de Pagamento do Aluguel"
+        subtitle={comprovanteSubtitle}
+        fields={comprovanteFields}
+        recipientPhone={comprovantePhone}
+        recipientName={comprovanteRecipient}
+      />
     </div>
   );
 }
