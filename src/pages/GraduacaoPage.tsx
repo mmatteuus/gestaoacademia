@@ -2,22 +2,22 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { graduacoesAlunos, regrasGraduacao as regrasMock, historicoGraduacoes, alunos } from '@/services/mocks/data';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAcademiaData } from '@/features/academia/AcademiaDataProvider';
+import { useInsightsData } from '@/features/insights/InsightsDataProvider';
 import type { RegraGraduacao } from '@/types';
 
 const modalidades = ['Jiu-Jitsu', 'Karatê', 'Judô', 'Muay Thai'];
 const categorias = ['Infantil', 'Juvenil', 'Adulto'];
 
 export default function GraduacaoPage() {
-  const [regrasGraduacao, setRegrasGraduacao] = useState<RegraGraduacao[]>(
-    regrasMock.map((regra) => ({ ...regra, modalidade: regra.modalidade || (regra.categoria === 'Adulto' ? 'Jiu-Jitsu' : 'Karatê') }))
-  );
+  const { alunosList } = useAcademiaData();
+  const { graduacoesAlunos, regrasGraduacao, historicoGraduacoes, upsertRegraGraduacao } = useInsightsData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRegra, setEditingRegra] = useState<RegraGraduacao | null>(null);
   const [form, setForm] = useState<RegraGraduacao>({
@@ -43,19 +43,17 @@ export default function GraduacaoPage() {
   };
 
   const salvarRegra = () => {
-    if (!form.faixaOrigem.trim() || !form.faixaDestino.trim()) {
-      toast.error('Preencha as faixas de origem e destino.');
+    const result = upsertRegraGraduacao({
+      ...form,
+      id: editingRegra?.id || form.id,
+    });
+
+    if (!result.ok) {
+      toast.error(result.message || 'Não foi possível salvar a regra.');
       return;
     }
 
-    if (editingRegra) {
-      setRegrasGraduacao((prev) => prev.map((regra) => (regra.id === editingRegra.id ? form : regra)));
-      toast.success('Regra de graduação atualizada.');
-    } else {
-      setRegrasGraduacao((prev) => [...prev, { ...form, id: `rg${Date.now()}` }]);
-      toast.success('Nova regra de graduação criada.');
-    }
-
+    toast.success(editingRegra ? 'Regra de graduação atualizada.' : 'Nova regra de graduação criada.');
     setDialogOpen(false);
   };
 
@@ -83,7 +81,7 @@ export default function GraduacaoPage() {
             <EmptyState title="Nenhum aluno em processo de graduação" />
           ) : (
             graduacoesAlunos.map((graduacao) => {
-              const aluno = alunos.find((item) => item.id === graduacao.alunoId);
+              const aluno = alunosList.find((item) => item.id === graduacao.alunoId);
               const progresso = graduacao.aulasNecessarias > 0 ? Math.min(100, Math.round((graduacao.aulasRealizadas / graduacao.aulasNecessarias) * 100)) : 100;
               return (
                 <div key={graduacao.alunoId} className="bg-card border border-border rounded-lg p-4 hover:bg-accent/30 transition-colors">
@@ -180,7 +178,7 @@ export default function GraduacaoPage() {
             <EmptyState title="Nenhuma graduação registrada" />
           ) : (
             historicoGraduacoes.map((historico) => {
-              const aluno = alunos.find((item) => item.id === historico.alunoId);
+              const aluno = alunosList.find((item) => item.id === historico.alunoId);
               return (
                 <div key={historico.id} className="flex items-center gap-4 bg-card border border-border rounded-lg p-4">
                   <div className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
