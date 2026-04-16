@@ -4,14 +4,14 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ComprovanteDialog } from '@/components/shared/ComprovanteDialog';
-import { produtos as produtosMock, vendas as vendasMock } from '@/services/mocks/data';
+import { useOperacionalData } from '@/features/operacional/OperacionalDataProvider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Package, AlertTriangle, ShoppingCart, Pencil, Trash2, Minus as MinusIcon, Receipt } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ProdutoForm } from '@/components/forms/ProdutoForm';
 import { toast } from 'sonner';
-import type { Produto, Venda, FormaPagamento } from '@/types';
+import type { FormaPagamento, Produto, Venda } from '@/types';
 
 interface CarrinhoItem {
   produtoId: string;
@@ -23,8 +23,7 @@ interface CarrinhoItem {
 const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência'];
 
 export default function ProdutosPage() {
-  const [produtosList, setProdutosList] = useState<Produto[]>(produtosMock);
-  const [vendasList, setVendasList] = useState<Venda[]>(vendasMock);
+  const { produtosList, vendasList, upsertProduto, createVenda } = useOperacionalData();
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduto, setEditingProduto] = useState<Produto | undefined>(undefined);
   const [carrinhoOpen, setCarrinhoOpen] = useState(false);
@@ -53,22 +52,20 @@ export default function ProdutosPage() {
   };
 
   const handleFormSubmit = (data: Partial<Produto>) => {
-    if (editingProduto) {
-      setProdutosList((prev) => prev.map((produto) => (produto.id === editingProduto.id ? { ...produto, ...data } : produto)));
-      toast.success('Produto atualizado');
-    } else {
-      const novoProduto: Produto = {
-        id: `p${Date.now()}`,
-        nome: data.nome || 'Novo Produto',
-        descricao: data.descricao || '',
-        preco: data.preco || 0,
-        estoque: data.estoque || 0,
-        estoqueMinimo: data.estoqueMinimo || 0,
-        categoria: data.categoria || 'Geral',
-      };
-      setProdutosList((prev) => [...prev, novoProduto]);
-      toast.success('Produto cadastrado');
-    }
+    const produtoFinal: Produto = editingProduto
+      ? { ...editingProduto, ...data }
+      : {
+          id: `p${Date.now()}`,
+          nome: data.nome || 'Novo Produto',
+          descricao: data.descricao || '',
+          preco: data.preco || 0,
+          estoque: data.estoque || 0,
+          estoqueMinimo: data.estoqueMinimo || 0,
+          categoria: data.categoria || 'Geral',
+        };
+
+    upsertProduto(produtoFinal);
+    toast.success(editingProduto ? 'Produto atualizado' : 'Produto cadastrado');
     setFormOpen(false);
   };
 
@@ -115,7 +112,7 @@ export default function ProdutosPage() {
     setCarrinho((prev) =>
       prev.flatMap((item) => {
         if (item.produtoId !== produtoId) return [item];
-        const produto = produtosList.find((p) => p.id === produtoId);
+        const produto = produtosList.find((product) => product.id === produtoId);
         const novaQuantidade = item.quantidade + delta;
         if (novaQuantidade <= 0) return [];
         if (produto && novaQuantidade > produto.estoque) {
@@ -156,13 +153,11 @@ export default function ProdutosPage() {
       comprovanteId: `CV-${Date.now()}`,
     };
 
-    setVendasList((prev) => [novaVenda, ...prev]);
-    setProdutosList((prev) =>
-      prev.map((produto) => {
-        const item = carrinho.find((entry) => entry.produtoId === produto.id);
-        return item ? { ...produto, estoque: produto.estoque - item.quantidade } : produto;
-      })
-    );
+    const result = createVenda(novaVenda);
+    if (!result.ok) {
+      toast.error(result.message || 'Não foi possível concluir a venda.');
+      return;
+    }
 
     setCarrinho([]);
     setCompradorNome('');
