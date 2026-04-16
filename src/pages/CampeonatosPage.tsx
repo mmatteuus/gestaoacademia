@@ -2,17 +2,19 @@ import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { campeonatos as campeonatosMock, alunos } from '@/services/mocks/data';
 import { Button } from '@/components/ui/button';
 import { Plus, Trophy, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { useAcademiaData } from '@/features/academia/AcademiaDataProvider';
+import { useInsightsData } from '@/features/insights/InsightsDataProvider';
 import type { Campeonato } from '@/types';
 
 const medalIcons: Record<string, string> = { ouro: '🥇', prata: '🥈', bronze: '🥉' };
 
 export default function CampeonatosPage() {
-  const [campeonatos, setCampeonatos] = useState<Campeonato[]>(campeonatosMock);
+  const { alunosList } = useAcademiaData();
+  const { campeonatos, createCampeonato, addParticipantesCampeonato } = useInsightsData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selecionarAlunosOpen, setSelecionarAlunosOpen] = useState(false);
   const [campeonatoSelecionado, setCampeonatoSelecionado] = useState<Campeonato | null>(null);
@@ -20,12 +22,13 @@ export default function CampeonatosPage() {
   const [nome, setNome] = useState('');
   const [data, setData] = useState('');
   const [local, setLocal] = useState('');
+  const [modalidade, setModalidade] = useState('Jiu-Jitsu');
 
   const alunosDisponiveis = useMemo(() => {
-    if (!campeonatoSelecionado) return alunos;
+    if (!campeonatoSelecionado) return alunosList;
     const idsJaInseridos = new Set(campeonatoSelecionado.participantes.map((participante) => participante.alunoId));
-    return alunos.filter((aluno) => !idsJaInseridos.has(aluno.id));
-  }, [campeonatoSelecionado]);
+    return alunosList.filter((aluno) => !idsJaInseridos.has(aluno.id));
+  }, [alunosList, campeonatoSelecionado]);
 
   const handleSalvar = () => {
     if (!nome.trim() || !data.trim()) {
@@ -33,23 +36,22 @@ export default function CampeonatosPage() {
       return;
     }
 
-    setCampeonatos((prev) => [
-      {
-        id: `c${Date.now()}`,
-        nome,
-        data,
-        local: local || 'A definir',
-        status: 'planejado',
-        modalidade: 'Geral',
-        participantes: [],
-      },
-      ...prev,
-    ]);
+    createCampeonato({
+      id: `c${Date.now()}`,
+      nome,
+      data,
+      local: local || 'A definir',
+      status: 'planejado',
+      modalidade,
+      participantes: [],
+    });
+
     toast.success('Campeonato agendado com sucesso!');
     setDialogOpen(false);
     setNome('');
     setData('');
     setLocal('');
+    setModalidade('Jiu-Jitsu');
   };
 
   const abrirSelecaoAlunos = (campeonato: Campeonato) => {
@@ -69,33 +71,20 @@ export default function CampeonatosPage() {
       return;
     }
 
-    setCampeonatos((prev) =>
-      prev.map((campeonato) => {
-        if (campeonato.id !== campeonatoSelecionado.id) return campeonato;
+    const participantes = alunosList
+      .filter((aluno) => selecionados.includes(aluno.id))
+      .map((aluno) => ({ alunoId: aluno.id, nomeAluno: aluno.nome, categoria: aluno.categoria }));
 
-        const novosParticipantes = alunos
-          .filter((aluno) => selecionados.includes(aluno.id))
-          .map((aluno) => ({ alunoId: aluno.id, nomeAluno: aluno.nome, categoria: aluno.categoria }));
-
-        return { ...campeonato, participantes: [...campeonato.participantes, ...novosParticipantes] };
-      })
-    );
-
-    setCampeonatoSelecionado((prev) =>
-      prev
-        ? {
-            ...prev,
-            participantes: [
-              ...prev.participantes,
-              ...alunos.filter((aluno) => selecionados.includes(aluno.id)).map((aluno) => ({ alunoId: aluno.id, nomeAluno: aluno.nome, categoria: aluno.categoria })),
-            ],
-          }
-        : prev
-    );
+    const result = addParticipantesCampeonato(campeonatoSelecionado.id, participantes);
+    if (!result.ok) {
+      toast.error(result.message || 'Não foi possível adicionar os alunos.');
+      return;
+    }
 
     toast.success('Alunos adicionados ao campeonato.');
     setSelecionarAlunosOpen(false);
     setSelecionados([]);
+    setCampeonatoSelecionado(null);
   };
 
   return (
@@ -169,6 +158,10 @@ export default function CampeonatosPage() {
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Local</label>
               <input type="text" value={local} onChange={(e) => setLocal(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground" placeholder="Ex. Ginásio Municipal" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Modalidade</label>
+              <input type="text" value={modalidade} onChange={(e) => setModalidade(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-base md:text-sm text-foreground" placeholder="Ex. Jiu-Jitsu" />
             </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
