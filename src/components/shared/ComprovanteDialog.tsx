@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { Copy, Share2 } from 'lucide-react';
 
 interface ComprovanteField {
   label: string;
@@ -15,6 +18,47 @@ interface ComprovanteDialogProps {
 }
 
 export function ComprovanteDialog({ open, onOpenChange, title, subtitle, fields }: ComprovanteDialogProps) {
+  const comprovanteText = useMemo(() => {
+    const lines = [title, subtitle, '', ...fields.map((field) => `${field.label}: ${field.value}`)];
+    return lines.join('\n');
+  }, [fields, subtitle, title]);
+
+  const handleShare = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({
+          title,
+          text: comprovanteText,
+        });
+        toast.success('Comprovante pronto para envio.');
+        return;
+      }
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(comprovanteText);
+        toast.success('Comprovante copiado. Cole na conversa com o cliente.');
+        return;
+      }
+
+      toast.error('Não foi possível compartilhar neste dispositivo.');
+    } catch {
+      toast.error('O envio do comprovante foi cancelado ou falhou.');
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(comprovanteText);
+        toast.success('Comprovante copiado com sucesso.');
+        return;
+      }
+      toast.error('Área de transferência não disponível neste dispositivo.');
+    } catch {
+      toast.error('Não foi possível copiar o comprovante.');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg bg-card border-border">
@@ -38,7 +82,15 @@ export function ComprovanteDialog({ open, onOpenChange, title, subtitle, fields 
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button variant="secondary" onClick={handleShare} className="text-xs">
+            <Share2 className="mr-1 h-3.5 w-3.5" />
+            Enviar ao cliente
+          </Button>
+          <Button variant="ghost" onClick={handleCopy} className="text-xs">
+            <Copy className="mr-1 h-3.5 w-3.5" />
+            Copiar comprovante
+          </Button>
           <Button variant="secondary" onClick={() => onOpenChange(false)} className="text-xs">
             Fechar
           </Button>
