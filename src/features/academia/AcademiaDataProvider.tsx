@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { alunos as alunosMock, turmas as turmasMock, sessoesAula as sessoesMock } from '@/services/mocks/data';
-import type { Aluno, SessaoAula, Turma } from '@/types';
+import { alunos as alunosMock, turmas as turmasMock, sessoesAula as sessoesMock, cobrancas as cobrancasMock, graduacoesAlunos as graduacoesMock, responsaveis as responsaveisMock } from '@/services/mocks/data';
+import type { Aluno, SessaoAula, Turma, Cobranca, GraduacaoAluno, Responsavel } from '@/types';
 
 interface ActionResult {
   ok: boolean;
@@ -11,6 +11,9 @@ interface AcademiaDataContextValue {
   alunosList: Aluno[];
   turmasList: Turma[];
   sessoesList: SessaoAula[];
+  cobrancasList: Cobranca[];
+  graduacoesAlunosList: GraduacaoAluno[];
+  responsaveisList: Responsavel[];
   addAluno: (aluno: Aluno) => void;
   updateAluno: (aluno: Aluno) => void;
   addTurma: (turma: Turma) => void;
@@ -26,6 +29,9 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
   const [alunosList, setAlunosList] = useState<Aluno[]>(alunosMock);
   const [turmasList, setTurmasList] = useState<Turma[]>(turmasMock);
   const [sessoesList, setSessoesList] = useState<SessaoAula[]>(sessoesMock);
+  const [cobrancasList] = useState<Cobranca[]>(cobrancasMock);
+  const [graduacoesAlunosList] = useState<GraduacaoAluno[]>(graduacoesMock);
+  const [responsaveisList] = useState<Responsavel[]>(responsaveisMock);
 
   const syncTurmasForAluno = (alunoId: string, turmaIds: string[]) => {
     setTurmasList((prev) =>
@@ -167,6 +173,9 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
       alunosList,
       turmasList,
       sessoesList,
+      cobrancasList,
+      graduacoesAlunosList,
+      responsaveisList,
       addAluno,
       updateAluno,
       addTurma,
@@ -175,7 +184,7 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
       removeAlunoFromTurma,
       addSessao,
     }),
-    [alunosList, turmasList, sessoesList]
+    [alunosList, turmasList, sessoesList, cobrancasList, graduacoesAlunosList, responsaveisList]
   );
 
   return <AcademiaDataContext.Provider value={value}>{children}</AcademiaDataContext.Provider>;

@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { alunoSchema } from '../schemas/aluno.schema';
 import type { AlunoFormValues } from '../types/aluno.types';
 import type { Aluno, AlunoStatus } from '@/types';
-import { responsaveis } from '@/services/mocks/data';
 
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -18,8 +17,9 @@ interface AlunoFormProps {
   aluno?: Aluno;
   onSubmit: (data: AlunoFormValues) => void;
   onCancel: () => void;
+  responsaveis: { id: string; nome: string }[];
   // Quick create hook (used later by real service).
-  onQuickCreateResponsavel?: (data: { nome: string; telefone: string; email?: string | null }) => Promise<{ id: string; nome: string }>; // [PENDENTE] backend
+  onQuickCreateResponsavel?: (data: { nome: string; telefone: string; email?: string | null }) => Promise<{ id: string; nome: string }>;
 }
 
 const categorias = ['Infantil', 'Juvenil', 'Adulto'] as const;
@@ -33,7 +33,7 @@ const statuses: { label: string; value: AlunoStatus }[] = [
   { label: 'Inativo', value: 'inativo' },
 ];
 
-export function AlunoForm({ aluno, onSubmit, onCancel, onQuickCreateResponsavel }: AlunoFormProps) {
+export function AlunoForm({ aluno, onSubmit, onCancel, responsaveis, onQuickCreateResponsavel }: AlunoFormProps) {
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickNome, setQuickNome] = useState('');
   const [quickTelefone, setQuickTelefone] = useState('');
@@ -59,8 +59,8 @@ export function AlunoForm({ aluno, onSubmit, onCancel, onQuickCreateResponsavel 
   });
 
   const responsavelItems = useMemo(() => {
-    return responsaveis.map((r) => ({ id: r.id, nome: r.nome }));
-  }, []);
+    return (responsaveis ?? []).map((r) => ({ id: r.id, nome: r.nome }));
+  }, [responsaveis]);
 
   const handleQuickCreate = async () => {
     if (!onQuickCreateResponsavel) {
