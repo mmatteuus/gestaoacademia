@@ -2,12 +2,14 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { despesas, receitas, receitaDespesaMensal } from '@/services/mocks/data';
+// NÃO USAR! Dados mocks só via provider/contexto. Migrado para InsightsDataProvider/useInsightsData
+import { useInsightsData } from '@/features/insights/InsightsDataProvider';
 import { DollarSign, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function FinanceiroGerencialPage() {
+  const { receitas, despesas, receitaDespesaMensal } = useInsightsData();
   const totalReceitas = receitas.reduce((s, r) => s + r.valor, 0);
   const totalDespesas = despesas.reduce((s, d) => s + d.valor, 0);
   const lucro = totalReceitas - totalDespesas;
