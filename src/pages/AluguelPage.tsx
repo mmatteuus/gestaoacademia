@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ComprovanteDialog } from '@/components/shared/ComprovanteDialog';
-import { reservas as reservasMock, contratosAluguel } from '@/services/mocks/data';
+import { useOperacionalData } from '@/features/operacional/OperacionalDataProvider';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertTriangle, Receipt } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -15,9 +15,7 @@ import type { ContratoAluguel, FormaPagamento, PagamentoContratoAluguel, Reserva
 const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência'];
 
 export default function AluguelPage() {
-  const [reservas, setReservas] = useState<Reserva[]>(reservasMock);
-  const [contratosList] = useState<ContratoAluguel[]>(contratosAluguel);
-  const [pagamentos, setPagamentos] = useState<PagamentoContratoAluguel[]>([]);
+  const { reservasList, contratosList, pagamentosContratoList, addReserva, addPagamentoContrato } = useOperacionalData();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pagamentoOpen, setPagamentoOpen] = useState(false);
   const [comprovanteOpen, setComprovanteOpen] = useState(false);
@@ -36,11 +34,11 @@ export default function AluguelPage() {
   const [comprovanteSubtitle, setComprovanteSubtitle] = useState('');
 
   const pagamentosPorContrato = useMemo(() => {
-    return pagamentos.reduce<Record<string, PagamentoContratoAluguel[]>>((acc, pagamento) => {
+    return pagamentosContratoList.reduce<Record<string, PagamentoContratoAluguel[]>>((acc, pagamento) => {
       acc[pagamento.contratoId] = [...(acc[pagamento.contratoId] || []), pagamento];
       return acc;
     }, {});
-  }, [pagamentos]);
+  }, [pagamentosContratoList]);
 
   const handleSalvar = () => {
     if (!locatario.trim() || !dataInicio || !horaInicio || !horaFim || !valor) {
@@ -48,22 +46,26 @@ export default function AluguelPage() {
       return;
     }
 
-    setReservas((prev) => [
-      {
-        id: `res${Date.now()}`,
-        locatario,
-        espaco,
-        dataInicio: dataInicio.split('-').reverse().join('/'),
-        dataFim: dataInicio.split('-').reverse().join('/'),
-        horaInicio,
-        horaFim,
-        status: 'confirmada',
-        valor: parseFloat(valor) || 0,
-        conflito: false,
-      },
-      ...prev,
-    ]);
-    toast.success('Reserva confirmada com sucesso!');
+    const reserva: Reserva = {
+      id: `res${Date.now()}`,
+      locatario,
+      espaco,
+      dataInicio: dataInicio.split('-').reverse().join('/'),
+      dataFim: dataInicio.split('-').reverse().join('/'),
+      horaInicio,
+      horaFim,
+      status: 'confirmada',
+      valor: parseFloat(valor) || 0,
+      conflito: false,
+    };
+
+    const result = addReserva(reserva);
+    if (!result.ok) {
+      toast.error(result.message || 'Não foi possível criar a reserva.');
+      return;
+    }
+
+    toast.success(result.message || 'Reserva confirmada com sucesso!');
     setDialogOpen(false);
     setLocatario('');
     setDataInicio('');
@@ -116,7 +118,12 @@ export default function AluguelPage() {
       comprovanteId: `AL-${Date.now()}`,
     };
 
-    setPagamentos((prev) => [pagamento, ...prev]);
+    const result = addPagamentoContrato(pagamento);
+    if (!result.ok) {
+      toast.error(result.message || 'Não foi possível registrar o pagamento.');
+      return;
+    }
+
     setPagamentoOpen(false);
     toast.success('Pagamento do contrato registrado.');
     abrirComprovante(contratoSel, pagamento);
@@ -137,10 +144,10 @@ export default function AluguelPage() {
         </TabsList>
 
         <TabsContent value="reservas" className="mt-4 space-y-3">
-          {reservas.length === 0 ? (
+          {reservasList.length === 0 ? (
             <EmptyState title="Nenhuma reserva" />
           ) : (
-            reservas.map((reserva) => (
+            reservasList.map((reserva) => (
               <div key={reserva.id} className={cn('bg-card border rounded-lg p-4 hover:bg-accent/30 transition-colors', reserva.conflito ? 'border-destructive/50' : 'border-border')}>
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0">
