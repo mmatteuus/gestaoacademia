@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { KpiCard } from '@/components/shared/KpiCard';
@@ -7,7 +7,7 @@ import { ComprovanteDialog } from '@/components/shared/ComprovanteDialog';
 import { useOperacionalData } from '@/features/operacional/OperacionalDataProvider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Package, AlertTriangle, ShoppingCart, Pencil, Trash2, Minus as MinusIcon, Receipt } from 'lucide-react';
+import { Plus, Package, AlertTriangle, ShoppingCart, Pencil, Trash2, Minus as MinusIcon, Receipt, Percent, Phone } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ProdutoForm } from '@/components/forms/ProdutoForm';
 import { toast } from 'sonner';
@@ -29,17 +29,36 @@ export default function ProdutosPage() {
   const [carrinhoOpen, setCarrinhoOpen] = useState(false);
   const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([]);
   const [compradorNome, setCompradorNome] = useState('');
+  const [compradorTelefone, setCompradorTelefone] = useState('');
   const [formaPagamento, setFormaPagamento] = useState<Exclude<FormaPagamento, 'Boleto'>>('PIX');
   const [observacoes, setObservacoes] = useState('');
   const [parcelado, setParcelado] = useState(false);
   const [parcelas, setParcelas] = useState('2');
+  const [descontoTipo, setDescontoTipo] = useState<'valor' | 'percentual'>('valor');
+  const [descontoInput, setDescontoInput] = useState('0');
   const [comprovanteOpen, setComprovanteOpen] = useState(false);
   const [comprovanteFields, setComprovanteFields] = useState<{ label: string; value: string }[]>([]);
   const [comprovanteSubtitle, setComprovanteSubtitle] = useState('');
+  const [comprovantePhone, setComprovantePhone] = useState('');
+  const [comprovanteRecipient, setComprovanteRecipient] = useState('');
 
   const estoqueBaixo = produtosList.filter((produto) => produto.estoque <= produto.estoqueMinimo && produto.estoque > 0).length;
   const semEstoque = produtosList.filter((produto) => produto.estoque === 0).length;
   const receitaVendas = vendasList.reduce((soma, venda) => soma + venda.total, 0);
+
+  const subtotalCarrinho = useMemo(
+    () => carrinho.reduce((soma, item) => soma + item.quantidade * item.precoUnitario, 0),
+    [carrinho]
+  );
+
+  const descontoCalculado = useMemo(() => {
+    const valorBruto = Number(descontoInput || 0);
+    if (Number.isNaN(valorBruto) || valorBruto <= 0) return 0;
+    if (descontoTipo === 'percentual') return Math.min(subtotalCarrinho, subtotalCarrinho * (valorBruto / 100));
+    return Math.min(subtotalCarrinho, valorBruto);
+  }, [descontoInput, descontoTipo, subtotalCarrinho]);
+
+  const totalCarrinho = Math.max(0, subtotalCarrinho - descontoCalculado);
 
   const handleCreate = () => {
     setEditingProduto(undefined);
@@ -69,17 +88,21 @@ export default function ProdutosPage() {
     setFormOpen(false);
   };
 
-  const abrirComprovante = (venda: Venda) => {
+  const abrirComprovante = (venda: Venda, subtotal?: number, desconto?: number, telefone?: string) => {
     setComprovanteSubtitle(`${venda.compradorNome} • ${venda.data}`);
     setComprovanteFields([
       { label: 'Comprador', value: venda.compradorNome },
       { label: 'Itens', value: venda.itens.map((item) => `${item.nomeProduto} x${item.quantidade}`).join(', ') },
+      { label: 'Subtotal', value: `R$ ${(subtotal ?? venda.total).toFixed(2)}` },
+      { label: 'Desconto aplicado', value: `R$ ${(desconto ?? 0).toFixed(2)}` },
       { label: 'Total', value: `R$ ${venda.total.toFixed(2)}` },
       { label: 'Forma de pagamento', value: venda.formaPagamento },
       { label: 'Parcelado', value: venda.parcelado ? `Sim • ${venda.quantidadeParcelas || 1}x` : 'Não' },
       { label: 'Observações', value: venda.observacoes || 'Sem observações' },
       { label: 'Comprovante', value: venda.comprovanteId || 'Não gerado' },
     ]);
+    setComprovantePhone(telefone || '');
+    setComprovanteRecipient(venda.compradorNome);
     setComprovanteOpen(true);
   };
 
@@ -124,8 +147,6 @@ export default function ProdutosPage() {
     );
   };
 
-  const totalCarrinho = carrinho.reduce((soma, item) => soma + item.quantidade * item.precoUnitario, 0);
-
   const finalizarVenda = () => {
     if (carrinho.length === 0) {
       toast.error('Carrinho vazio');
@@ -140,6 +161,8 @@ export default function ProdutosPage() {
       return;
     }
 
+    const descontoTexto = descontoCalculado > 0 ? ` | Desconto aplicado: R$ ${descontoCalculado.toFixed(2)} (${descontoTipo === 'percentual' ? `${descontoInput}%` : 'valor fixo'})` : '';
+
     const novaVenda: Venda = {
       id: `v${Date.now()}`,
       data: new Date().toISOString().split('T')[0],
@@ -147,7 +170,7 @@ export default function ProdutosPage() {
       total: totalCarrinho,
       compradorNome: compradorNome.trim(),
       formaPagamento,
-      observacoes,
+      observacoes: `${observacoes || ''}${descontoTexto}`.trim(),
       parcelado,
       quantidadeParcelas: parcelado ? Number(parcelas) : undefined,
       comprovanteId: `CV-${Date.now()}`,
@@ -159,15 +182,22 @@ export default function ProdutosPage() {
       return;
     }
 
+    const subtotalFinal = subtotalCarrinho;
+    const descontoFinal = descontoCalculado;
+    const telefoneFinal = compradorTelefone;
+
     setCarrinho([]);
     setCompradorNome('');
+    setCompradorTelefone('');
     setFormaPagamento('PIX');
     setObservacoes('');
     setParcelado(false);
     setParcelas('2');
+    setDescontoTipo('valor');
+    setDescontoInput('0');
     setCarrinhoOpen(false);
     toast.success('Venda realizada com sucesso!');
-    abrirComprovante(novaVenda);
+    abrirComprovante(novaVenda, subtotalFinal, descontoFinal, telefoneFinal);
   };
 
   return (
@@ -327,13 +357,45 @@ export default function ProdutosPage() {
                   </Button>
                 </div>
               ))}
-              <div className="border-t border-border pt-3 flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Total</span>
-                <span className="text-lg font-bold text-foreground">R$ {totalCarrinho.toFixed(2)}</span>
+
+              <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Percent className="h-3.5 w-3.5" />
+                  <span>Aplicar desconto após montar o carrinho</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-2">
+                  <select value={descontoTipo} onChange={(e) => setDescontoTipo(e.target.value as 'valor' | 'percentual')} className="h-9 rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground">
+                    <option value="valor">Valor (R$)</option>
+                    <option value="percentual">Percentual (%)</option>
+                  </select>
+                  <input type="number" min="0" step="0.01" value={descontoInput} onChange={(e) => setDescontoInput(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground" placeholder={descontoTipo === 'percentual' ? 'Ex.: 10' : 'Ex.: 25.00'} />
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-foreground">R$ {subtotalCarrinho.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Desconto</span>
+                    <span className="text-foreground">- R$ {descontoCalculado.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border pt-2">
+                    <span className="text-sm font-medium text-foreground">Total final</span>
+                    <span className="text-lg font-bold text-foreground">R$ {totalCarrinho.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
+
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Nome do comprador</label>
                 <input value={compradorNome} onChange={(e) => setCompradorNome(e.target.value)} placeholder="Ex: Lucas Mendes" className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground placeholder:text-muted-foreground" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Telefone do comprador</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input value={compradorTelefone} onChange={(e) => setCompradorTelefone(e.target.value)} placeholder="Ex: (63) 99999-9999" className="h-9 w-full rounded-md border border-border bg-secondary/50 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground" />
+                </div>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Forma de pagamento</label>
@@ -364,7 +426,15 @@ export default function ProdutosPage() {
         </DialogContent>
       </Dialog>
 
-      <ComprovanteDialog open={comprovanteOpen} onOpenChange={setComprovanteOpen} title="Comprovante de Compra e Pagamento" subtitle={comprovanteSubtitle} fields={comprovanteFields} />
+      <ComprovanteDialog
+        open={comprovanteOpen}
+        onOpenChange={setComprovanteOpen}
+        title="Comprovante de Compra e Pagamento"
+        subtitle={comprovanteSubtitle}
+        fields={comprovanteFields}
+        recipientPhone={comprovantePhone}
+        recipientName={comprovanteRecipient}
+      />
     </div>
   );
 }
