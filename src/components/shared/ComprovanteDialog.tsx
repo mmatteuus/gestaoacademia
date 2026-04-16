@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Copy, Share2 } from 'lucide-react';
+import { Copy, MessageCircle, Share2 } from 'lucide-react';
 
 interface ComprovanteField {
   label: string;
@@ -15,21 +15,23 @@ interface ComprovanteDialogProps {
   title: string;
   subtitle: string;
   fields: ComprovanteField[];
+  recipientPhone?: string;
+  recipientName?: string;
 }
 
-export function ComprovanteDialog({ open, onOpenChange, title, subtitle, fields }: ComprovanteDialogProps) {
+export function ComprovanteDialog({ open, onOpenChange, title, subtitle, fields, recipientPhone, recipientName }: ComprovanteDialogProps) {
   const comprovanteText = useMemo(() => {
-    const lines = [title, subtitle, '', ...fields.map((field) => `${field.label}: ${field.value}`)];
+    const saudacao = recipientName ? `Olá, ${recipientName}.\nSegue o comprovante:` : 'Segue o comprovante:';
+    const lines = [saudacao, '', title, subtitle, '', ...fields.map((field) => `${field.label}: ${field.value}`)];
     return lines.join('\n');
-  }, [fields, subtitle, title]);
+  }, [fields, recipientName, subtitle, title]);
+
+  const normalizedPhone = useMemo(() => recipientPhone?.replace(/\D/g, '') || '', [recipientPhone]);
 
   const handleShare = async () => {
     try {
       if (typeof navigator !== 'undefined' && navigator.share) {
-        await navigator.share({
-          title,
-          text: comprovanteText,
-        });
+        await navigator.share({ title, text: comprovanteText });
         toast.success('Comprovante pronto para envio.');
         return;
       }
@@ -59,6 +61,17 @@ export function ComprovanteDialog({ open, onOpenChange, title, subtitle, fields 
     }
   };
 
+  const handleWhatsApp = () => {
+    if (!normalizedPhone) {
+      toast.error('Não há telefone cadastrado para envio por WhatsApp.');
+      return;
+    }
+
+    const url = `https://wa.me/55${normalizedPhone}?text=${encodeURIComponent(comprovanteText)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    toast.success('Comprovante enviado para o WhatsApp.');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg bg-card border-border">
@@ -86,6 +99,10 @@ export function ComprovanteDialog({ open, onOpenChange, title, subtitle, fields 
           <Button variant="secondary" onClick={handleShare} className="text-xs">
             <Share2 className="mr-1 h-3.5 w-3.5" />
             Enviar ao cliente
+          </Button>
+          <Button variant="secondary" onClick={handleWhatsApp} className="text-xs" disabled={!normalizedPhone}>
+            <MessageCircle className="mr-1 h-3.5 w-3.5" />
+            WhatsApp
           </Button>
           <Button variant="ghost" onClick={handleCopy} className="text-xs">
             <Copy className="mr-1 h-3.5 w-3.5" />
