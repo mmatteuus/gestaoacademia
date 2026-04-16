@@ -4,7 +4,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ComprovanteDialog } from '@/components/shared/ComprovanteDialog';
-import { cobrancas as cobrancasMock } from '@/services/mocks/data';
+import { useOperacionalData } from '@/features/operacional/OperacionalDataProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -23,7 +23,7 @@ const statusTabs: { label: string; value: CobrancaStatus | 'todas' }[] = [
 const formasPagamento: FormaPagamento[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência', 'Boleto'];
 
 export default function FinanceiroPage() {
-  const [cobrancasList, setCobrancasList] = useState<Cobranca[]>(cobrancasMock);
+  const { cobrancasList, updateCobranca } = useOperacionalData();
   const [filtro, setFiltro] = useState<CobrancaStatus | 'todas'>('todas');
   const [busca, setBusca] = useState('');
   const [pagamentoOpen, setPagamentoOpen] = useState(false);
@@ -35,19 +35,19 @@ export default function FinanceiroPage() {
   const [comprovanteFields, setComprovanteFields] = useState<{ label: string; value: string }[]>([]);
   const [comprovanteSubtitle, setComprovanteSubtitle] = useState('');
 
-  const filtered = cobrancasList.filter((c) => {
-    const matchStatus = filtro === 'todas' || c.status === filtro;
-    const matchBusca = c.nomeAluno.toLowerCase().includes(busca.toLowerCase());
+  const filtered = cobrancasList.filter((cobranca) => {
+    const matchStatus = filtro === 'todas' || cobranca.status === filtro;
+    const matchBusca = cobranca.nomeAluno.toLowerCase().includes(busca.toLowerCase());
     return matchStatus && matchBusca;
   });
 
   const totalAberto = cobrancasList
-    .filter((c) => c.status === 'aberta' || c.status === 'parcial')
+    .filter((cobranca) => cobranca.status === 'aberta' || cobranca.status === 'parcial')
     .reduce((soma, cobranca) => soma + (cobranca.valor - cobranca.valorPago), 0);
 
   const totalVencido = cobrancasList
-    .filter((c) => c.status === 'vencida')
-    .reduce((soma, cobranca) => soma + c.valor, 0);
+    .filter((cobranca) => cobranca.status === 'vencida')
+    .reduce((soma, cobranca) => soma + cobranca.valor, 0);
 
   const abrirComprovante = (cobranca: Cobranca) => {
     setComprovanteSubtitle(`${cobranca.nomeAluno} • ${cobranca.descricao}`);
@@ -89,17 +89,17 @@ export default function FinanceiroPage() {
 
     const dataPagamento = new Date().toISOString().split('T')[0];
     const comprovanteId = `CP-${Date.now()}`;
-    const atualizado = {
+    const atualizado: Cobranca = {
       ...cobrancaSel,
       valorPago: cobrancaSel.valorPago + valor,
-      status: cobrancaSel.valorPago + valor >= cobrancaSel.valor ? 'paga' as CobrancaStatus : 'parcial' as CobrancaStatus,
+      status: cobrancaSel.valorPago + valor >= cobrancaSel.valor ? 'paga' : 'parcial',
       dataPagamento,
       formaPagamento,
       observacoes,
       comprovanteId,
     };
 
-    setCobrancasList((prev) => prev.map((c) => (c.id === cobrancaSel.id ? atualizado : c)));
+    updateCobranca(atualizado);
     setPagamentoOpen(false);
     setCobrancaSel(null);
     toast.success(`Pagamento de R$ ${valor.toFixed(2)} registrado`);
