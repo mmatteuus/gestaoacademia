@@ -5,6 +5,7 @@ import { KpiCard } from '@/components/shared/KpiCard';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ComprovanteDialog } from '@/components/shared/ComprovanteDialog';
 import { useOperacionalData } from '@/features/operacional/OperacionalDataProvider';
+import { useAcademiaData } from '@/features/academia/AcademiaDataProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -24,6 +25,7 @@ const formasPagamento: FormaPagamento[] = ['PIX', 'Cartão', 'Dinheiro', 'Transf
 
 export default function FinanceiroPage() {
   const { cobrancasList, updateCobranca } = useOperacionalData();
+  const { alunosList } = useAcademiaData();
   const [filtro, setFiltro] = useState<CobrancaStatus | 'todas'>('todas');
   const [busca, setBusca] = useState('');
   const [pagamentoOpen, setPagamentoOpen] = useState(false);
@@ -34,6 +36,8 @@ export default function FinanceiroPage() {
   const [comprovanteOpen, setComprovanteOpen] = useState(false);
   const [comprovanteFields, setComprovanteFields] = useState<{ label: string; value: string }[]>([]);
   const [comprovanteSubtitle, setComprovanteSubtitle] = useState('');
+  const [comprovantePhone, setComprovantePhone] = useState('');
+  const [comprovanteRecipient, setComprovanteRecipient] = useState('');
 
   const filtered = cobrancasList.filter((cobranca) => {
     const matchStatus = filtro === 'todas' || cobranca.status === filtro;
@@ -50,6 +54,7 @@ export default function FinanceiroPage() {
     .reduce((soma, cobranca) => soma + cobranca.valor, 0);
 
   const abrirComprovante = (cobranca: Cobranca) => {
+    const aluno = alunosList.find((item) => item.id === cobranca.alunoId);
     setComprovanteSubtitle(`${cobranca.nomeAluno} • ${cobranca.descricao}`);
     setComprovanteFields([
       { label: 'Aluno', value: cobranca.nomeAluno },
@@ -61,6 +66,8 @@ export default function FinanceiroPage() {
       { label: 'Observações', value: cobranca.observacoes || 'Sem observações' },
       { label: 'Comprovante', value: cobranca.comprovanteId || 'Não gerado' },
     ]);
+    setComprovantePhone(aluno?.telefone || '');
+    setComprovanteRecipient(aluno?.nome || cobranca.nomeAluno);
     setComprovanteOpen(true);
   };
 
@@ -252,7 +259,15 @@ export default function FinanceiroPage() {
         </DialogContent>
       </Dialog>
 
-      <ComprovanteDialog open={comprovanteOpen} onOpenChange={setComprovanteOpen} title={comprovanteTitle} subtitle={comprovanteSubtitle} fields={comprovanteFields} />
+      <ComprovanteDialog
+        open={comprovanteOpen}
+        onOpenChange={setComprovanteOpen}
+        title={comprovanteTitle}
+        subtitle={comprovanteSubtitle}
+        fields={comprovanteFields}
+        recipientPhone={comprovantePhone}
+        recipientName={comprovanteRecipient}
+      />
     </div>
   );
 }
