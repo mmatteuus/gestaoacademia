@@ -4,7 +4,6 @@ import {
   BarChart3, TrendingUp,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useLocation } from 'react-router-dom';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -36,9 +35,7 @@ const menuOperacional = [
 export function AppSidebar() {
   const { state, setOpenMobile } = useSidebar();
   const collapsed = state === 'collapsed';
-  const location = useLocation();
   const isMobile = useIsMobile();
-  const isActive = (path: string) => location.pathname === path;
 
   const handleNavClick = () => {
     if (isMobile) {

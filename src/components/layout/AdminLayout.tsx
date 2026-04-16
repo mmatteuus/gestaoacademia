@@ -11,11 +11,11 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
           <AppTopbar />
-          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto animate-fade-in">
+          <main className="flex-1 overflow-auto animate-fade-in p-4 pb-24 md:p-6 md:pb-24 lg:p-8 lg:pb-24">
             {children}
           </main>
           <AppFooter />

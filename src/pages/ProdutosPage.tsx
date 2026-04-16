@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { KpiCard } from '@/components/shared/KpiCard';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { produtos as produtosMock, vendas as vendasMock } from '@/services/mocks/data';
+import { ComprovanteDialog } from '@/components/shared/ComprovanteDialog';
+import { useOperacionalData } from '@/features/operacional/OperacionalDataProvider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Package, AlertTriangle, ShoppingCart, Pencil, Trash2, Minus as MinusIcon } from 'lucide-react';
+import { Plus, Package, AlertTriangle, ShoppingCart, Pencil, Trash2, Minus as MinusIcon, Receipt, Percent, Phone } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ProdutoForm } from '@/components/forms/ProdutoForm';
 import { toast } from 'sonner';
-import type { Produto, Venda } from '@/types';
+import type { FormaPagamento, Produto, Venda } from '@/types';
 
 interface CarrinhoItem {
   produtoId: string;
@@ -19,83 +20,193 @@ interface CarrinhoItem {
   precoUnitario: number;
 }
 
+type VendaDetalhada = Venda & {
+  compradorTelefone?: string;
+  subtotal?: number;
+  desconto?: number;
+  descontoTipo?: 'valor' | 'percentual';
+  recipientPhone?: string;
+};
+
+const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência'];
+
 export default function ProdutosPage() {
-  const [produtosList, setProdutosList] = useState<Produto[]>(produtosMock);
-  const [vendasList, setVendasList] = useState<Venda[]>(vendasMock);
+  const { produtosList, vendasList, upsertProduto, createVenda } = useOperacionalData();
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduto, setEditingProduto] = useState<Produto | undefined>(undefined);
   const [carrinhoOpen, setCarrinhoOpen] = useState(false);
   const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([]);
   const [compradorNome, setCompradorNome] = useState('');
+  const [compradorTelefone, setCompradorTelefone] = useState('');
+  const [formaPagamento, setFormaPagamento] = useState<Exclude<FormaPagamento, 'Boleto'>>('PIX');
+  const [observacoes, setObservacoes] = useState('');
+  const [parcelado, setParcelado] = useState(false);
+  const [parcelas, setParcelas] = useState('2');
+  const [descontoTipo, setDescontoTipo] = useState<'valor' | 'percentual'>('valor');
+  const [descontoInput, setDescontoInput] = useState('0');
+  const [comprovanteOpen, setComprovanteOpen] = useState(false);
+  const [comprovanteFields, setComprovanteFields] = useState<{ label: string; value: string }[]>([]);
+  const [comprovanteSubtitle, setComprovanteSubtitle] = useState('');
+  const [comprovantePhone, setComprovantePhone] = useState('');
+  const [comprovanteRecipient, setComprovanteRecipient] = useState('');
 
-  const estoqueBaixo = produtosList.filter(p => p.estoque <= p.estoqueMinimo && p.estoque > 0).length;
-  const semEstoque = produtosList.filter(p => p.estoque === 0).length;
-  const receitaVendas = vendasList.reduce((s, v) => s + v.total, 0);
+  const estoqueBaixo = produtosList.filter((produto) => produto.estoque <= produto.estoqueMinimo && produto.estoque > 0).length;
+  const semEstoque = produtosList.filter((produto) => produto.estoque === 0).length;
+  const receitaVendas = vendasList.reduce((soma, venda) => soma + venda.total, 0);
 
-  const handleCreate = () => { setEditingProduto(undefined); setFormOpen(true); };
-  const handleEdit = (produto: Produto) => { setEditingProduto(produto); setFormOpen(true); };
+  const subtotalCarrinho = useMemo(
+    () => carrinho.reduce((soma, item) => soma + item.quantidade * item.precoUnitario, 0),
+    [carrinho]
+  );
 
-  const handleFormSubmit = (data: any) => {
-    if (editingProduto) {
-      setProdutosList(prev => prev.map(p => p.id === editingProduto.id ? { ...p, ...data } : p));
-      toast.success('Produto atualizado');
-    } else {
-      setProdutosList(prev => [...prev, { ...data, id: `p${Date.now()}` }]);
-      toast.success('Produto cadastrado');
-    }
+  const descontoCalculado = useMemo(() => {
+    const valorBruto = Number(descontoInput || 0);
+    if (Number.isNaN(valorBruto) || valorBruto <= 0) return 0;
+    if (descontoTipo === 'percentual') return Math.min(subtotalCarrinho, subtotalCarrinho * (valorBruto / 100));
+    return Math.min(subtotalCarrinho, valorBruto);
+  }, [descontoInput, descontoTipo, subtotalCarrinho]);
+
+  const totalCarrinho = Math.max(0, subtotalCarrinho - descontoCalculado);
+
+  const handleCreate = () => {
+    setEditingProduto(undefined);
+    setFormOpen(true);
+  };
+
+  const handleEdit = (produto: Produto) => {
+    setEditingProduto(produto);
+    setFormOpen(true);
+  };
+
+  const handleFormSubmit = (data: Partial<Produto>) => {
+    const produtoFinal: Produto = editingProduto
+      ? { ...editingProduto, ...data }
+      : {
+          id: `p${Date.now()}`,
+          nome: data.nome || 'Novo Produto',
+          descricao: data.descricao || '',
+          preco: data.preco || 0,
+          estoque: data.estoque || 0,
+          estoqueMinimo: data.estoqueMinimo || 0,
+          categoria: data.categoria || 'Geral',
+        };
+
+    upsertProduto(produtoFinal);
+    toast.success(editingProduto ? 'Produto atualizado' : 'Produto cadastrado');
     setFormOpen(false);
   };
 
-  const addToCarrinho = (p: Produto) => {
-    if (p.estoque === 0) { toast.error('Produto sem estoque'); return; }
-    setCarrinho(prev => {
-      const existing = prev.find(i => i.produtoId === p.id);
-      if (existing) {
-        if (existing.quantidade >= p.estoque) { toast.error('Estoque insuficiente'); return prev; }
-        return prev.map(i => i.produtoId === p.id ? { ...i, quantidade: i.quantidade + 1 } : i);
+  const abrirComprovante = (venda: Venda) => {
+    const vendaDetalhada = venda as VendaDetalhada;
+    setComprovanteSubtitle(`${venda.compradorNome} • ${venda.data}`);
+    setComprovanteFields([
+      { label: 'Comprador', value: venda.compradorNome },
+      { label: 'Telefone', value: vendaDetalhada.compradorTelefone || 'Não informado' },
+      { label: 'Itens', value: venda.itens.map((item) => `${item.nomeProduto} x${item.quantidade}`).join(', ') },
+      { label: 'Subtotal', value: `R$ ${(vendaDetalhada.subtotal ?? venda.total).toFixed(2)}` },
+      { label: 'Desconto aplicado', value: `R$ ${(vendaDetalhada.desconto ?? 0).toFixed(2)}${vendaDetalhada.descontoTipo === 'percentual' ? ` (${descontoInput || 0}%)` : ''}` },
+      { label: 'Total', value: `R$ ${venda.total.toFixed(2)}` },
+      { label: 'Forma de pagamento', value: venda.formaPagamento },
+      { label: 'Parcelado', value: venda.parcelado ? `Sim • ${venda.quantidadeParcelas || 1}x` : 'Não' },
+      { label: 'Observações', value: venda.observacoes || 'Sem observações' },
+      { label: 'Comprovante', value: venda.comprovanteId || 'Não gerado' },
+    ]);
+    setComprovantePhone(vendaDetalhada.compradorTelefone || vendaDetalhada.recipientPhone || '');
+    setComprovanteRecipient(venda.compradorNome);
+    setComprovanteOpen(true);
+  };
+
+  const addToCarrinho = (produto: Produto) => {
+    if (produto.estoque === 0) {
+      toast.error('Produto sem estoque');
+      return;
+    }
+
+    setCarrinho((prev) => {
+      const existente = prev.find((item) => item.produtoId === produto.id);
+      if (existente) {
+        if (existente.quantidade >= produto.estoque) {
+          toast.error('Estoque insuficiente');
+          return prev;
+        }
+        return prev.map((item) => (item.produtoId === produto.id ? { ...item, quantidade: item.quantidade + 1 } : item));
       }
-      return [...prev, { produtoId: p.id, nomeProduto: p.nome, quantidade: 1, precoUnitario: p.preco }];
+      return [...prev, { produtoId: produto.id, nomeProduto: produto.nome, quantidade: 1, precoUnitario: produto.preco }];
     });
-    toast.success(`${p.nome} adicionado ao carrinho`);
+
+    toast.success(`${produto.nome} adicionado ao carrinho`);
   };
 
   const removeFromCarrinho = (produtoId: string) => {
-    setCarrinho(prev => prev.filter(i => i.produtoId !== produtoId));
+    setCarrinho((prev) => prev.filter((item) => item.produtoId !== produtoId));
   };
 
   const updateQty = (produtoId: string, delta: number) => {
-    setCarrinho(prev => prev.map(i => {
-      if (i.produtoId !== produtoId) return i;
-      const produto = produtosList.find(p => p.id === produtoId);
-      const newQty = i.quantidade + delta;
-      if (newQty <= 0) return i;
-      if (produto && newQty > produto.estoque) { toast.error('Estoque insuficiente'); return i; }
-      return { ...i, quantidade: newQty };
-    }));
+    setCarrinho((prev) =>
+      prev.flatMap((item) => {
+        if (item.produtoId !== produtoId) return [item];
+        const produto = produtosList.find((product) => product.id === produtoId);
+        const novaQuantidade = item.quantidade + delta;
+        if (novaQuantidade <= 0) return [];
+        if (produto && novaQuantidade > produto.estoque) {
+          toast.error('Estoque insuficiente');
+          return [item];
+        }
+        return [{ ...item, quantidade: novaQuantidade }];
+      })
+    );
   };
 
-  const totalCarrinho = carrinho.reduce((s, i) => s + i.quantidade * i.precoUnitario, 0);
-
   const finalizarVenda = () => {
-    if (carrinho.length === 0) { toast.error('Carrinho vazio'); return; }
-    if (!compradorNome.trim()) { toast.error('Informe o nome do comprador'); return; }
-    const novaVenda: Venda = {
+    if (carrinho.length === 0) {
+      toast.error('Carrinho vazio');
+      return;
+    }
+    if (!compradorNome.trim()) {
+      toast.error('Informe o nome do comprador');
+      return;
+    }
+    if (parcelado && Number(parcelas) < 2) {
+      toast.error('Informe pelo menos 2 parcelas');
+      return;
+    }
+
+    const novaVenda: VendaDetalhada = {
       id: `v${Date.now()}`,
       data: new Date().toISOString().split('T')[0],
       itens: carrinho,
+      subtotal: subtotalCarrinho,
+      desconto: descontoCalculado,
+      descontoTipo,
       total: totalCarrinho,
       compradorNome: compradorNome.trim(),
-      formaPagamento: 'PIX',
+      compradorTelefone: compradorTelefone.trim(),
+      recipientPhone: compradorTelefone.trim(),
+      formaPagamento,
+      observacoes,
+      parcelado,
+      quantidadeParcelas: parcelado ? Number(parcelas) : undefined,
+      comprovanteId: `CV-${Date.now()}`,
     };
-    setVendasList(prev => [novaVenda, ...prev]);
-    setProdutosList(prev => prev.map(p => {
-      const item = carrinho.find(i => i.produtoId === p.id);
-      return item ? { ...p, estoque: p.estoque - item.quantidade } : p;
-    }));
+
+    const result = createVenda(novaVenda);
+    if (!result.ok) {
+      toast.error(result.message || 'Não foi possível concluir a venda.');
+      return;
+    }
+
     setCarrinho([]);
     setCompradorNome('');
+    setCompradorTelefone('');
+    setFormaPagamento('PIX');
+    setObservacoes('');
+    setParcelado(false);
+    setParcelas('2');
+    setDescontoTipo('valor');
+    setDescontoInput('0');
     setCarrinhoOpen(false);
     toast.success('Venda realizada com sucesso!');
+    abrirComprovante(novaVenda);
   };
 
   return (
@@ -109,7 +220,7 @@ export default function ProdutosPage() {
               <ShoppingCart className="h-4 w-4 mr-1" />Carrinho
               {carrinho.length > 0 && (
                 <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
-                  {carrinho.reduce((s, i) => s + i.quantidade, 0)}
+                  {carrinho.reduce((soma, item) => soma + item.quantidade, 0)}
                 </span>
               )}
             </Button>
@@ -133,24 +244,24 @@ export default function ProdutosPage() {
 
         <TabsContent value="catalogo" className="mt-4">
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {produtosList.map(p => {
-              const estoqueStatus = p.estoque === 0 ? 'sem-estoque' : p.estoque <= p.estoqueMinimo ? 'estoque-baixo' : 'estoque-ok';
+            {produtosList.map((produto) => {
+              const estoqueStatus = produto.estoque === 0 ? 'sem-estoque' : produto.estoque <= produto.estoqueMinimo ? 'estoque-baixo' : 'estoque-ok';
               return (
-                <div key={p.id} className="bg-card border border-border rounded-lg p-4 hover:bg-accent/30 transition-colors group relative">
-                  <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleEdit(p)}>
+                <div key={produto.id} className="bg-card border border-border rounded-lg p-4 hover:bg-accent/30 transition-colors group relative">
+                  <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleEdit(produto)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <div className="flex items-start justify-between mb-2 pr-8">
-                    <h3 className="text-sm font-semibold text-foreground">{p.nome}</h3>
+                    <h3 className="text-sm font-semibold text-foreground">{produto.nome}</h3>
                     <StatusBadge status={estoqueStatus} />
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">{p.descricao}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{produto.descricao}</p>
                   <div className="flex items-center justify-between text-xs mb-3">
-                    <span className="text-foreground font-semibold">R$ {p.preco.toFixed(2)}</span>
-                    <span className="text-muted-foreground">{p.estoque} em estoque</span>
+                    <span className="text-foreground font-semibold">R$ {produto.preco.toFixed(2)}</span>
+                    <span className="text-muted-foreground">{produto.estoque} em estoque</span>
                   </div>
-                  <Button size="sm" variant="secondary" className="w-full text-xs h-8" onClick={() => addToCarrinho(p)} disabled={p.estoque === 0}>
-                    <ShoppingCart className="h-3 w-3 mr-1" />{p.estoque === 0 ? 'Indisponível' : 'Adicionar ao Carrinho'}
+                  <Button size="sm" variant="secondary" className="w-full text-xs h-8" onClick={() => addToCarrinho(produto)} disabled={produto.estoque === 0}>
+                    <ShoppingCart className="h-3 w-3 mr-1" />{produto.estoque === 0 ? 'Indisponível' : 'Adicionar ao Carrinho'}
                   </Button>
                 </div>
               );
@@ -163,53 +274,71 @@ export default function ProdutosPage() {
             <EmptyState title="Nenhuma venda registrada" />
           ) : (
             <>
-              {/* Desktop */}
               <div className="hidden sm:block bg-card border border-border rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs min-w-[500px]">
+                  <table className="w-full text-xs min-w-[760px]">
                     <thead><tr className="border-b border-border bg-muted/30">
                       <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Data</th>
                       <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Comprador</th>
                       <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Itens</th>
                       <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Total</th>
                       <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Pagamento</th>
+                      <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Ações</th>
                     </tr></thead>
                     <tbody>
-                      {vendasList.map(v => (
-                        <tr key={v.id} className="border-b border-border/50">
-                          <td className="py-3 px-4 text-foreground whitespace-nowrap">{v.data}</td>
-                          <td className="py-3 px-4 text-foreground whitespace-nowrap">{v.compradorNome}</td>
-                          <td className="py-3 px-4 text-muted-foreground">{v.itens.map(i => i.nomeProduto).join(', ')}</td>
-                          <td className="py-3 px-4 text-foreground font-medium whitespace-nowrap">R$ {v.total.toFixed(2)}</td>
-                          <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">{v.formaPagamento}</td>
-                        </tr>
-                      ))}
+                      {vendasList.map((venda) => {
+                        const vendaDetalhada = venda as VendaDetalhada;
+                        return (
+                          <tr key={venda.id} className="border-b border-border/50">
+                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{venda.data}</td>
+                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{venda.compradorNome}</td>
+                            <td className="py-3 px-4 text-muted-foreground">{venda.itens.map((item) => item.nomeProduto).join(', ')}</td>
+                            <td className="py-3 px-4 text-foreground font-medium whitespace-nowrap">
+                              R$ {venda.total.toFixed(2)}
+                              {(vendaDetalhada.desconto ?? 0) > 0 && <p className="text-[10px] text-muted-foreground">Desc.: R$ {(vendaDetalhada.desconto ?? 0).toFixed(2)}</p>}
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">{venda.formaPagamento}</td>
+                            <td className="py-3 px-4">
+                              <Button size="sm" variant="ghost" className="text-[10px] h-7" onClick={() => abrirComprovante(venda)}>
+                                <Receipt className="h-3 w-3 mr-1" />Comprovante
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
-              {/* Mobile */}
               <div className="sm:hidden space-y-3">
-                {vendasList.map(v => (
-                  <div key={v.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-semibold text-foreground">{v.compradorNome}</span>
-                      <span className="text-muted-foreground">{v.data}</span>
+                {vendasList.map((venda) => {
+                  const vendaDetalhada = venda as VendaDetalhada;
+                  return (
+                    <div key={venda.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-semibold text-foreground">{venda.compradorNome}</span>
+                        <span className="text-muted-foreground">{venda.data}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{venda.itens.map((item) => `${item.nomeProduto} x${item.quantidade}`).join(', ')}</p>
+                      <div className="flex justify-between text-xs">
+                        <div>
+                          <span className="text-foreground font-medium">R$ {venda.total.toFixed(2)}</span>
+                          {(vendaDetalhada.desconto ?? 0) > 0 && <span className="text-muted-foreground ml-2">Desc.: R$ {(vendaDetalhada.desconto ?? 0).toFixed(2)}</span>}
+                        </div>
+                        <span className="text-muted-foreground">{venda.formaPagamento}</span>
+                      </div>
+                      <Button size="sm" variant="secondary" className="w-full text-xs h-8" onClick={() => abrirComprovante(venda)}>
+                        <Receipt className="h-3 w-3 mr-1" />Ver Comprovante
+                      </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">{v.itens.map(i => `${i.nomeProduto} x${i.quantidade}`).join(', ')}</p>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-foreground font-medium">R$ {v.total.toFixed(2)}</span>
-                      <span className="text-muted-foreground">{v.formaPagamento}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
         </TabsContent>
       </Tabs>
 
-      {/* Dialog Produto */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-xl bg-card border-border max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -219,7 +348,6 @@ export default function ProdutosPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Carrinho */}
       <Dialog open={carrinhoOpen} onOpenChange={setCarrinhoOpen}>
         <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -229,7 +357,7 @@ export default function ProdutosPage() {
             <EmptyState title="Carrinho vazio" description="Adicione produtos do catálogo." className="py-8" />
           ) : (
             <div className="space-y-3">
-              {carrinho.map(item => (
+              {carrinho.map((item) => (
                 <div key={item.produtoId} className="flex items-center gap-3 bg-muted/30 rounded-lg p-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{item.nomeProduto}</p>
@@ -250,29 +378,82 @@ export default function ProdutosPage() {
                   </Button>
                 </div>
               ))}
-              <div className="border-t border-border pt-3 flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Total</span>
-                <span className="text-lg font-bold text-foreground">R$ {totalCarrinho.toFixed(2)}</span>
+              <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Percent className="h-3.5 w-3.5" />
+                  <span>Aplicar desconto depois de montar o carrinho</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-2">
+                  <select value={descontoTipo} onChange={(e) => setDescontoTipo(e.target.value as 'valor' | 'percentual')} className="h-9 rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground">
+                    <option value="valor">Desconto (R$)</option>
+                    <option value="percentual">Desconto (%)</option>
+                  </select>
+                  <input type="number" min="0" step="0.01" value={descontoInput} onChange={(e) => setDescontoInput(e.target.value)} className="h-9 rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground" placeholder={descontoTipo === 'percentual' ? 'Ex.: 10' : 'Ex.: 15.00'} />
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="rounded-lg bg-card border border-border px-3 py-2">
+                    <p className="text-muted-foreground">Subtotal</p>
+                    <p className="mt-1 font-semibold text-foreground">R$ {subtotalCarrinho.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-lg bg-card border border-border px-3 py-2">
+                    <p className="text-muted-foreground">Desconto</p>
+                    <p className="mt-1 font-semibold text-foreground">R$ {descontoCalculado.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-lg bg-card border border-border px-3 py-2">
+                    <p className="text-muted-foreground">Total</p>
+                    <p className="mt-1 font-semibold text-foreground">R$ {totalCarrinho.toFixed(2)}</p>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Nome do comprador</label>
-                <input
-                  value={compradorNome}
-                  onChange={e => setCompradorNome(e.target.value)}
-                  placeholder="Ex: Lucas Mendes"
-                  className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground placeholder:text-muted-foreground"
-                />
+                <input value={compradorNome} onChange={(e) => setCompradorNome(e.target.value)} placeholder="Ex: Lucas Mendes" className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground placeholder:text-muted-foreground" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Telefone do comprador</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input value={compradorTelefone} onChange={(e) => setCompradorTelefone(e.target.value)} placeholder="(63) 99999-9999" className="h-9 w-full rounded-md border border-border bg-secondary/50 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Forma de pagamento</label>
+                <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value as Exclude<FormaPagamento, 'Boleto'>)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground">
+                  {formasPagamento.map((forma) => <option key={forma} value={forma}>{forma}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-foreground">
+                <input id="parcelado" type="checkbox" checked={parcelado} onChange={(e) => setParcelado(e.target.checked)} className="h-4 w-4 rounded border-border" />
+                <label htmlFor="parcelado">Compra parcelada</label>
+              </div>
+              {parcelado && (
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Quantidade de parcelas</label>
+                  <input type="number" min="2" value={parcelas} onChange={(e) => setParcelas(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground" />
+                </div>
+              )}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Observações</label>
+                <textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} className="w-full rounded-md border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground resize-none" placeholder="Ex.: primeira parcela paga no ato" />
               </div>
             </div>
           )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" onClick={() => setCarrinhoOpen(false)} className="text-xs">Fechar</Button>
-            {carrinho.length > 0 && (
-              <Button onClick={finalizarVenda} className="text-xs">Finalizar Venda</Button>
-            )}
+            {carrinho.length > 0 && <Button onClick={finalizarVenda} className="text-xs">Finalizar Venda</Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ComprovanteDialog
+        open={comprovanteOpen}
+        onOpenChange={setComprovanteOpen}
+        title="Comprovante de Compra e Pagamento"
+        subtitle={comprovanteSubtitle}
+        fields={comprovanteFields}
+        recipientPhone={comprovantePhone}
+        recipientName={comprovanteRecipient}
+      />
     </div>
   );
 }

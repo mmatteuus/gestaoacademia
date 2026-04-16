@@ -24,6 +24,7 @@ interface AlunoFormProps {
 
 const categorias = ['Infantil', 'Juvenil', 'Adulto'] as const;
 const faixas = ['Branca', 'Amarela', 'Laranja', 'Verde', 'Azul', 'Roxa', 'Marrom', 'Preta'] as const;
+const NO_RESPONSAVEL_VALUE = '__none__';
 const statuses: { label: string; value: AlunoStatus }[] = [
   { label: 'Pré-cadastro', value: 'pre-cadastro' },
   { label: 'Ativo', value: 'ativo' },
@@ -159,12 +160,12 @@ export function AlunoForm({ aluno, onSubmit, onCancel, onQuickCreateResponsavel 
             <FormItem>
               <FormLabel className="text-xs">Responsável (opcional)</FormLabel>
               <Select
-                onValueChange={(v) => field.onChange(v === '' ? null : v)}
-                value={field.value ?? ''}
+                onValueChange={(v) => field.onChange(v === NO_RESPONSAVEL_VALUE ? null : v)}
+                value={field.value ?? NO_RESPONSAVEL_VALUE}
               >
                 <FormControl><SelectTrigger className="h-9 text-base md:text-sm bg-secondary/50"><SelectValue placeholder="Nenhum" /></SelectTrigger></FormControl>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value={NO_RESPONSAVEL_VALUE}>Nenhum</SelectItem>
                   {responsavelItems.map((r) => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
