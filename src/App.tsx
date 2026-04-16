@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AcademiaDataProvider } from "@/features/academia/AcademiaDataProvider";
 import { OperacionalDataProvider } from "@/features/operacional/OperacionalDataProvider";
+import { InsightsDataProvider } from "@/features/insights/InsightsDataProvider";
 import DashboardPage from "./pages/DashboardPage";
 import AlunosPage from "./pages/AlunosPage";
 import TurmasPage from "./pages/TurmasPage";
@@ -27,25 +28,27 @@ const App = () => (
       <Sonner />
       <AcademiaDataProvider>
         <OperacionalDataProvider>
-          <BrowserRouter>
-            <AdminLayout>
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/alunos" element={<AlunosPage />} />
-                <Route path="/turmas" element={<TurmasPage />} />
-                <Route path="/frequencia" element={<FrequenciaPage />} />
-                <Route path="/graduacao" element={<GraduacaoPage />} />
-                <Route path="/ranking" element={<RankingPage />} />
-                <Route path="/campeonatos" element={<CampeonatosPage />} />
-                <Route path="/financeiro" element={<FinanceiroPage />} />
-                <Route path="/financeiro-gerencial" element={<FinanceiroGerencialPage />} />
-                <Route path="/produtos" element={<ProdutosPage />} />
-                <Route path="/aluguel" element={<AluguelPage />} />
-                <Route path="/relatorios" element={<RelatoriosPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AdminLayout>
-          </BrowserRouter>
+          <InsightsDataProvider>
+            <BrowserRouter>
+              <AdminLayout>
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/alunos" element={<AlunosPage />} />
+                  <Route path="/turmas" element={<TurmasPage />} />
+                  <Route path="/frequencia" element={<FrequenciaPage />} />
+                  <Route path="/graduacao" element={<GraduacaoPage />} />
+                  <Route path="/ranking" element={<RankingPage />} />
+                  <Route path="/campeonatos" element={<CampeonatosPage />} />
+                  <Route path="/financeiro" element={<FinanceiroPage />} />
+                  <Route path="/financeiro-gerencial" element={<FinanceiroGerencialPage />} />
+                  <Route path="/produtos" element={<ProdutosPage />} />
+                  <Route path="/aluguel" element={<AluguelPage />} />
+                  <Route path="/relatorios" element={<RelatoriosPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AdminLayout>
+            </BrowserRouter>
+          </InsightsDataProvider>
         </OperacionalDataProvider>
       </AcademiaDataProvider>
     </TooltipProvider>
