@@ -20,6 +20,14 @@ interface CarrinhoItem {
   precoUnitario: number;
 }
 
+type VendaDetalhada = Venda & {
+  compradorTelefone?: string;
+  subtotal?: number;
+  desconto?: number;
+  descontoTipo?: 'valor' | 'percentual';
+  recipientPhone?: string;
+};
+
 const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência'];
 
 export default function ProdutosPage() {
@@ -88,20 +96,22 @@ export default function ProdutosPage() {
     setFormOpen(false);
   };
 
-  const abrirComprovante = (venda: Venda, subtotal?: number, desconto?: number, telefone?: string) => {
+  const abrirComprovante = (venda: Venda) => {
+    const vendaDetalhada = venda as VendaDetalhada;
     setComprovanteSubtitle(`${venda.compradorNome} • ${venda.data}`);
     setComprovanteFields([
       { label: 'Comprador', value: venda.compradorNome },
+      { label: 'Telefone', value: vendaDetalhada.compradorTelefone || 'Não informado' },
       { label: 'Itens', value: venda.itens.map((item) => `${item.nomeProduto} x${item.quantidade}`).join(', ') },
-      { label: 'Subtotal', value: `R$ ${(subtotal ?? venda.total).toFixed(2)}` },
-      { label: 'Desconto aplicado', value: `R$ ${(desconto ?? 0).toFixed(2)}` },
+      { label: 'Subtotal', value: `R$ ${(vendaDetalhada.subtotal ?? venda.total).toFixed(2)}` },
+      { label: 'Desconto aplicado', value: `R$ ${(vendaDetalhada.desconto ?? 0).toFixed(2)}${vendaDetalhada.descontoTipo === 'percentual' ? ` (${descontoInput || 0}%)` : ''}` },
       { label: 'Total', value: `R$ ${venda.total.toFixed(2)}` },
       { label: 'Forma de pagamento', value: venda.formaPagamento },
       { label: 'Parcelado', value: venda.parcelado ? `Sim • ${venda.quantidadeParcelas || 1}x` : 'Não' },
       { label: 'Observações', value: venda.observacoes || 'Sem observações' },
       { label: 'Comprovante', value: venda.comprovanteId || 'Não gerado' },
     ]);
-    setComprovantePhone(telefone || '');
+    setComprovantePhone(vendaDetalhada.compradorTelefone || vendaDetalhada.recipientPhone || '');
     setComprovanteRecipient(venda.compradorNome);
     setComprovanteOpen(true);
   };
@@ -161,16 +171,19 @@ export default function ProdutosPage() {
       return;
     }
 
-    const descontoTexto = descontoCalculado > 0 ? ` | Desconto aplicado: R$ ${descontoCalculado.toFixed(2)} (${descontoTipo === 'percentual' ? `${descontoInput}%` : 'valor fixo'})` : '';
-
-    const novaVenda: Venda = {
+    const novaVenda: VendaDetalhada = {
       id: `v${Date.now()}`,
       data: new Date().toISOString().split('T')[0],
       itens: carrinho,
+      subtotal: subtotalCarrinho,
+      desconto: descontoCalculado,
+      descontoTipo,
       total: totalCarrinho,
       compradorNome: compradorNome.trim(),
+      compradorTelefone: compradorTelefone.trim(),
+      recipientPhone: compradorTelefone.trim(),
       formaPagamento,
-      observacoes: `${observacoes || ''}${descontoTexto}`.trim(),
+      observacoes,
       parcelado,
       quantidadeParcelas: parcelado ? Number(parcelas) : undefined,
       comprovanteId: `CV-${Date.now()}`,
@@ -181,10 +194,6 @@ export default function ProdutosPage() {
       toast.error(result.message || 'Não foi possível concluir a venda.');
       return;
     }
-
-    const subtotalFinal = subtotalCarrinho;
-    const descontoFinal = descontoCalculado;
-    const telefoneFinal = compradorTelefone;
 
     setCarrinho([]);
     setCompradorNome('');
@@ -197,7 +206,7 @@ export default function ProdutosPage() {
     setDescontoInput('0');
     setCarrinhoOpen(false);
     toast.success('Venda realizada com sucesso!');
-    abrirComprovante(novaVenda, subtotalFinal, descontoFinal, telefoneFinal);
+    abrirComprovante(novaVenda);
   };
 
   return (
@@ -267,7 +276,7 @@ export default function ProdutosPage() {
             <>
               <div className="hidden sm:block bg-card border border-border rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs min-w-[720px]">
+                  <table className="w-full text-xs min-w-[760px]">
                     <thead><tr className="border-b border-border bg-muted/30">
                       <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Data</th>
                       <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Comprador</th>
@@ -277,41 +286,53 @@ export default function ProdutosPage() {
                       <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Ações</th>
                     </tr></thead>
                     <tbody>
-                      {vendasList.map((venda) => (
-                        <tr key={venda.id} className="border-b border-border/50">
-                          <td className="py-3 px-4 text-foreground whitespace-nowrap">{venda.data}</td>
-                          <td className="py-3 px-4 text-foreground whitespace-nowrap">{venda.compradorNome}</td>
-                          <td className="py-3 px-4 text-muted-foreground">{venda.itens.map((item) => item.nomeProduto).join(', ')}</td>
-                          <td className="py-3 px-4 text-foreground font-medium whitespace-nowrap">R$ {venda.total.toFixed(2)}</td>
-                          <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">{venda.formaPagamento}</td>
-                          <td className="py-3 px-4">
-                            <Button size="sm" variant="ghost" className="text-[10px] h-7" onClick={() => abrirComprovante(venda)}>
-                              <Receipt className="h-3 w-3 mr-1" />Comprovante
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
+                      {vendasList.map((venda) => {
+                        const vendaDetalhada = venda as VendaDetalhada;
+                        return (
+                          <tr key={venda.id} className="border-b border-border/50">
+                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{venda.data}</td>
+                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{venda.compradorNome}</td>
+                            <td className="py-3 px-4 text-muted-foreground">{venda.itens.map((item) => item.nomeProduto).join(', ')}</td>
+                            <td className="py-3 px-4 text-foreground font-medium whitespace-nowrap">
+                              R$ {venda.total.toFixed(2)}
+                              {(vendaDetalhada.desconto ?? 0) > 0 && <p className="text-[10px] text-muted-foreground">Desc.: R$ {(vendaDetalhada.desconto ?? 0).toFixed(2)}</p>}
+                            </td>
+                            <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">{venda.formaPagamento}</td>
+                            <td className="py-3 px-4">
+                              <Button size="sm" variant="ghost" className="text-[10px] h-7" onClick={() => abrirComprovante(venda)}>
+                                <Receipt className="h-3 w-3 mr-1" />Comprovante
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
               <div className="sm:hidden space-y-3">
-                {vendasList.map((venda) => (
-                  <div key={venda.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-semibold text-foreground">{venda.compradorNome}</span>
-                      <span className="text-muted-foreground">{venda.data}</span>
+                {vendasList.map((venda) => {
+                  const vendaDetalhada = venda as VendaDetalhada;
+                  return (
+                    <div key={venda.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-semibold text-foreground">{venda.compradorNome}</span>
+                        <span className="text-muted-foreground">{venda.data}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{venda.itens.map((item) => `${item.nomeProduto} x${item.quantidade}`).join(', ')}</p>
+                      <div className="flex justify-between text-xs">
+                        <div>
+                          <span className="text-foreground font-medium">R$ {venda.total.toFixed(2)}</span>
+                          {(vendaDetalhada.desconto ?? 0) > 0 && <span className="text-muted-foreground ml-2">Desc.: R$ {(vendaDetalhada.desconto ?? 0).toFixed(2)}</span>}
+                        </div>
+                        <span className="text-muted-foreground">{venda.formaPagamento}</span>
+                      </div>
+                      <Button size="sm" variant="secondary" className="w-full text-xs h-8" onClick={() => abrirComprovante(venda)}>
+                        <Receipt className="h-3 w-3 mr-1" />Ver Comprovante
+                      </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">{venda.itens.map((item) => `${item.nomeProduto} x${item.quantidade}`).join(', ')}</p>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-foreground font-medium">R$ {venda.total.toFixed(2)}</span>
-                      <span className="text-muted-foreground">{venda.formaPagamento}</span>
-                    </div>
-                    <Button size="sm" variant="secondary" className="w-full text-xs h-8" onClick={() => abrirComprovante(venda)}>
-                      <Receipt className="h-3 w-3 mr-1" />Ver Comprovante
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
@@ -357,35 +378,33 @@ export default function ProdutosPage() {
                   </Button>
                 </div>
               ))}
-
               <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Percent className="h-3.5 w-3.5" />
-                  <span>Aplicar desconto após montar o carrinho</span>
+                  <span>Aplicar desconto depois de montar o carrinho</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-2">
                   <select value={descontoTipo} onChange={(e) => setDescontoTipo(e.target.value as 'valor' | 'percentual')} className="h-9 rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground">
-                    <option value="valor">Valor (R$)</option>
-                    <option value="percentual">Percentual (%)</option>
+                    <option value="valor">Desconto (R$)</option>
+                    <option value="percentual">Desconto (%)</option>
                   </select>
-                  <input type="number" min="0" step="0.01" value={descontoInput} onChange={(e) => setDescontoInput(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground" placeholder={descontoTipo === 'percentual' ? 'Ex.: 10' : 'Ex.: 25.00'} />
+                  <input type="number" min="0" step="0.01" value={descontoInput} onChange={(e) => setDescontoInput(e.target.value)} className="h-9 rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground" placeholder={descontoTipo === 'percentual' ? 'Ex.: 10' : 'Ex.: 15.00'} />
                 </div>
-                <div className="space-y-1 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="text-foreground">R$ {subtotalCarrinho.toFixed(2)}</span>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="rounded-lg bg-card border border-border px-3 py-2">
+                    <p className="text-muted-foreground">Subtotal</p>
+                    <p className="mt-1 font-semibold text-foreground">R$ {subtotalCarrinho.toFixed(2)}</p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Desconto</span>
-                    <span className="text-foreground">- R$ {descontoCalculado.toFixed(2)}</span>
+                  <div className="rounded-lg bg-card border border-border px-3 py-2">
+                    <p className="text-muted-foreground">Desconto</p>
+                    <p className="mt-1 font-semibold text-foreground">R$ {descontoCalculado.toFixed(2)}</p>
                   </div>
-                  <div className="flex items-center justify-between border-t border-border pt-2">
-                    <span className="text-sm font-medium text-foreground">Total final</span>
-                    <span className="text-lg font-bold text-foreground">R$ {totalCarrinho.toFixed(2)}</span>
+                  <div className="rounded-lg bg-card border border-border px-3 py-2">
+                    <p className="text-muted-foreground">Total</p>
+                    <p className="mt-1 font-semibold text-foreground">R$ {totalCarrinho.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
-
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Nome do comprador</label>
                 <input value={compradorNome} onChange={(e) => setCompradorNome(e.target.value)} placeholder="Ex: Lucas Mendes" className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground placeholder:text-muted-foreground" />
@@ -394,7 +413,7 @@ export default function ProdutosPage() {
                 <label className="text-xs text-muted-foreground mb-1 block">Telefone do comprador</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <input value={compradorTelefone} onChange={(e) => setCompradorTelefone(e.target.value)} placeholder="Ex: (63) 99999-9999" className="h-9 w-full rounded-md border border-border bg-secondary/50 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground" />
+                  <input value={compradorTelefone} onChange={(e) => setCompradorTelefone(e.target.value)} placeholder="(63) 99999-9999" className="h-9 w-full rounded-md border border-border bg-secondary/50 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground" />
                 </div>
               </div>
               <div>
