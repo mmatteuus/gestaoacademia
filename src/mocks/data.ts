@@ -193,10 +193,16 @@ export const receitaDespesaMensal = [
 
 // === Heatmap de Frequência (semanas x dias) ===
 export const frequenciaHeatmap = [
-  { semana: 'Sem 1', Seg: 90, Ter: 75, Qua: 88, Qui: 70, Sex: 85, Sab: 40 },
-  { semana: 'Sem 2', Seg: 85, Ter: 80, Qua: 92, Qui: 78, Sex: 80, Sab: 35 },
-  { semana: 'Sem 3', Seg: 78, Ter: 82, Qua: 86, Qui: 74, Sex: 90, Sab: 50 },
-  { semana: 'Sem 4', Seg: 92, Ter: 88, Qua: 80, Qui: 85, Sex: 82, Sab: 45 },
+  { dia: 'Seg', horario: '08:00', presenca: 90 },
+  { dia: 'Ter', horario: '08:00', presenca: 75 },
+  { dia: 'Qua', horario: '08:00', presenca: 88 },
+  { dia: 'Qui', horario: '08:00', presenca: 70 },
+  { dia: 'Sex', horario: '08:00', presenca: 85 },
+  { dia: 'Seg', horario: '18:00', presenca: 62 },
+  { dia: 'Ter', horario: '18:00', presenca: 80 },
+  { dia: 'Qua', horario: '18:00', presenca: 83 },
+  { dia: 'Qui', horario: '18:00', presenca: 79 },
+  { dia: 'Sex', horario: '18:00', presenca: 77 },
 ];
 
 // === Evolução do Ranking por mês ===
@@ -209,9 +215,9 @@ export const rankingEvolucao = [
 
 // === Vendas por Categoria ===
 export const vendasPorCategoria = [
-  { categoria: 'Vestimenta', total: 2450 },
-  { categoria: 'Faixas', total: 890 },
-  { categoria: 'Proteção', total: 1670 },
-  { categoria: 'Acessórios', total: 520 },
-  { categoria: 'Suplementos', total: 340 },
+  { categoria: 'Vestimenta', valor: 2450 },
+  { categoria: 'Faixas', valor: 890 },
+  { categoria: 'Proteção', valor: 1670 },
+  { categoria: 'Acessórios', valor: 520 },
+  { categoria: 'Suplementos', valor: 340 },
 ];
