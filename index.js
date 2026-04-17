@@ -11,25 +11,9 @@ if (!SPREADSHEET_ID || !CLIENT_ID || !CLIENT_SECRET || !REFRESH_TOKEN) {
   throw new Error('Configure corretamente o arquivo .env com todos os campos necessários.');
 }
 
-// Autenticador OAuth
-const oauth2Client = new google.auth.OAuth2(
-  CLIENT_ID,
-  CLIENT_SECRET
-);
+const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
 oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-async function getAccessToken() {
-  try {
-    const { token } = await oauth2Client.getAccessToken();
-    if (!token) throw new Error('Falha ao obter access token');
-    return token;
-  } catch (error) {
-    console.error('Erro ao obter access token:', error);
-    throw error;
-  }
-}
-
-// Mapeamento de tipos para abas
 const SHEET_CONFIG = {
   Alunos: { name: 'Alunos', headers: ['id', 'nome', 'email', 'status', 'plano', 'created_at'] },
   Financeiro: { name: 'Financeiro', headers: ['id', 'aluno_id', 'descricao', 'valor', 'status_pagamento', 'data_vencimento', 'created_at'] },
@@ -40,17 +24,18 @@ function getSheets() {
   return google.sheets({ version: 'v4', auth: oauth2Client });
 }
 
+async function listAllSheets() {
+  const sheets = getSheets();
+  const res = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+  return res.data.sheets.map(s => s.properties.title);
+}
+
 async function ensureSheetExists(sheetName, headers) {
   const sheets = getSheets();
-  try {
-    // Tenta ler a primeira célula para ver se a aba existe
-    await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: sheetName,
-    });
-  } catch (error) {
-    // Se der erro (aba não existe), cria uma nova aba
-    console.log(`Criando aba: ${sheetName}`);
+  const existingSheets = await listAllSheets();
+  
+  if (!existingSheets.includes(sheetName)) {
+    console.log(`Criando nova aba: ${sheetName}`);
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,
       requestBody: {
@@ -64,10 +49,9 @@ async function ensureSheetExists(sheetName, headers) {
         }]
       }
     });
-    // Cria o cabeçalho
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetName}!A1`,
+      range: `${sheetName}!A1:Z1`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [headers] }
     });
@@ -75,100 +59,130 @@ async function ensureSheetExists(sheetName, headers) {
 }
 
 function detectSheetType(data) {
-  if (data.plano) return 'Alunos';
-  if (data.valor || data.status_pagamento) return 'Financeiro';
-  if (data.nome_aula || data.duracao_min) return 'Aulas';
-  return 'Alunos'; // Default
+  if (data.sheet_type) return data.sheet_type;
+  if (data.plano !== undefined) return 'Alunos';
+  if (data.valor !== undefined || data.status_pagamento !== undefined) return 'Financeiro';
+  if (data.nome_aula !== undefined || data.duracao_min !== undefined) return 'Aulas';
+  return 'Alunos';
 }
 
 async function listRows(type = 'Alunos') {
-  const config = SHEET_CONFIG[type] || SHEET_CONFIG.Alunos;
+  const config = SHEET_CONFIG[type];
+  if (!config) throw new Error(`Tipo inválido: ${type}`);
+  
   const sheets = getSheets();
   await ensureSheetExists(config.name, config.headers);
   
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: config.name,
+    range: `${config.name}!A1:ZZ1000`,
   });
-  const [header, ...rows] = res.data.values || [];
-  if (!header) return [];
-  return rows.map(row => Object.fromEntries(config.headers.map((h, i) => [h, row[i] || ''])));
+  const values = res.data.values || [];
+  if (values.length <= 1) return [];
+  
+  const [header, ...rows] = values;
+  return rows.map(row => {
+    const obj = {};
+    config.headers.forEach((h, i) => { obj[h] = row[i] || ''; });
+    return obj;
+  });
 }
 
 async function getRowById(id, type = 'Alunos') {
-  const config = SHEET_CONFIG[type] || SHEET_CONFIG.Alunos;
+  const config = SHEET_CONFIG[type];
+  if (!config) throw new Error(`Tipo inválido: ${type}`);
+  
   const sheets = getSheets();
   await ensureSheetExists(config.name, config.headers);
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: config.name,
+    range: `${config.name}!A1:ZZ1000`,
   });
-  const [header, ...rows] = res.data.values || [];
-  if (!header) return null;
+  const values = res.data.values || [];
+  if (values.length <= 1) return null;
   
-  const idx = header.indexOf('id');
-  const match = rows.find(r => r[idx] === String(id));
-  return match ? Object.fromEntries(config.headers.map((h, i) => [h, match[i] || ''])) : null;
+  const [header, ...rows] = values;
+  const idIdx = header.indexOf('id');
+  const match = rows.find(r => r[idIdx] === String(id));
+  
+  if (!match) return null;
+  const obj = {};
+  config.headers.forEach((h, i) => { obj[h] = match[i] || ''; });
+  return obj;
 }
 
 async function insertRow(data) {
   const type = detectSheetType(data);
   const config = SHEET_CONFIG[type];
-  const sheets = getSheets();
+  if (!config) throw new Error(`Tipo não reconhecido para os dados: ${JSON.stringify(data)}`);
   
+  const sheets = getSheets();
   await ensureSheetExists(config.name, config.headers);
   
-  // Garante que o ID exista, se não fornecido
-  if (!data.id) data.id = String(Date.now());
+  if (!data.id) data.id = String(Date.now()) + '_' + Math.random().toString(36).slice(2, 8);
   if (!data.created_at) data.created_at = new Date().toISOString();
 
-  const newRow = config.headers.map(h => data[h] || '');
+  const newRow = config.headers.map(h => {
+    if (h === 'id' && !data.id) return data.id;
+    return data[h] !== undefined ? String(data[h]) : '';
+  });
+  
+  console.log(`Inserindo em [${config.name}]: ${JSON.stringify({id: data.id, ...Object.fromEntries(config.headers.slice(1,4).map(h => [h, data[h]])))}`);
   
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
-    range: config.name,
+    range: `${config.name}!A:Z`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [newRow] },
   });
-  return true;
+  return { success: true, sheet: config.name, id: data.id };
 }
 
 async function updateRow(id, data, type = 'Alunos') {
   const config = SHEET_CONFIG[type];
+  if (!config) throw new Error(`Tipo inválido: ${type}`);
+  
   const sheets = getSheets();
   await ensureSheetExists(config.name, config.headers);
 
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: config.name });
-  const [header, ...rows] = res.data.values || [];
-  if (!header) return false;
+  const res = await sheets.spreadsheets.values.get({ 
+    spreadsheetId: SPREADSHEET_ID, 
+    range: `${config.name}!A1:ZZ1000` 
+  });
+  const values = res.data.values || [];
+  if (values.length <= 1) return false;
 
-  const idx = header.indexOf('id');
-  const rowIndex = rows.findIndex(r => r[idx] === String(id));
+  const [header, ...rows] = values;
+  const idIdx = header.indexOf('id');
+  const rowIndex = rows.findIndex(r => r[idIdx] === String(id));
   if (rowIndex < 0) return false;
 
+  const currentRow = rows[rowIndex];
   const updatedRow = config.headers.map((h, i) => {
     if (h === 'id') return id;
-    return data[h] !== undefined ? data[h] : (rows[rowIndex][i] || '');
+    if (data[h] !== undefined) return String(data[h]);
+    return currentRow[i] || '';
   });
 
-  const targetRange = `${config.name}!A${rowIndex + 2}`;
+  const targetRange = `${config.name}!A${rowIndex + 2}:${String.fromCharCode(65 + config.headers.length - 1)}${rowIndex + 2}`;
+  
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
     range: targetRange,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [updatedRow] },
   });
-  return true;
+  return { success: true, sheet: config.name, id };
 }
 
-// INTERFACE DE TESTE SIMPLES SE EXECUTADO DIRETO
-// Se executado como script principal em ESM, checamos import.meta.url
 if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
   (async () => {
-    console.log('listRows():', await listRows());
-    console.log('getRowById(1):', await getRowById(1));
+    console.log('Abas disponíveis:', await listAllSheets());
+    console.log('Alunos:', (await listRows('Alunos')).length);
+    console.log('Financeiro:', (await listRows('Financeiro')).length);
+    console.log('Aulas:', (await listRows('Aulas')).length);
   })();
 }
 
-export { getAccessToken, oauth2Client, SPREADSHEET_ID, listRows, getRowById, insertRow, updateRow };
+export { getAccessToken: () => oauth2Client.getAccessToken(), oauth2Client, SPREADSHEET_ID, listRows, getRowById, insertRow, updateRow, SHEET_CONFIG, detectSheetType };
