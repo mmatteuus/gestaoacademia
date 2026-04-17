@@ -212,7 +212,8 @@ async function updateRow(id, data, type = 'Alunos') {
   return { success: true, sheet: config.name, id };
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+const entryPath = process.argv[1];
+if (entryPath && import.meta.url === `file://${entryPath.replace(/\\/g, '/')}`) {
   (async () => {
     console.log('Abas disponíveis:', await listAllSheets());
     console.log('Alunos:', (await listRows('Alunos')).length);
