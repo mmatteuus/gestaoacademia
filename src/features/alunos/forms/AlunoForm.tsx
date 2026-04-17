@@ -206,8 +206,9 @@ export function AlunoForm({ aluno, onSubmit, onCancel, responsaveis, onQuickCrea
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Nome Completo *</label>
+              <label htmlFor="quick-responsavel-nome" className="text-xs text-muted-foreground mb-1 block">Nome Completo *</label>
               <input
+                id="quick-responsavel-nome"
                 type="text"
                 value={quickNome}
                 onChange={(e) => setQuickNome(e.target.value)}
@@ -216,8 +217,9 @@ export function AlunoForm({ aluno, onSubmit, onCancel, responsaveis, onQuickCrea
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Telefone *</label>
+              <label htmlFor="quick-responsavel-telefone" className="text-xs text-muted-foreground mb-1 block">Telefone *</label>
               <input
+                id="quick-responsavel-telefone"
                 type="tel"
                 value={quickTelefone}
                 onChange={(e) => setQuickTelefone(e.target.value)}
@@ -226,8 +228,9 @@ export function AlunoForm({ aluno, onSubmit, onCancel, responsaveis, onQuickCrea
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+              <label htmlFor="quick-responsavel-email" className="text-xs text-muted-foreground mb-1 block">Email</label>
               <input
+                id="quick-responsavel-email"
                 type="email"
                 value={quickEmail}
                 onChange={(e) => setQuickEmail(e.target.value)}
