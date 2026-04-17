@@ -29,66 +29,130 @@ async function getAccessToken() {
   }
 }
 
-// Helper para criar sheets API autenticada
+// Mapeamento de tipos para abas
+const SHEET_CONFIG = {
+  Alunos: { name: 'Alunos', headers: ['id', 'nome', 'email', 'status', 'plano', 'created_at'] },
+  Financeiro: { name: 'Financeiro', headers: ['id', 'aluno_id', 'descricao', 'valor', 'status_pagamento', 'data_vencimento', 'created_at'] },
+  Aulas: { name: 'Aulas', headers: ['id', 'aluno_id', 'nome_aula', 'data_assistida', 'duracao_min', 'created_at'] }
+};
+
 function getSheets() {
   return google.sheets({ version: 'v4', auth: oauth2Client });
 }
 
-// Listar todas as linhas da planilha (exceto header)
-async function listRows() {
+async function ensureSheetExists(sheetName, headers) {
   const sheets = getSheets();
-  const range = 'Página1'; // Troque se o nome da aba for diferente
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range,
-  });
-  const [header, ...rows] = res.data.values;
-  return rows.map(row => Object.fromEntries(header.map((h, i) => [h, row[i]])));
+  try {
+    // Tenta ler a primeira célula para ver se a aba existe
+    await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: sheetName,
+    });
+  } catch (error) {
+    // Se der erro (aba não existe), cria uma nova aba
+    console.log(`Criando aba: ${sheetName}`);
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [{
+          addSheet: {
+            properties: {
+              title: sheetName,
+              gridProperties: { rowCount: 1000, columnCount: 20 }
+            }
+          }
+        }]
+      }
+    });
+    // Cria o cabeçalho
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${sheetName}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [headers] }
+    });
+  }
 }
 
-// Buscar linha por ID
-async function getRowById(id) {
+function detectSheetType(data) {
+  if (data.plano) return 'Alunos';
+  if (data.valor || data.status_pagamento) return 'Financeiro';
+  if (data.nome_aula || data.duracao_min) return 'Aulas';
+  return 'Alunos'; // Default
+}
+
+async function listRows(type = 'Alunos') {
+  const config = SHEET_CONFIG[type] || SHEET_CONFIG.Alunos;
   const sheets = getSheets();
-  const range = 'Página1';
+  await ensureSheetExists(config.name, config.headers);
+  
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range,
+    range: config.name,
   });
-  const [header, ...rows] = res.data.values;
+  const [header, ...rows] = res.data.values || [];
+  if (!header) return [];
+  return rows.map(row => Object.fromEntries(config.headers.map((h, i) => [h, row[i] || ''])));
+}
+
+async function getRowById(id, type = 'Alunos') {
+  const config = SHEET_CONFIG[type] || SHEET_CONFIG.Alunos;
+  const sheets = getSheets();
+  await ensureSheetExists(config.name, config.headers);
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: config.name,
+  });
+  const [header, ...rows] = res.data.values || [];
+  if (!header) return null;
+  
   const idx = header.indexOf('id');
   const match = rows.find(r => r[idx] === String(id));
-  return match ? Object.fromEntries(header.map((h, i) => [h, match[i]])) : null;
+  return match ? Object.fromEntries(config.headers.map((h, i) => [h, match[i] || ''])) : null;
 }
 
-// Inserir uma nova linha (adiciona ao fim)
 async function insertRow(data) {
+  const type = detectSheetType(data);
+  const config = SHEET_CONFIG[type];
   const sheets = getSheets();
-  const range = 'Página1';
-  const { data: { values } } = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range });
-  const header = values[0];
-  const newRow = header.map((h) => data[h] || '');
+  
+  await ensureSheetExists(config.name, config.headers);
+  
+  // Garante que o ID exista, se não fornecido
+  if (!data.id) data.id = String(Date.now());
+  if (!data.created_at) data.created_at = new Date().toISOString();
+
+  const newRow = config.headers.map(h => data[h] || '');
+  
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
-    range,
+    range: config.name,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [newRow] },
   });
   return true;
 }
 
-// Atualizar linha por ID
-async function updateRow(id, data) {
+async function updateRow(id, data, type = 'Alunos') {
+  const config = SHEET_CONFIG[type];
   const sheets = getSheets();
-  const range = 'Página1';
-  // Busca todas linhas para localizar índice da row
-  const { data: { values } } = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range });
-  const [header, ...rows] = values;
+  await ensureSheetExists(config.name, config.headers);
+
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: config.name });
+  const [header, ...rows] = res.data.values || [];
+  if (!header) return false;
+
   const idx = header.indexOf('id');
   const rowIndex = rows.findIndex(r => r[idx] === String(id));
   if (rowIndex < 0) return false;
-  // Atualiza somente campos presentes em data
-  const updatedRow = header.map((h, i) => (h === 'id' ? id : (data[h] ?? rows[rowIndex][i] || '')));
-  const targetRange = `Página1!A${rowIndex + 2}`; // +2 = header + 1-based
+
+  const updatedRow = config.headers.map((h, i) => {
+    if (h === 'id') return id;
+    return data[h] !== undefined ? data[h] : (rows[rowIndex][i] || '');
+  });
+
+  const targetRange = `${config.name}!A${rowIndex + 2}`;
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
     range: targetRange,
@@ -99,14 +163,11 @@ async function updateRow(id, data) {
 }
 
 // INTERFACE DE TESTE SIMPLES SE EXECUTADO DIRETO
-if (require.main === module) {
+// Se executado como script principal em ESM, checamos import.meta.url
+if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
   (async () => {
     console.log('listRows():', await listRows());
     console.log('getRowById(1):', await getRowById(1));
-    // Exemplo insert:
-    // await insertRow({ id: '3', nome: 'Novo', email: 'teste@ex.com', status: 'ativo', created_at: new Date().toISOString() });
-    // Exemplo update:
-    // await updateRow('1', { nome: 'Atualizado' });
   })();
 }
 
