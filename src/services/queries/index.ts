@@ -20,11 +20,13 @@ type Adapter<T> = {
   fromRow: (r: SheetRow) => T;
   toRow: (v: Partial<T>) => Record<string, unknown>;
 };
+type EntityQueryOptions = { enabled?: boolean };
 
 export const sheetKey = (type: SheetType) => ['sheets', type] as const;
 
-function useEntity<T>(type: SheetType, adapter: Adapter<T>) {
+function useEntity<T>(type: SheetType, adapter: Adapter<T>, options?: EntityQueryOptions) {
   const qc = useQueryClient();
+  const enabled = options?.enabled ?? true;
 
   const list = useQuery({
     queryKey: sheetKey(type),
@@ -33,6 +35,7 @@ function useEntity<T>(type: SheetType, adapter: Adapter<T>) {
       return rows.map(adapter.fromRow);
     },
     staleTime: 30_000,
+    enabled,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: sheetKey(type) });
@@ -53,22 +56,31 @@ function useEntity<T>(type: SheetType, adapter: Adapter<T>) {
 
 // ============= hooks por entidade =============
 
-export const useAlunos = () => useEntity<Aluno>('Alunos', alunoAdapter);
-export const useResponsaveis = () => useEntity<Responsavel>('Responsaveis', responsavelAdapter);
-export const useTurmas = () => useEntity<Turma>('Turmas', turmaAdapter);
-export const useSessoesAula = () => useEntity<SessaoAula>('Aulas', sessaoAulaAdapter);
-export const useFrequencia = () => useEntity<RegistroFrequencia>('Frequencia', frequenciaAdapter);
-export const useHistoricoGraduacao = () => useEntity<HistoricoGraduacao>('Graduacao', historicoGraduacaoAdapter);
-export const useGraduacoesAlunos = () => useEntity<GraduacaoAluno>('GraduacoesAlunos', graduacaoAlunoAdapter);
-export const useRegrasGraduacao = () => useEntity<RegraGraduacao>('RegrasGraduacao', regraGraduacaoAdapter);
-export const useRanking = () => useEntity<RankingEntry>('Ranking', rankingAdapter);
-export const useCampeonatos = () => useEntity<Campeonato>('Campeonatos', campeonatoAdapter);
-export const useCobrancas = () => useEntity<Cobranca>('Financeiro', cobrancaAdapter);
-export const useDespesas = () => useEntity<Despesa>('Despesas', despesaAdapter);
-export const useReceitas = () => useEntity<Receita>('Receitas', receitaAdapter);
-export const useProdutos = () => useEntity<Produto>('Produtos', produtoAdapter);
-export const useVendas = () => useEntity<Venda>('Vendas', vendaAdapter);
-export const useReservas = () => useEntity<Reserva>('Reservas', reservaAdapter);
-export const useContratosAluguel = () => useEntity<ContratoAluguel>('Aluguel', contratoAluguelAdapter);
+export const useAlunos = (options?: EntityQueryOptions) => useEntity<Aluno>('Alunos', alunoAdapter, options);
+export const useResponsaveis = (options?: EntityQueryOptions) =>
+  useEntity<Responsavel>('Responsaveis', responsavelAdapter, options);
+export const useTurmas = (options?: EntityQueryOptions) => useEntity<Turma>('Turmas', turmaAdapter, options);
+export const useSessoesAula = (options?: EntityQueryOptions) =>
+  useEntity<SessaoAula>('Aulas', sessaoAulaAdapter, options);
+export const useFrequencia = (options?: EntityQueryOptions) =>
+  useEntity<RegistroFrequencia>('Frequencia', frequenciaAdapter, options);
+export const useHistoricoGraduacao = (options?: EntityQueryOptions) =>
+  useEntity<HistoricoGraduacao>('Graduacao', historicoGraduacaoAdapter, options);
+export const useGraduacoesAlunos = (options?: EntityQueryOptions) =>
+  useEntity<GraduacaoAluno>('GraduacoesAlunos', graduacaoAlunoAdapter, options);
+export const useRegrasGraduacao = (options?: EntityQueryOptions) =>
+  useEntity<RegraGraduacao>('RegrasGraduacao', regraGraduacaoAdapter, options);
+export const useRanking = (options?: EntityQueryOptions) => useEntity<RankingEntry>('Ranking', rankingAdapter, options);
+export const useCampeonatos = (options?: EntityQueryOptions) =>
+  useEntity<Campeonato>('Campeonatos', campeonatoAdapter, options);
+export const useCobrancas = (options?: EntityQueryOptions) =>
+  useEntity<Cobranca>('Financeiro', cobrancaAdapter, options);
+export const useDespesas = (options?: EntityQueryOptions) => useEntity<Despesa>('Despesas', despesaAdapter, options);
+export const useReceitas = (options?: EntityQueryOptions) => useEntity<Receita>('Receitas', receitaAdapter, options);
+export const useProdutos = (options?: EntityQueryOptions) => useEntity<Produto>('Produtos', produtoAdapter, options);
+export const useVendas = (options?: EntityQueryOptions) => useEntity<Venda>('Vendas', vendaAdapter, options);
+export const useReservas = (options?: EntityQueryOptions) => useEntity<Reserva>('Reservas', reservaAdapter, options);
+export const useContratosAluguel = (options?: EntityQueryOptions) =>
+  useEntity<ContratoAluguel>('Aluguel', contratoAluguelAdapter, options);
 export const usePagamentosContrato = () =>
   useEntity<PagamentoContratoAluguel>('PagamentosContrato', pagamentoContratoAdapter);

@@ -8,6 +8,12 @@ const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 
 let oauth2Client = null;
+const CACHE_TTL_MS = 30_000;
+const sheetNamesCache = {
+  expiresAt: 0,
+  names: null,
+};
+const headerCache = new Map();
 
 function initAuth() {
   if (!SPREADSHEET_ID || !CLIENT_ID || !CLIENT_SECRET || !REFRESH_TOKEN) {
@@ -153,9 +159,68 @@ function getSheets() {
 }
 
 async function listAllSheets() {
+  const now = Date.now();
+  if (sheetNamesCache.names && sheetNamesCache.expiresAt > now) {
+    return [...sheetNamesCache.names];
+  }
+
   const sheets = getSheets();
   const res = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
-  return res.data.sheets.map(s => s.properties.title);
+  const names = res.data.sheets.map(s => s.properties.title);
+  sheetNamesCache.names = names;
+  sheetNamesCache.expiresAt = now + CACHE_TTL_MS;
+  return names;
+}
+
+function setSheetKnown(sheetName) {
+  const now = Date.now();
+  if (sheetNamesCache.names) {
+    if (!sheetNamesCache.names.includes(sheetName)) {
+      sheetNamesCache.names.push(sheetName);
+    }
+    sheetNamesCache.expiresAt = now + CACHE_TTL_MS;
+  }
+}
+
+function invalidateSheetCaches(sheetName) {
+  sheetNamesCache.expiresAt = 0;
+  if (sheetName) headerCache.delete(sheetName);
+}
+
+async function getHeaderRow(sheetName, fallbackHeaders) {
+  const now = Date.now();
+  const cached = headerCache.get(sheetName);
+  if (cached && cached.expiresAt > now) {
+    return cached.headers;
+  }
+
+  const sheets = getSheets();
+  const headRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${sheetName}!A1:ZZ1`,
+  });
+  const headers = (headRes.data.values && headRes.data.values[0]) || fallbackHeaders;
+  headerCache.set(sheetName, { headers, expiresAt: now + CACHE_TTL_MS });
+  return headers;
+}
+
+function isSheetTabNotFound(err) {
+  const message = String(err?.message || '');
+  return message.includes('Unable to parse range') || message.includes('Range not found');
+}
+
+async function readSheetValuesSafe(sheetName, rangeSuffix) {
+  const sheets = getSheets();
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${sheetName}!${rangeSuffix}`,
+    });
+    return res.data.values || [];
+  } catch (err) {
+    if (isSheetTabNotFound(err)) return null;
+    throw err;
+  }
 }
 
 function colLetter(n) {
@@ -195,6 +260,8 @@ async function ensureSheetExists(sheetName, headers) {
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [headers] },
     });
+    setSheetKnown(sheetName);
+    headerCache.set(sheetName, { headers: [...headers], expiresAt: Date.now() + CACHE_TTL_MS });
     return;
   }
 
@@ -217,6 +284,7 @@ async function ensureSheetExists(sheetName, headers) {
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [merged] },
   });
+  headerCache.set(sheetName, { headers: merged, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
 function detectSheetType(data) {
@@ -258,14 +326,8 @@ async function listRows(type = 'Alunos') {
   const config = SHEET_CONFIG[type];
   if (!config) throw new Error(`Tipo inválido: ${type}`);
 
-  const sheets = getSheets();
-  await ensureSheetExists(config.name, config.headers);
-
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `${config.name}!A1:ZZ1000`,
-  });
-  const values = res.data.values || [];
+  const values = await readSheetValuesSafe(config.name, 'A1:ZZ1000');
+  if (!values) return [];
   if (values.length <= 1) return [];
 
   const [headerRow, ...rows] = values;
@@ -276,14 +338,8 @@ async function getRowById(id, type = 'Alunos') {
   const config = SHEET_CONFIG[type];
   if (!config) throw new Error(`Tipo inválido: ${type}`);
 
-  const sheets = getSheets();
-  await ensureSheetExists(config.name, config.headers);
-
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `${config.name}!A1:ZZ1000`,
-  });
-  const values = res.data.values || [];
+  const values = await readSheetValuesSafe(config.name, 'A1:ZZ1000');
+  if (!values) return null;
   if (values.length <= 1) return null;
 
   const [headerRow, ...rows] = values;
@@ -306,11 +362,7 @@ async function insertRow(data) {
   if (!data.created_at) data.created_at = new Date().toISOString();
 
   // Lê o cabeçalho atual da planilha (pode ter colunas extras além do config).
-  const headRes = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `${config.name}!A1:ZZ1`,
-  });
-  const headerRow = (headRes.data.values && headRes.data.values[0]) || config.headers;
+  const headerRow = await getHeaderRow(config.name, config.headers);
   const newRow = headerRow.map(h => (data[h] !== undefined && data[h] !== null ? String(data[h]) : ''));
 
   console.log(`Inserindo em [${config.name}]: ID=${data.id}, tipo=${type}`);
@@ -322,6 +374,7 @@ async function insertRow(data) {
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [newRow] },
   });
+  invalidateSheetCaches(config.name);
   return { success: true, sheet: config.name, id: data.id };
 }
 
@@ -331,12 +384,8 @@ async function updateRow(id, data, type = 'Alunos') {
 
   const sheets = getSheets();
   await ensureSheetExists(config.name, config.headers);
-
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `${config.name}!A1:ZZ1000`,
-  });
-  const values = res.data.values || [];
+  const values = await readSheetValuesSafe(config.name, 'A1:ZZ1000');
+  if (!values) return false;
   if (values.length <= 1) return false;
 
   const [headerRow, ...rows] = values;
@@ -361,6 +410,7 @@ async function updateRow(id, data, type = 'Alunos') {
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [updatedRow] },
   });
+  invalidateSheetCaches(config.name);
   return { success: true, sheet: config.name, id };
 }
 

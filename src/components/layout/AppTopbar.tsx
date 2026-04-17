@@ -4,33 +4,41 @@ import { Search, Bell, X, Users, BookOpen, Package } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAcademiaData } from '@/features/academia/AcademiaDataProvider';
-import { useOperacionalData } from '@/features/operacional/OperacionalDataProvider';
+import { useAlunos, useProdutos, useTurmas } from '@/services/queries';
 
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
   '/alunos': 'Alunos',
   '/turmas': 'Turmas',
-  '/frequencia': 'Frequência',
-  '/graduacao': 'Graduação',
+  '/frequencia': 'Frequencia',
+  '/graduacao': 'Graduacao',
   '/ranking': 'Ranking',
   '/campeonatos': 'Campeonatos',
   '/financeiro': 'Financeiro Escolar',
   '/financeiro-gerencial': 'Financeiro Gerencial',
   '/produtos': 'Produtos & Vendas',
   '/aluguel': 'Aluguel',
-  '/relatorios': 'Relatórios',
+  '/relatorios': 'Relatorios',
 };
 
 export function AppTopbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { alunosList, turmasList } = useAcademiaData();
-  const { produtosList } = useOperacionalData();
-  const title = pageTitles[location.pathname] || 'Gêmeos Academia';
+  const title = pageTitles[location.pathname] || 'Gemeos Academia';
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const shouldQuery = searchOpen && query.trim().length >= 2;
+
+  const alunosQ = useAlunos({ enabled: shouldQuery });
+  const turmasQ = useTurmas({ enabled: shouldQuery });
+  const produtosQ = useProdutos({ enabled: shouldQuery });
+
+  const alunosList = useMemo(() => alunosQ.list.data ?? [], [alunosQ.list.data]);
+  const turmasList = useMemo(() => turmasQ.list.data ?? [], [turmasQ.list.data]);
+  const produtosList = useMemo(() => produtosQ.list.data ?? [], [produtosQ.list.data]);
+  const isSearching = shouldQuery && (alunosQ.list.isLoading || turmasQ.list.isLoading || produtosQ.list.isLoading);
+  const hasSearchError = shouldQuery && (alunosQ.list.isError || turmasQ.list.isError || produtosQ.list.isError);
 
   useEffect(() => {
     if (searchOpen && inputRef.current) inputRef.current.focus();
@@ -38,10 +46,11 @@ export function AppTopbar() {
 
   const results = useMemo(() => {
     if (query.trim().length < 2) return null;
+    const normalizedQuery = query.toLowerCase();
     return {
-      alunos: alunosList.filter((item) => item.nome.toLowerCase().includes(query.toLowerCase())).slice(0, 4),
-      turmas: turmasList.filter((item) => item.nome.toLowerCase().includes(query.toLowerCase())).slice(0, 3),
-      produtos: produtosList.filter((item) => item.nome.toLowerCase().includes(query.toLowerCase())).slice(0, 3),
+      alunos: alunosList.filter((item) => item.nome.toLowerCase().includes(normalizedQuery)).slice(0, 4),
+      turmas: turmasList.filter((item) => item.nome.toLowerCase().includes(normalizedQuery)).slice(0, 3),
+      produtos: produtosList.filter((item) => item.nome.toLowerCase().includes(normalizedQuery)).slice(0, 3),
     };
   }, [alunosList, turmasList, produtosList, query]);
 
@@ -74,14 +83,16 @@ export function AppTopbar() {
             onFocus={() => setSearchOpen(true)}
             className="pl-9 w-72 h-9 text-sm bg-secondary/50 border-border/50 focus:bg-secondary"
           />
-          {searchOpen && hasResults && results && (
+          {searchOpen && query.length >= 2 && (
             <div className="absolute top-full mt-1 right-0 w-80 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50">
-              <SearchResults results={results} onSelect={handleSelect} />
-            </div>
-          )}
-          {searchOpen && query.length >= 2 && !hasResults && (
-            <div className="absolute top-full mt-1 right-0 w-80 bg-card border border-border rounded-lg shadow-xl p-4 z-50">
-              <p className="text-xs text-muted-foreground text-center">Nenhum resultado para "{query}"</p>
+              <SearchPanel
+                query={query}
+                isSearching={isSearching}
+                hasSearchError={hasSearchError}
+                hasResults={hasResults}
+                results={results}
+                onSelect={handleSelect}
+              />
             </div>
           )}
         </div>
@@ -104,18 +115,53 @@ export function AppTopbar() {
               className="pl-9 h-9 text-sm bg-secondary/50 border-border/50"
             />
           </div>
-          {hasResults && results && (
+          {query.length >= 2 && (
             <div className="mt-2 rounded-lg border border-border bg-card overflow-hidden">
-              <SearchResults results={results} onSelect={handleSelect} />
+              <SearchPanel
+                query={query}
+                isSearching={isSearching}
+                hasSearchError={hasSearchError}
+                hasResults={hasResults}
+                results={results}
+                onSelect={handleSelect}
+              />
             </div>
-          )}
-          {query.length >= 2 && !hasResults && (
-            <p className="text-xs text-muted-foreground text-center mt-2">Nenhum resultado para "{query}"</p>
           )}
         </div>
       )}
     </header>
   );
+}
+
+function SearchPanel({
+  query,
+  isSearching,
+  hasSearchError,
+  hasResults,
+  results,
+  onSelect,
+}: {
+  query: string;
+  isSearching: boolean;
+  hasSearchError: boolean;
+  hasResults: boolean;
+  results: {
+    alunos: { id: string; nome: string; categoria: string }[];
+    turmas: { id: string; nome: string; professor: string }[];
+    produtos: { id: string; nome: string; preco: number }[];
+  } | null;
+  onSelect: (path: string) => void;
+}) {
+  if (isSearching) {
+    return <p className="text-xs text-muted-foreground text-center p-4">Buscando...</p>;
+  }
+  if (hasSearchError) {
+    return <p className="text-xs text-destructive text-center p-4">Falha ao buscar. Tente novamente.</p>;
+  }
+  if (hasResults && results) {
+    return <SearchResults results={results} onSelect={onSelect} />;
+  }
+  return <p className="text-xs text-muted-foreground text-center p-4">Nenhum resultado para "{query}"</p>;
 }
 
 function SearchResults({
