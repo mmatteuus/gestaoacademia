@@ -1,4 +1,6 @@
 import { google } from 'googleapis';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
