@@ -1,8 +1,6 @@
 import express from 'express';
-import dotenv from 'dotenv';
-import { listRows, getRowById, insertRow, updateRow } from './index.js';
+import { listRows, getRowById, insertRow, updateRow, SHEET_CONFIG } from './index.js';
 
-dotenv.config();
 const app = express();
 app.use(express.json());
 
@@ -55,4 +53,13 @@ app.get('/status', (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log('Server listening on', port));
+app.listen(port, () => {
+  console.log(`🚀 Servidor rodando na porta ${port}`);
+  console.log(`📋 Endpoints disponíveis:`);
+  console.log(`   GET  /rows?type=Alunos      - Listar alunos`);
+  console.log(`   GET  /rows?type=Financeiro - Listar financeiros`);
+  console.log(`   GET  /rows?type=Aulas      - Listar aulas`);
+  console.log(`   GET  /rows?type=Frequencia - Listar frequência`);
+  console.log(`   GET  /rows?type=Ranking    - Listar ranking`);
+  console.log(`   GET  /status             - Health check`);
+});

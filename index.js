@@ -1,5 +1,3 @@
-import dotenv from 'dotenv';
-dotenv.config();
 import { google } from 'googleapis';
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
@@ -7,12 +5,25 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
 
-if (!SPREADSHEET_ID || !CLIENT_ID || !CLIENT_SECRET || !REFRESH_TOKEN) {
-  throw new Error('Configure corretamente o arquivo .env com todos os campos necessários.');
+let oauth2Client = null;
+
+function initAuth() {
+  if (!SPREADSHEET_ID || !CLIENT_ID || !CLIENT_SECRET || !REFRESH_TOKEN) {
+    console.error('ATENÇÃO: Variáveis de ambiente não configuradas!');
+    console.error('SPREADSHEET_ID:', SPREADSHEET_ID ? 'OK' : 'FALTANDO');
+    console.error('GOOGLE_CLIENT_ID:', CLIENT_ID ? 'OK' : 'FALTANDO');
+    console.error('GOOGLE_CLIENT_SECRET:', CLIENT_SECRET ? 'OK' : 'FALTANDO');
+    console.error('GOOGLE_REFRESH_TOKEN:', REFRESH_TOKEN ? 'OK' : 'FALTANDO');
+    return false;
+  }
+  
+  oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
+  oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+  console.log('Google OAuth inicializado com sucesso');
+  return true;
 }
 
-const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
-oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+initAuth();
 
 const SHEET_CONFIG = {
   Alunos: { name: 'Alunos', headers: ['id', 'nome', 'email', 'telefone', 'status', 'plano', 'data_matricula', 'created_at'] },
@@ -23,6 +34,9 @@ const SHEET_CONFIG = {
 };
 
 function getSheets() {
+  if (!oauth2Client) {
+    throw new Error('Google OAuth não inicializado. Configure as variáveis de ambiente.');
+  }
   return google.sheets({ version: 'v4', auth: oauth2Client });
 }
 
