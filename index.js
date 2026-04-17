@@ -30,7 +30,15 @@ const SHEET_CONFIG = {
   Financeiro: { name: 'Financeiro', headers: ['id', 'aluno_id', 'descricao', 'valor', 'status_pagamento', 'data_vencimento', 'data_pagamento', 'created_at'] },
   Aulas: { name: 'Aulas', headers: ['id', 'aluno_id', 'nome_aula', 'instrutor', 'data_assistida', 'duracao_min', 'observacoes', 'created_at'] },
   Frequencia: { name: 'Frequencia', headers: ['id', 'aluno_id', 'aula_id', 'data', 'presente', 'horario_chegada', 'observacoes', 'created_at'] },
-  Ranking: { name: 'Ranking', headers: ['id', 'aluno_id', 'pontuacao', 'categoria', 'posicao', 'data_referencia', 'descricao', 'created_at'] }
+  Ranking: { name: 'Ranking', headers: ['id', 'aluno_id', 'pontuacao', 'categoria', 'posicao', 'data_referencia', 'descricao', 'created_at'] },
+  Turmas: { name: 'Turmas', headers: ['id', 'nome_turma', 'instrutor', 'horario_inicio', 'horario_fim', 'dias_semana', 'capacidade_max', 'status', 'created_at'] },
+  Graduacao: { name: 'Graduacao', headers: ['id', 'aluno_id', 'faixa_atual', 'data_graduacao', 'grau', 'instrutor_responsavel', 'observacoes', 'created_at'] },
+  Campeonatos: { name: 'Campeonatos', headers: ['id', 'nome_evento', 'data_inicio', 'local', 'custo_inscricao', 'status', 'created_at'] },
+  Medalhas: { name: 'Medalhas', headers: ['id', 'aluno_id', 'campeonato_id', 'tipo_medalha', 'categoria', 'data_conquista', 'created_at'] },
+  Produtos: { name: 'Produtos', headers: ['id', 'nome_produto', 'sku', 'preco_custo', 'preco_venda', 'quantidade_estoque', 'estoque_minimo', 'created_at'] },
+  Vendas: { name: 'Vendas', headers: ['id', 'aluno_id', 'produto_id', 'quantidade', 'valor_total', 'data_venda', 'metodo_pagamento', 'created_at'] },
+  Aluguel: { name: 'Aluguel', headers: ['id', 'locatario', 'data_inicio', 'data_fim', 'horario', 'valor_aluguel', 'status_pagamento', 'finalidade', 'created_at'] },
+  Professores: { name: 'Professores', headers: ['id', 'nome', 'cpf', 'telefone', 'email', 'especialidade', 'valor_hora', 'status', 'created_at'] }
 };
 
 function getSheets() {
@@ -76,9 +84,19 @@ async function ensureSheetExists(sheetName, headers) {
 
 function detectSheetType(data) {
   if (data.sheet_type) return data.sheet_type;
-  if (data.plano !== undefined) return 'Alunos';
+  if (data.plano !== undefined || data.data_matricula !== undefined) return 'Alunos';
   if (data.valor !== undefined || data.status_pagamento !== undefined) return 'Financeiro';
   if (data.nome_aula !== undefined || data.duracao_min !== undefined) return 'Aulas';
+  if (data.presente !== undefined || data.horario_chegada !== undefined) return 'Frequencia';
+  if (data.pontuacao !== undefined || data.posicao !== undefined) return 'Ranking';
+  if (data.nome_turma !== undefined || data.dias_semana !== undefined) return 'Turmas';
+  if (data.faixa_atual !== undefined || data.grau !== undefined) return 'Graduacao';
+  if (data.nome_evento !== undefined || data.custo_inscricao !== undefined) return 'Campeonatos';
+  if (data.tipo_medalha !== undefined || data.campeonato_id !== undefined) return 'Medalhas';
+  if (data.nome_produto !== undefined || data.sku !== undefined) return 'Produtos';
+  if (data.produto_id !== undefined || data.metodo_pagamento !== undefined) return 'Vendas';
+  if (data.locatario !== undefined || data.valor_aluguel !== undefined) return 'Aluguel';
+  if (data.especialidade !== undefined || data.cpf !== undefined) return 'Professores';
   return 'Alunos';
 }
 
