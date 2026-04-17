@@ -6,9 +6,11 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "dev": "node server.js",
     "start": "node server.js",
     "seed": "node seed.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build": "echo No build step required"
   },
   "dependencies": {
     "dotenv": "^10.0.0",

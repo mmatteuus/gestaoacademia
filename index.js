@@ -15,9 +15,11 @@ const oauth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET);
 oauth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 const SHEET_CONFIG = {
-  Alunos: { name: 'Alunos', headers: ['id', 'nome', 'email', 'status', 'plano', 'created_at'] },
-  Financeiro: { name: 'Financeiro', headers: ['id', 'aluno_id', 'descricao', 'valor', 'status_pagamento', 'data_vencimento', 'created_at'] },
-  Aulas: { name: 'Aulas', headers: ['id', 'aluno_id', 'nome_aula', 'data_assistida', 'duracao_min', 'created_at'] }
+  Alunos: { name: 'Alunos', headers: ['id', 'nome', 'email', 'telefone', 'status', 'plano', 'data_matricula', 'created_at'] },
+  Financeiro: { name: 'Financeiro', headers: ['id', 'aluno_id', 'descricao', 'valor', 'status_pagamento', 'data_vencimento', 'data_pagamento', 'created_at'] },
+  Aulas: { name: 'Aulas', headers: ['id', 'aluno_id', 'nome_aula', 'instrutor', 'data_assistida', 'duracao_min', 'observacoes', 'created_at'] },
+  Frequencia: { name: 'Frequencia', headers: ['id', 'aluno_id', 'aula_id', 'data', 'presente', 'horario_chegada', 'observacoes', 'created_at'] },
+  Ranking: { name: 'Ranking', headers: ['id', 'aluno_id', 'pontuacao', 'categoria', 'posicao', 'data_referencia', 'descricao', 'created_at'] }
 };
 
 function getSheets() {
