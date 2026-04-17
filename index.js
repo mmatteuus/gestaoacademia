@@ -162,7 +162,7 @@ async function insertRow(data) {
     return data[h] !== undefined ? String(data[h]) : '';
   });
   
-  console.log(`Inserindo em [${config.name}]: ${JSON.stringify({id: data.id, ...Object.fromEntries(config.headers.slice(1,4).map(h => [h, data[h]])))}`);
+  console.log(`Inserindo em [${config.name}]: ID=${data.id}, tipo=${type}`);
   
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
@@ -219,4 +219,4 @@ if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
   })();
 }
 
-export { getAccessToken: () => oauth2Client.getAccessToken(), oauth2Client, SPREADSHEET_ID, listRows, getRowById, insertRow, updateRow, SHEET_CONFIG, detectSheetType };
+export { oauth2Client, SPREADSHEET_ID, listRows, getRowById, insertRow, updateRow, SHEET_CONFIG, detectSheetType };
