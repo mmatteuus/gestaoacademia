@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle, X } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -44,10 +45,19 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function formatDate(dateIso: string) {
+  if (!dateIso) return '-';
+  const [year, month, day] = dateIso.split('-');
+  if (!year || !month || !day) return dateIso;
+  return `${day}/${month}/${year}`;
+}
+
 export default function AlunosPage() {
+  const navigate = useNavigate();
   const {
     alunosList,
     turmasList,
+    sessoesList,
     addAluno,
     updateAluno,
     addAlunoToTurma,
@@ -109,6 +119,18 @@ export default function AlunosPage() {
   };
 
   const alunoCobrancas = selectedAluno ? cobrancasList.filter((cobranca) => cobranca.alunoId === selectedAluno.id) : [];
+  const alunoCobrancasOrdenadas = useMemo(
+    () => [...alunoCobrancas].sort((a, b) => (a.dataVencimento > b.dataVencimento ? -1 : 1)),
+    [alunoCobrancas]
+  );
+  const alunoMensalidades = useMemo(
+    () => alunoCobrancasOrdenadas.filter((cobranca) => cobranca.tipo === 'mensalidade'),
+    [alunoCobrancasOrdenadas]
+  );
+  const mensalidadePendente = useMemo(
+    () => alunoMensalidades.find((cobranca) => cobranca.status !== 'paga'),
+    [alunoMensalidades]
+  );
   const alunoGraduacao = selectedAluno ? graduacoesAlunosList.find((graduacao) => graduacao.alunoId === selectedAluno.id) : null;
   const alunoResponsavel = selectedAluno?.responsavelId ? responsaveisList.find((responsavel) => responsavel.id === selectedAluno.responsavelId) : null;
   const showResponsavel = !!alunoResponsavel || (selectedAluno ? isMinor(selectedAluno.dataNascimento) : false);
@@ -126,6 +148,27 @@ export default function AlunosPage() {
   const percentualGraduacao = alunoGraduacao
     ? Math.round((alunoGraduacao.aulasRealizadas / Math.max(1, alunoGraduacao.aulasNecessarias)) * 100)
     : 0;
+
+  const historicoFrequencia = useMemo(() => {
+    if (!selectedAluno) return [];
+    return sessoesList
+      .map((sessao) => {
+        const presenca = sessao.presencas.find((item) => item.alunoId === selectedAluno.id);
+        if (!presenca) return null;
+        return {
+          sessaoId: sessao.id,
+          data: sessao.data,
+          turmaNome: turmasList.find((turma) => turma.id === sessao.turmaId)?.nome || 'Turma nao encontrada',
+          presente: presenca.presente,
+        };
+      })
+      .filter((item): item is { sessaoId: string; data: string; turmaNome: string; presente: boolean } => !!item)
+      .sort((a, b) => (a.data > b.data ? -1 : 1));
+  }, [selectedAluno, sessoesList, turmasList]);
+
+  const totalAulas = historicoFrequencia.length;
+  const totalPresencas = historicoFrequencia.filter((sessao) => sessao.presente).length;
+  const taxaPresenca = totalAulas === 0 ? 0 : Math.round((totalPresencas / totalAulas) * 100);
 
   const getWhatsAppLink = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -195,7 +238,7 @@ export default function AlunosPage() {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{aluno.nome}</p>
-                  <p className="text-xs text-muted-foreground">{aluno.categoria || 'Sem categoria'} � {aluno.faixaAtual || 'Sem faixa'}</p>
+                  <p className="text-xs text-muted-foreground">{aluno.categoria || 'Sem categoria'} • {aluno.faixaAtual || 'Sem faixa'}</p>
                 </div>
                 <StatusBadge status={aluno.status} />
               </div>
@@ -268,13 +311,10 @@ export default function AlunosPage() {
             <div className="space-y-4 p-4">
               <SheetHeader className="flex-row items-center justify-between space-y-0">
                 <SheetTitle>{selectedAluno.nome}</SheetTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center">
                   <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => handleEdit(selectedAluno)}>
                     <Pencil className="mr-1 h-3.5 w-3.5" />
                     Editar
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setSelectedAlunoId(null)}>
-                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               </SheetHeader>
@@ -283,6 +323,7 @@ export default function AlunosPage() {
                 <TabsList className="w-full justify-start">
                   <TabsTrigger value="perfil">Perfil</TabsTrigger>
                   <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+                  <TabsTrigger value="frequencia">Frequencia</TabsTrigger>
                   <TabsTrigger value="graduacao">Graduacao</TabsTrigger>
                 </TabsList>
 
@@ -354,24 +395,90 @@ export default function AlunosPage() {
                 </TabsContent>
 
                 <TabsContent value="financeiro" className="space-y-2 pt-2">
-                  {alunoCobrancas.length === 0 ? (
+                  <div className="rounded-md border border-border p-3">
+                    <p className="text-xs font-semibold text-foreground">Resumo financeiro</p>
+                    <div className="mt-2 space-y-1">
+                      <InfoRow label="Mensalidades" value={String(alunoMensalidades.length)} />
+                      <InfoRow
+                        label="Proxima pendente"
+                        value={mensalidadePendente ? `${formatDate(mensalidadePendente.dataVencimento)} (R$ ${mensalidadePendente.valor.toFixed(2)})` : 'Sem pendencias'}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3 h-8 text-xs"
+                      onClick={() => navigate(`/financeiro?aluno=${selectedAluno.id}`)}
+                    >
+                      Abrir financeiro deste aluno
+                    </Button>
+                  </div>
+                  {alunoCobrancasOrdenadas.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Sem cobrancas para este aluno.</p>
                   ) : (
-                    alunoCobrancas.map((cobranca) => (
+                    alunoCobrancasOrdenadas.map((cobranca) => (
                       <div key={cobranca.id} className="rounded-md border border-border p-3">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-foreground">{cobranca.descricao}</p>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{cobranca.descricao}</p>
+                            <p className="text-[11px] text-muted-foreground">Tipo: {cobranca.tipo}</p>
+                          </div>
                           <StatusBadge status={cobranca.status} />
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Vencimento: {cobranca.dataVencimento || '-'} � Valor: R$ {cobranca.valor.toFixed(2)}
+                          Vencimento: {formatDate(cobranca.dataVencimento)} • Valor: R$ {cobranca.valor.toFixed(2)} • Pago: R$ {cobranca.valorPago.toFixed(2)}
                         </p>
                       </div>
                     ))
                   )}
                 </TabsContent>
 
+                <TabsContent value="frequencia" className="space-y-3 pt-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-md border border-border bg-secondary/20 p-3">
+                      <p className="text-[11px] text-muted-foreground">Aulas</p>
+                      <p className="text-lg font-semibold text-foreground">{totalAulas}</p>
+                    </div>
+                    <div className="rounded-md border border-border bg-secondary/20 p-3">
+                      <p className="text-[11px] text-muted-foreground">Presencas</p>
+                      <p className="text-lg font-semibold text-foreground">{totalPresencas}</p>
+                    </div>
+                    <div className="rounded-md border border-border bg-secondary/20 p-3">
+                      <p className="text-[11px] text-muted-foreground">Taxa</p>
+                      <p className="text-lg font-semibold text-foreground">{taxaPresenca}%</p>
+                    </div>
+                  </div>
+
+                  {historicoFrequencia.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Sem historico de frequencia para este aluno.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {historicoFrequencia.slice(0, 20).map((registro) => (
+                        <div key={`${registro.sessaoId}-${registro.data}`} className="rounded-md border border-border p-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-foreground">{registro.turmaNome}</p>
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${registro.presente ? 'border-success/20 bg-success/15 text-success' : 'border-destructive/20 bg-destructive/15 text-destructive'}`}>
+                              {registro.presente ? 'Presente' : 'Falta'}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">Data: {formatDate(registro.data)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
                 <TabsContent value="graduacao" className="space-y-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => navigate(`/graduacao?aluno=${selectedAluno.id}`)}
+                  >
+                    Abrir graduacao deste aluno
+                  </Button>
                   {alunoGraduacao ? (
                     <>
                       <div className="rounded-md border border-border p-3">

@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Search, Bell, X, Users, BookOpen, Package } from 'lucide-react';
+import { Search, X, Users, BookOpen, Package, Sun, Moon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAlunos, useProdutos, useTurmas } from '@/services/queries';
+import { useTheme } from 'next-themes';
 
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
@@ -27,8 +28,10 @@ export function AppTopbar() {
   const title = pageTitles[location.pathname] || 'Gemeos Academia';
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const shouldQuery = searchOpen && query.trim().length >= 2;
+  const { theme, setTheme } = useTheme();
 
   const alunosQ = useAlunos({ enabled: shouldQuery });
   const turmasQ = useTurmas({ enabled: shouldQuery });
@@ -43,6 +46,10 @@ export function AppTopbar() {
   useEffect(() => {
     if (searchOpen && inputRef.current) inputRef.current.focus();
   }, [searchOpen]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const results = useMemo(() => {
     if (query.trim().length < 2) return null;
@@ -97,9 +104,14 @@ export function AppTopbar() {
           )}
         </div>
 
-        <Button variant="ghost" size="icon" className="relative h-8 w-8 text-muted-foreground hover:text-foreground">
-          <Bell className="h-4 w-4" />
-          <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-primary rounded-full text-[9px] text-primary-foreground flex items-center justify-center">3</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          aria-label={theme === 'light' ? 'Tema claro ativo. Alternar para escuro' : 'Tema escuro ativo. Alternar para claro'}
+        >
+          {mounted && theme === 'light' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
       </div>
 

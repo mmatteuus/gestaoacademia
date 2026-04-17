@@ -326,7 +326,7 @@ async function listRows(type = 'Alunos') {
   const config = SHEET_CONFIG[type];
   if (!config) throw new Error(`Tipo inválido: ${type}`);
 
-  const values = await readSheetValuesSafe(config.name, 'A1:ZZ1000');
+  const values = await readSheetValuesSafe(config.name, 'A1:ZZ');
   if (!values) return [];
   if (values.length <= 1) return [];
 
@@ -338,7 +338,7 @@ async function getRowById(id, type = 'Alunos') {
   const config = SHEET_CONFIG[type];
   if (!config) throw new Error(`Tipo inválido: ${type}`);
 
-  const values = await readSheetValuesSafe(config.name, 'A1:ZZ1000');
+  const values = await readSheetValuesSafe(config.name, 'A1:ZZ');
   if (!values) return null;
   if (values.length <= 1) return null;
 
@@ -384,7 +384,7 @@ async function updateRow(id, data, type = 'Alunos') {
 
   const sheets = getSheets();
   await ensureSheetExists(config.name, config.headers);
-  const values = await readSheetValuesSafe(config.name, 'A1:ZZ1000');
+  const values = await readSheetValuesSafe(config.name, 'A1:ZZ');
   if (!values) return false;
   if (values.length <= 1) return false;
 

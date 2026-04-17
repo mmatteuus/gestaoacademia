@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   useAlunos,
   useTurmas,
@@ -29,9 +29,54 @@ interface AcademiaDataContextValue {
   addAlunoToTurma: (alunoId: string, turmaId: string) => ActionResult;
   removeAlunoFromTurma: (alunoId: string, turmaId: string) => ActionResult;
   addSessao: (sessao: SessaoAula) => ActionResult;
+  syncMensalidadesParaTodos: () => ActionResult<{ created: number }>;
+  syncGraduacoesParaTodos: () => ActionResult<{ created: number }>;
 }
 
 const AcademiaDataContext = createContext<AcademiaDataContextValue | undefined>(undefined);
+
+const DEFAULT_MENSALIDADE = 180;
+const DEFAULT_AULAS_GRADUACAO = 20;
+const FAIXAS_ORDEM = ['Branca', 'Amarela', 'Laranja', 'Verde', 'Azul', 'Roxa', 'Marrom', 'Preta'];
+
+function toMonthKey(dateIso: string) {
+  if (!dateIso || dateIso.length < 7) return '';
+  return dateIso.slice(0, 7);
+}
+
+function parseIsoDate(value: string | undefined): Date {
+  if (!value) return new Date();
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return new Date();
+  return parsed;
+}
+
+function monthLabel(month: Date) {
+  const mm = String(month.getMonth() + 1).padStart(2, '0');
+  const yyyy = month.getFullYear();
+  return `${mm}/${yyyy}`;
+}
+
+function addMonths(base: Date, months: number) {
+  const clone = new Date(base);
+  clone.setMonth(clone.getMonth() + months);
+  return clone;
+}
+
+function dueDateForMonth(month: Date, preferredDay: number) {
+  const year = month.getFullYear();
+  const monthIndex = month.getMonth();
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  const day = Math.min(Math.max(preferredDay, 1), lastDay);
+  const mm = String(monthIndex + 1).padStart(2, '0');
+  return `${year}-${mm}-${String(day).padStart(2, '0')}`;
+}
+
+function nextFaixaFrom(currentFaixa: string) {
+  const idx = FAIXAS_ORDEM.findIndex((faixa) => faixa.toLowerCase() === currentFaixa.toLowerCase());
+  if (idx === -1 || idx >= FAIXAS_ORDEM.length - 1) return FAIXAS_ORDEM[0];
+  return FAIXAS_ORDEM[idx + 1];
+}
 
 export function AcademiaDataProvider({ children }: { children: ReactNode }) {
   const alunos = useAlunos();
@@ -50,6 +95,9 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
 
   const isLoading =
     alunos.list.isLoading || turmas.list.isLoading || sessoes.list.isLoading;
+  const pendingMensalidadeIds = useRef<Set<string>>(new Set());
+  const pendingGraduacaoIds = useRef<Set<string>>(new Set());
+  const didBootstrapSync = useRef(false);
 
   /** Propaga em turmas os alunoIds para refletir o turmaIds do aluno. */
   const syncTurmasForAluno = (alunoId: string, turmaIds: string[]) => {
@@ -72,13 +120,19 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
 
   const addAluno = (aluno: Aluno) => {
     alunos.create.mutate(aluno, {
-      onSuccess: () => syncTurmasForAluno(aluno.id, aluno.turmaIds),
+      onSuccess: () => {
+        syncTurmasForAluno(aluno.id, aluno.turmaIds);
+        ensureMensalidadesForAluno(aluno);
+        ensureGraduacaoForAluno(aluno);
+      },
     });
   };
 
   const updateAluno = (aluno: Aluno) => {
     alunos.update.mutate({ id: aluno.id, data: aluno });
     syncTurmasForAluno(aluno.id, aluno.turmaIds);
+    ensureMensalidadesForAluno(aluno);
+    ensureGraduacaoForAluno(aluno);
   };
 
   const addTurma = (turma: Turma) => {
@@ -155,6 +209,120 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   };
 
+  const ensureMensalidadesForAluno = (aluno: Aluno): number => {
+    if (aluno.status === 'inativo' || aluno.status === 'pre-cadastro') {
+      return 0;
+    }
+
+    const startDate = parseIsoDate(aluno.dataMatricula);
+    const currentDate = new Date();
+    const startMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const endMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const dueDay = startDate.getDate() || 5;
+    const existingMensalidades = cobrancasList.filter(
+      (cobranca) => cobranca.alunoId === aluno.id && cobranca.tipo === 'mensalidade'
+    );
+    const monthlyValue =
+      existingMensalidades[0]?.valor && existingMensalidades[0].valor > 0
+        ? existingMensalidades[0].valor
+        : DEFAULT_MENSALIDADE;
+    const existingMonthKeys = new Set(existingMensalidades.map((cobranca) => toMonthKey(cobranca.dataVencimento)));
+    const todayIso = new Date().toISOString().slice(0, 10);
+
+    let created = 0;
+    let offset = 0;
+    while (true) {
+      const monthCursor = addMonths(startMonth, offset);
+      if (monthCursor > endMonth) break;
+
+      const dueDate = dueDateForMonth(monthCursor, dueDay);
+      const monthKey = toMonthKey(dueDate);
+      const cobrancaId = `fin-${aluno.id}-${monthKey.replace('-', '')}`;
+      const alreadyQueued = pendingMensalidadeIds.current.has(cobrancaId);
+      if (!existingMonthKeys.has(monthKey) && !alreadyQueued) {
+        pendingMensalidadeIds.current.add(cobrancaId);
+        cobrancas.create.mutate(
+          {
+            id: cobrancaId,
+            alunoId: aluno.id,
+            nomeAluno: aluno.nome,
+            tipo: 'mensalidade',
+            descricao: `Mensalidade ${monthLabel(monthCursor)}`,
+            valor: monthlyValue,
+            valorPago: 0,
+            dataVencimento: dueDate,
+            status: dueDate < todayIso ? 'vencida' : 'aberta',
+            observacoes: 'Gerada automaticamente pela data de matricula.',
+          },
+          {
+            onSettled: () => {
+              pendingMensalidadeIds.current.delete(cobrancaId);
+            },
+          }
+        );
+        created += 1;
+      }
+
+      offset += 1;
+    }
+
+    return created;
+  };
+
+  const syncMensalidadesParaTodos = (): ActionResult<{ created: number }> => {
+    let created = 0;
+    for (const aluno of alunosList) {
+      created += ensureMensalidadesForAluno(aluno);
+    }
+    return { ok: true, data: { created } };
+  };
+
+  const ensureGraduacaoForAluno = (aluno: Aluno): number => {
+    const existing = graduacoesAlunosList.some((graduacao) => graduacao.alunoId === aluno.id);
+    const graduacaoId = `grad-${aluno.id}`;
+    if (existing || pendingGraduacaoIds.current.has(graduacaoId)) {
+      return 0;
+    }
+
+    const faixaAtual = aluno.faixaAtual || FAIXAS_ORDEM[0];
+    const proximaFaixa = nextFaixaFrom(faixaAtual);
+    pendingGraduacaoIds.current.add(graduacaoId);
+    graduacoesAlunos.create.mutate(
+      {
+        id: graduacaoId,
+        alunoId: aluno.id,
+        faixaAtual,
+        proximaFaixa,
+        aulasRealizadas: 0,
+        aulasNecessarias: DEFAULT_AULAS_GRADUACAO,
+        status: 'nao-elegivel',
+      },
+      {
+        onSettled: () => {
+          pendingGraduacaoIds.current.delete(graduacaoId);
+        },
+      }
+    );
+
+    return 1;
+  };
+
+  const syncGraduacoesParaTodos = (): ActionResult<{ created: number }> => {
+    let created = 0;
+    for (const aluno of alunosList) {
+      created += ensureGraduacaoForAluno(aluno);
+    }
+    return { ok: true, data: { created } };
+  };
+
+  useEffect(() => {
+    if (isLoading || didBootstrapSync.current) return;
+    didBootstrapSync.current = true;
+    syncMensalidadesParaTodos();
+    syncGraduacoesParaTodos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, alunosList.length, cobrancasList.length, graduacoesAlunosList.length]);
+
   const value = useMemo<AcademiaDataContextValue>(
     () => ({
       alunosList,
@@ -171,6 +339,8 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
       addAlunoToTurma,
       removeAlunoFromTurma,
       addSessao,
+      syncMensalidadesParaTodos,
+      syncGraduacoesParaTodos,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [alunosList, turmasList, sessoesList, cobrancasList, graduacoesAlunosList, responsaveisList, isLoading]

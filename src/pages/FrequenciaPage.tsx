@@ -128,8 +128,8 @@ export default function FrequenciaPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Data da aula</label>
-              <input type="date" value={novaData} onChange={(e) => setNovaData(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground" />
+              <label htmlFor="data-aula" className="text-xs text-muted-foreground mb-1 block">Data da aula</label>
+              <input id="data-aula" type="date" value={novaData} onChange={(e) => setNovaData(e.target.value)} className="h-9 w-full rounded-md border border-border bg-secondary/50 px-3 text-sm text-foreground" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-2">Marque os alunos presentes:</p>
