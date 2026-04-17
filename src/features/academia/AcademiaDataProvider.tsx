@@ -1,5 +1,12 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { alunos as alunosMock, turmas as turmasMock, sessoesAula as sessoesMock, cobrancas as cobrancasMock, graduacoesAlunos as graduacoesMock, responsaveis as responsaveisMock } from '@/services/mocks/data';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import {
+  useAlunos,
+  useTurmas,
+  useSessoesAula,
+  useCobrancas,
+  useGraduacoesAlunos,
+  useResponsaveis,
+} from '@/services/queries';
 import type { Aluno, SessaoAula, Turma, Cobranca, GraduacaoAluno, Responsavel } from '@/types';
 
 interface ActionResult {
@@ -14,6 +21,7 @@ interface AcademiaDataContextValue {
   cobrancasList: Cobranca[];
   graduacoesAlunosList: GraduacaoAluno[];
   responsaveisList: Responsavel[];
+  isLoading: boolean;
   addAluno: (aluno: Aluno) => void;
   updateAluno: (aluno: Aluno) => void;
   addTurma: (turma: Turma) => void;
@@ -26,73 +34,83 @@ interface AcademiaDataContextValue {
 const AcademiaDataContext = createContext<AcademiaDataContextValue | undefined>(undefined);
 
 export function AcademiaDataProvider({ children }: { children: ReactNode }) {
-  const [alunosList, setAlunosList] = useState<Aluno[]>(alunosMock);
-  const [turmasList, setTurmasList] = useState<Turma[]>(turmasMock);
-  const [sessoesList, setSessoesList] = useState<SessaoAula[]>(sessoesMock);
-  const [cobrancasList] = useState<Cobranca[]>(cobrancasMock);
-  const [graduacoesAlunosList] = useState<GraduacaoAluno[]>(graduacoesMock);
-  const [responsaveisList] = useState<Responsavel[]>(responsaveisMock);
+  const alunos = useAlunos();
+  const turmas = useTurmas();
+  const sessoes = useSessoesAula();
+  const cobrancas = useCobrancas();
+  const graduacoesAlunos = useGraduacoesAlunos();
+  const responsaveis = useResponsaveis();
 
+  const alunosList = alunos.list.data ?? [];
+  const turmasList = turmas.list.data ?? [];
+  const sessoesList = sessoes.list.data ?? [];
+  const cobrancasList = cobrancas.list.data ?? [];
+  const graduacoesAlunosList = graduacoesAlunos.list.data ?? [];
+  const responsaveisList = responsaveis.list.data ?? [];
+
+  const isLoading =
+    alunos.list.isLoading || turmas.list.isLoading || sessoes.list.isLoading;
+
+  /** Propaga em turmas os alunoIds para refletir o turmaIds do aluno. */
   const syncTurmasForAluno = (alunoId: string, turmaIds: string[]) => {
-    setTurmasList((prev) =>
-      prev.map((turma) => {
-        const shouldContainAluno = turmaIds.includes(turma.id);
-        const alreadyContainsAluno = turma.alunoIds.includes(alunoId);
-
-        if (shouldContainAluno && !alreadyContainsAluno) {
-          return { ...turma, alunoIds: [...turma.alunoIds, alunoId] };
-        }
-
-        if (!shouldContainAluno && alreadyContainsAluno) {
-          return { ...turma, alunoIds: turma.alunoIds.filter((id) => id !== alunoId) };
-        }
-
-        return turma;
-      })
-    );
+    for (const turma of turmasList) {
+      const shouldContain = turmaIds.includes(turma.id);
+      const alreadyContains = turma.alunoIds.includes(alunoId);
+      if (shouldContain && !alreadyContains) {
+        turmas.update.mutate({
+          id: turma.id,
+          data: { alunoIds: [...turma.alunoIds, alunoId] },
+        });
+      } else if (!shouldContain && alreadyContains) {
+        turmas.update.mutate({
+          id: turma.id,
+          data: { alunoIds: turma.alunoIds.filter((id) => id !== alunoId) },
+        });
+      }
+    }
   };
 
   const addAluno = (aluno: Aluno) => {
-    setAlunosList((prev) => [...prev, aluno]);
-    syncTurmasForAluno(aluno.id, aluno.turmaIds);
+    alunos.create.mutate(aluno, {
+      onSuccess: () => syncTurmasForAluno(aluno.id, aluno.turmaIds),
+    });
   };
 
   const updateAluno = (aluno: Aluno) => {
-    setAlunosList((prev) => prev.map((item) => (item.id === aluno.id ? aluno : item)));
+    alunos.update.mutate({ id: aluno.id, data: aluno });
     syncTurmasForAluno(aluno.id, aluno.turmaIds);
   };
 
   const addTurma = (turma: Turma) => {
-    setTurmasList((prev) => [...prev, turma]);
+    turmas.create.mutate(turma);
   };
 
   const updateTurma = (turmaAtualizada: Turma): ActionResult => {
     const turmaAnterior = turmasList.find((turma) => turma.id === turmaAtualizada.id);
-    if (!turmaAnterior) {
-      return { ok: false, message: 'Turma não encontrada.' };
-    }
+    if (!turmaAnterior) return { ok: false, message: 'Turma não encontrada.' };
 
     if (turmaAtualizada.capacidade < turmaAtualizada.alunoIds.length) {
       return { ok: false, message: 'A capacidade não pode ser menor do que a quantidade atual de alunos.' };
     }
 
-    setTurmasList((prev) => prev.map((turma) => (turma.id === turmaAtualizada.id ? turmaAtualizada : turma)));
-    setAlunosList((prev) =>
-      prev.map((aluno) => {
-        const shouldContainTurma = turmaAtualizada.alunoIds.includes(aluno.id);
-        const alreadyContainsTurma = aluno.turmaIds.includes(turmaAtualizada.id);
+    turmas.update.mutate({ id: turmaAtualizada.id, data: turmaAtualizada });
 
-        if (shouldContainTurma && !alreadyContainsTurma) {
-          return { ...aluno, turmaIds: [...aluno.turmaIds, turmaAtualizada.id] };
-        }
-
-        if (!shouldContainTurma && alreadyContainsTurma) {
-          return { ...aluno, turmaIds: aluno.turmaIds.filter((id) => id !== turmaAtualizada.id) };
-        }
-
-        return aluno;
-      })
-    );
+    // Sincroniza turma_ids nos alunos impactados
+    for (const aluno of alunosList) {
+      const shouldContain = turmaAtualizada.alunoIds.includes(aluno.id);
+      const alreadyContains = aluno.turmaIds.includes(turmaAtualizada.id);
+      if (shouldContain && !alreadyContains) {
+        alunos.update.mutate({
+          id: aluno.id,
+          data: { turmaIds: [...aluno.turmaIds, turmaAtualizada.id] },
+        });
+      } else if (!shouldContain && alreadyContains) {
+        alunos.update.mutate({
+          id: aluno.id,
+          data: { turmaIds: aluno.turmaIds.filter((id) => id !== turmaAtualizada.id) },
+        });
+      }
+    }
 
     return { ok: true };
   };
@@ -100,58 +118,29 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
   const addAlunoToTurma = (alunoId: string, turmaId: string): ActionResult => {
     const turma = turmasList.find((item) => item.id === turmaId);
     const aluno = alunosList.find((item) => item.id === alunoId);
+    if (!turma || !aluno) return { ok: false, message: 'Aluno ou turma não encontrado.' };
+    if (turma.alunoIds.includes(alunoId)) return { ok: false, message: 'Este aluno já está vinculado à turma.' };
+    if (turma.alunoIds.length >= turma.capacidade) return { ok: false, message: 'A turma já atingiu a capacidade máxima.' };
 
-    if (!turma || !aluno) {
-      return { ok: false, message: 'Aluno ou turma não encontrado.' };
-    }
-
-    if (turma.alunoIds.includes(alunoId)) {
-      return { ok: false, message: 'Este aluno já está vinculado à turma.' };
-    }
-
-    if (turma.alunoIds.length >= turma.capacidade) {
-      return { ok: false, message: 'A turma já atingiu a capacidade máxima.' };
-    }
-
-    setTurmasList((prev) =>
-      prev.map((item) =>
-        item.id === turmaId ? { ...item, alunoIds: [...item.alunoIds, alunoId] } : item
-      )
-    );
-
-    setAlunosList((prev) =>
-      prev.map((item) =>
-        item.id === alunoId ? { ...item, turmaIds: [...item.turmaIds, turmaId] } : item
-      )
-    );
-
+    turmas.update.mutate({ id: turmaId, data: { alunoIds: [...turma.alunoIds, alunoId] } });
+    alunos.update.mutate({ id: alunoId, data: { turmaIds: [...aluno.turmaIds, turmaId] } });
     return { ok: true };
   };
 
   const removeAlunoFromTurma = (alunoId: string, turmaId: string): ActionResult => {
     const turma = turmasList.find((item) => item.id === turmaId);
     const aluno = alunosList.find((item) => item.id === alunoId);
+    if (!turma || !aluno) return { ok: false, message: 'Aluno ou turma não encontrado.' };
+    if (!turma.alunoIds.includes(alunoId)) return { ok: false, message: 'Este aluno não está vinculado à turma.' };
 
-    if (!turma || !aluno) {
-      return { ok: false, message: 'Aluno ou turma não encontrado.' };
-    }
-
-    if (!turma.alunoIds.includes(alunoId)) {
-      return { ok: false, message: 'Este aluno não está vinculado à turma.' };
-    }
-
-    setTurmasList((prev) =>
-      prev.map((item) =>
-        item.id === turmaId ? { ...item, alunoIds: item.alunoIds.filter((id) => id !== alunoId) } : item
-      )
-    );
-
-    setAlunosList((prev) =>
-      prev.map((item) =>
-        item.id === alunoId ? { ...item, turmaIds: item.turmaIds.filter((id) => id !== turmaId) } : item
-      )
-    );
-
+    turmas.update.mutate({
+      id: turmaId,
+      data: { alunoIds: turma.alunoIds.filter((id) => id !== alunoId) },
+    });
+    alunos.update.mutate({
+      id: alunoId,
+      data: { turmaIds: aluno.turmaIds.filter((id) => id !== turmaId) },
+    });
     return { ok: true };
   };
 
@@ -159,12 +148,10 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
     const existeSessaoMesmoDia = sessoesList.some(
       (item) => item.turmaId === sessao.turmaId && item.data === sessao.data
     );
-
     if (existeSessaoMesmoDia) {
       return { ok: false, message: 'Já existe uma sessão lançada para esta turma nesta data.' };
     }
-
-    setSessoesList((prev) => [sessao, ...prev]);
+    sessoes.create.mutate(sessao);
     return { ok: true };
   };
 
@@ -176,6 +163,7 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
       cobrancasList,
       graduacoesAlunosList,
       responsaveisList,
+      isLoading,
       addAluno,
       updateAluno,
       addTurma,
@@ -184,7 +172,8 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
       removeAlunoFromTurma,
       addSessao,
     }),
-    [alunosList, turmasList, sessoesList, cobrancasList, graduacoesAlunosList, responsaveisList]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [alunosList, turmasList, sessoesList, cobrancasList, graduacoesAlunosList, responsaveisList, isLoading]
   );
 
   return <AcademiaDataContext.Provider value={value}>{children}</AcademiaDataContext.Provider>;

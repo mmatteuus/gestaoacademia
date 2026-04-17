@@ -10,6 +10,10 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    proxy: {
+      "/rows": "http://localhost:3000",
+      "/status": "http://localhost:3000",
+    },
   },
   plugins: [react()],
   resolve: {

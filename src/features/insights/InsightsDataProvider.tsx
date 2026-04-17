@@ -2,19 +2,21 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 import {
   alertas as alertasMock,
   atividadesRecentes as atividadesMock,
-  campeonatos as campeonatosMock,
   frequenciaHeatmap as frequenciaHeatmapMock,
   frequenciaMensal as frequenciaMensalMock,
-  graduacoesAlunos as graduacoesAlunosMock,
-  historicoGraduacoes as historicoGraduacoesMock,
-  ranking as rankingMock,
   rankingEvolucao as rankingEvolucaoMock,
   receitaDespesaMensal as receitaDespesaMensalMock,
-  receitas as receitasMock,
-  despesas as despesasMock,
-  regrasGraduacao as regrasGraduacaoMock,
   vendasPorCategoria as vendasPorCategoriaMock,
 } from '@/services/mocks/data';
+import {
+  useCampeonatos,
+  useDespesas,
+  useGraduacoesAlunos,
+  useHistoricoGraduacao,
+  useRanking,
+  useReceitas,
+  useRegrasGraduacao,
+} from '@/services/queries';
 import type {
   Alerta,
   AtividadeRecente,
@@ -56,66 +58,65 @@ interface InsightsDataContextValue {
 const InsightsDataContext = createContext<InsightsDataContextValue | undefined>(undefined);
 
 export function InsightsDataProvider({ children }: { children: ReactNode }) {
+  // Entidades reais vindas do Google Sheets
+  const graduacoesAlunosQ = useGraduacoesAlunos();
+  const historicoGraduacoesQ = useHistoricoGraduacao();
+  const regrasGraduacaoQ = useRegrasGraduacao();
+  const rankingQ = useRanking();
+  const campeonatosQ = useCampeonatos();
+  const receitasQ = useReceitas();
+  const despesasQ = useDespesas();
+
+  // Séries agregadas / UI-only — seguem mock até termos cálculos a partir das entidades.
   const [alertas] = useState<Alerta[]>(alertasMock);
   const [atividadesRecentes] = useState<AtividadeRecente[]>(atividadesMock);
-  const [graduacoesAlunos] = useState<GraduacaoAluno[]>(graduacoesAlunosMock);
-  const [historicoGraduacoes] = useState<HistoricoGraduacao[]>(historicoGraduacoesMock);
-  const [regrasGraduacao, setRegrasGraduacao] = useState<RegraGraduacao[]>(
-    regrasGraduacaoMock.map((regra) => ({
-      ...regra,
-      modalidade: regra.modalidade || (regra.categoria === 'Adulto' ? 'Jiu-Jitsu' : 'Karatê'),
-    }))
-  );
-  const [ranking] = useState<RankingEntry[]>(rankingMock);
-  const [campeonatos, setCampeonatos] = useState<Campeonato[]>(campeonatosMock);
   const [frequenciaMensal] = useState(frequenciaMensalMock);
   const [receitaDespesaMensal] = useState(receitaDespesaMensalMock);
   const [frequenciaHeatmap] = useState(frequenciaHeatmapMock);
   const [rankingEvolucao] = useState<Record<string, string | number>[]>(rankingEvolucaoMock);
   const [vendasPorCategoria] = useState(vendasPorCategoriaMock);
-  const [receitas] = useState<Receita[]>(receitasMock);
-  const [despesas] = useState<Despesa[]>(despesasMock);
+
+  const graduacoesAlunos = graduacoesAlunosQ.list.data ?? [];
+  const historicoGraduacoes = historicoGraduacoesQ.list.data ?? [];
+  const regrasGraduacao = regrasGraduacaoQ.list.data ?? [];
+  const ranking = rankingQ.list.data ?? [];
+  const campeonatos = campeonatosQ.list.data ?? [];
+  const receitas = receitasQ.list.data ?? [];
+  const despesas = despesasQ.list.data ?? [];
 
   const upsertRegraGraduacao = (regra: RegraGraduacao): ActionResult<RegraGraduacao> => {
     if (!regra.faixaOrigem.trim() || !regra.faixaDestino.trim()) {
       return { ok: false, message: 'Preencha as faixas de origem e destino.' };
     }
 
-    const regraFinal = regra.id ? regra : { ...regra, id: `rg${Date.now()}` };
-    setRegrasGraduacao((prev) => {
-      const exists = prev.some((item) => item.id === regraFinal.id);
-      if (exists) {
-        return prev.map((item) => (item.id === regraFinal.id ? regraFinal : item));
-      }
-      return [...prev, regraFinal];
-    });
-
-    return { ok: true, data: regraFinal };
+    const exists = regrasGraduacao.some((item) => item.id === regra.id);
+    if (exists) {
+      regrasGraduacaoQ.update.mutate({ id: regra.id, data: regra });
+    } else {
+      regrasGraduacaoQ.create.mutate(regra);
+    }
+    return { ok: true, data: regra };
   };
 
   const createCampeonato = (campeonato: Campeonato): ActionResult<Campeonato> => {
-    const campeonatoFinal = { ...campeonato, id: campeonato.id || `c${Date.now()}` };
-    setCampeonatos((prev) => [campeonatoFinal, ...prev]);
-    return { ok: true, data: campeonatoFinal };
+    campeonatosQ.create.mutate(campeonato);
+    return { ok: true, data: campeonato };
   };
 
-  const addParticipantesCampeonato = (campeonatoId: string, participantes: Campeonato['participantes']): ActionResult => {
+  const addParticipantesCampeonato = (
+    campeonatoId: string,
+    participantes: Campeonato['participantes']
+  ): ActionResult => {
     const campeonato = campeonatos.find((item) => item.id === campeonatoId);
-    if (!campeonato) {
-      return { ok: false, message: 'Campeonato não encontrado.' };
-    }
+    if (!campeonato) return { ok: false, message: 'Campeonato não encontrado.' };
 
     const existentes = new Set(campeonato.participantes.map((item) => item.alunoId));
     const novos = participantes.filter((item) => !existentes.has(item.alunoId));
 
-    setCampeonatos((prev) =>
-      prev.map((item) =>
-        item.id === campeonatoId
-          ? { ...item, participantes: [...item.participantes, ...novos] }
-          : item
-      )
-    );
-
+    campeonatosQ.update.mutate({
+      id: campeonatoId,
+      data: { participantes: [...campeonato.participantes, ...novos] },
+    });
     return { ok: true };
   };
 
@@ -139,7 +140,23 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
       createCampeonato,
       addParticipantesCampeonato,
     }),
-    [alertas, atividadesRecentes, graduacoesAlunos, historicoGraduacoes, regrasGraduacao, ranking, campeonatos, frequenciaMensal, receitaDespesaMensal, frequenciaHeatmap, rankingEvolucao, vendasPorCategoria, receitas, despesas]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      alertas,
+      atividadesRecentes,
+      graduacoesAlunos,
+      historicoGraduacoes,
+      regrasGraduacao,
+      ranking,
+      campeonatos,
+      frequenciaMensal,
+      receitaDespesaMensal,
+      frequenciaHeatmap,
+      rankingEvolucao,
+      vendasPorCategoria,
+      receitas,
+      despesas,
+    ]
   );
 
   return <InsightsDataContext.Provider value={value}>{children}</InsightsDataContext.Provider>;

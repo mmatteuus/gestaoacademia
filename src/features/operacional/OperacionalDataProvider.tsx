@@ -1,11 +1,12 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import {
-  cobrancas as cobrancasMock,
-  produtos as produtosMock,
-  vendas as vendasMock,
-  reservas as reservasMock,
-  contratosAluguel as contratosMock,
-} from '@/services/mocks/data';
+  useCobrancas,
+  useProdutos,
+  useVendas,
+  useReservas,
+  useContratosAluguel,
+  usePagamentosContrato,
+} from '@/services/queries';
 import type {
   Cobranca,
   ContratoAluguel,
@@ -28,6 +29,7 @@ interface OperacionalDataContextValue {
   reservasList: Reserva[];
   contratosList: ContratoAluguel[];
   pagamentosContratoList: PagamentoContratoAluguel[];
+  isLoading: boolean;
   updateCobranca: (cobranca: Cobranca) => void;
   upsertProduto: (produto: Produto) => void;
   createVenda: (venda: Venda) => ActionResult;
@@ -43,25 +45,38 @@ function timeToMinutes(value: string) {
 }
 
 export function OperacionalDataProvider({ children }: { children: ReactNode }) {
-  const [cobrancasList, setCobrancasList] = useState<Cobranca[]>(cobrancasMock);
-  const [produtosList, setProdutosList] = useState<Produto[]>(produtosMock);
-  const [vendasList, setVendasList] = useState<Venda[]>(vendasMock);
-  const [reservasList, setReservasList] = useState<Reserva[]>(reservasMock);
-  const [contratosList] = useState<ContratoAluguel[]>(contratosMock);
-  const [pagamentosContratoList, setPagamentosContratoList] = useState<PagamentoContratoAluguel[]>([]);
+  const cobrancas = useCobrancas();
+  const produtos = useProdutos();
+  const vendas = useVendas();
+  const reservas = useReservas();
+  const contratos = useContratosAluguel();
+  const pagamentosContrato = usePagamentosContrato();
+
+  const cobrancasList = cobrancas.list.data ?? [];
+  const produtosList = produtos.list.data ?? [];
+  const vendasList = vendas.list.data ?? [];
+  const reservasList = reservas.list.data ?? [];
+  const contratosList = contratos.list.data ?? [];
+  const pagamentosContratoList = pagamentosContrato.list.data ?? [];
+
+  const isLoading =
+    cobrancas.list.isLoading ||
+    produtos.list.isLoading ||
+    vendas.list.isLoading ||
+    reservas.list.isLoading ||
+    contratos.list.isLoading;
 
   const updateCobranca = (cobrancaAtualizada: Cobranca) => {
-    setCobrancasList((prev) => prev.map((cobranca) => (cobranca.id === cobrancaAtualizada.id ? cobrancaAtualizada : cobranca)));
+    cobrancas.update.mutate({ id: cobrancaAtualizada.id, data: cobrancaAtualizada });
   };
 
   const upsertProduto = (produto: Produto) => {
-    setProdutosList((prev) => {
-      const exists = prev.some((item) => item.id === produto.id);
-      if (exists) {
-        return prev.map((item) => (item.id === produto.id ? produto : item));
-      }
-      return [...prev, produto];
-    });
+    const exists = produtosList.some((item) => item.id === produto.id);
+    if (exists) {
+      produtos.update.mutate({ id: produto.id, data: produto });
+    } else {
+      produtos.create.mutate(produto);
+    }
   };
 
   const createVenda = (venda: Venda): ActionResult => {
@@ -75,13 +90,17 @@ export function OperacionalDataProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    setProdutosList((prev) =>
-      prev.map((produto) => {
-        const item = venda.itens.find((entry) => entry.produtoId === produto.id);
-        return item ? { ...produto, estoque: produto.estoque - item.quantidade } : produto;
-      })
-    );
-    setVendasList((prev) => [venda, ...prev]);
+    vendas.create.mutate(venda);
+
+    for (const item of venda.itens) {
+      const produto = produtosList.find((p) => p.id === item.produtoId);
+      if (produto) {
+        produtos.update.mutate({
+          id: produto.id,
+          data: { estoque: produto.estoque - item.quantidade },
+        });
+      }
+    }
     return { ok: true };
   };
 
@@ -96,7 +115,7 @@ export function OperacionalDataProvider({ children }: { children: ReactNode }) {
     });
 
     const reservaFinal = { ...reserva, conflito: hasConflict };
-    setReservasList((prev) => [reservaFinal, ...prev]);
+    reservas.create.mutate(reservaFinal);
 
     return {
       ok: true,
@@ -110,7 +129,7 @@ export function OperacionalDataProvider({ children }: { children: ReactNode }) {
     if (!contrato) {
       return { ok: false, message: 'Contrato não encontrado.' };
     }
-    setPagamentosContratoList((prev) => [pagamento, ...prev]);
+    pagamentosContrato.create.mutate(pagamento);
     return { ok: true };
   };
 
@@ -122,13 +141,15 @@ export function OperacionalDataProvider({ children }: { children: ReactNode }) {
       reservasList,
       contratosList,
       pagamentosContratoList,
+      isLoading,
       updateCobranca,
       upsertProduto,
       createVenda,
       addReserva,
       addPagamentoContrato,
     }),
-    [cobrancasList, produtosList, vendasList, reservasList, contratosList, pagamentosContratoList]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cobrancasList, produtosList, vendasList, reservasList, contratosList, pagamentosContratoList, isLoading]
   );
 
   return <OperacionalDataContext.Provider value={value}>{children}</OperacionalDataContext.Provider>;
