@@ -34,6 +34,9 @@ function getClientIp(req) {
   return req.ip || 'unknown';
 }
 
+/**
+ * Rate limiter para rotas de mutação (POST/PUT/PATCH/DELETE).
+ */
 export function createMutationRateLimiter({ windowMs, max, maxBuckets = 10_000 }) {
   const normalizedWindowMs = sanitizePositiveInt(windowMs, 60_000);
   const normalizedMax = sanitizePositiveInt(max, 120);
@@ -46,7 +49,38 @@ export function createMutationRateLimiter({ windowMs, max, maxBuckets = 10_000 }
 
     const now = Date.now();
     cleanupBuckets(now, normalizedMaxBuckets);
-    const key = getClientIp(req);
+    const key = `mut:${getClientIp(req)}`;
+    const entry = buckets.get(key);
+
+    if (!entry || entry.resetAt <= now) {
+      buckets.set(key, { count: 1, resetAt: now + normalizedWindowMs });
+      return next();
+    }
+
+    if (entry.count >= normalizedMax) {
+      const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+      res.setHeader('Retry-After', String(retryAfter));
+      return res.status(429).json({ ok: false, error: 'operation_failed', message: 'Too many requests' });
+    }
+
+    entry.count += 1;
+    return next();
+  };
+}
+
+/**
+ * Rate limiter global (inclui leitura).
+ * Mais permissivo que o de mutação.
+ */
+export function createGlobalRateLimiter({ windowMs, max, maxBuckets = 10_000 }) {
+  const normalizedWindowMs = sanitizePositiveInt(windowMs, 60_000);
+  const normalizedMax = sanitizePositiveInt(max, 300);
+  const normalizedMaxBuckets = sanitizePositiveInt(maxBuckets, 10_000);
+
+  return function globalRateLimiter(req, res, next) {
+    const now = Date.now();
+    cleanupBuckets(now, normalizedMaxBuckets);
+    const key = `global:${getClientIp(req)}`;
     const entry = buckets.get(key);
 
     if (!entry || entry.resetAt <= now) {

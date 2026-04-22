@@ -1,6 +1,7 @@
 // Em dev o Vite proxy manda /rows e /status para :3000, então usamos caminhos
 // relativos por padrão. Sobrescrever via VITE_API_URL se a API estiver em outro host.
 const RAW_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
+const RAW_API_KEY = (import.meta.env.VITE_API_KEY as string | undefined) ?? '';
 
 export const API_BASE = RAW_BASE.replace(/\/+$/, '');
 
@@ -24,6 +25,19 @@ function buildUrl(path: string, query?: Record<string, string | number | undefin
   return API_BASE ? url.toString() : url.pathname + url.search;
 }
 
+function buildHeaders(contentType?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+  };
+  if (contentType) {
+    headers['Content-Type'] = contentType;
+  }
+  if (RAW_API_KEY) {
+    headers['X-API-Key'] = RAW_API_KEY;
+  }
+  return headers;
+}
+
 async function parse<T>(res: Response): Promise<T> {
   const text = await res.text();
   const body = text ? safeJson(text) : null;
@@ -43,17 +57,17 @@ function safeJson(text: string): unknown {
 
 export const http = {
   get: <T>(path: string, query?: Record<string, string | number | undefined>) =>
-    fetch(buildUrl(path, query), { method: 'GET', headers: { Accept: 'application/json' } }).then(parse<T>),
+    fetch(buildUrl(path, query), { method: 'GET', headers: buildHeaders() }).then(parse<T>),
   post: <T>(path: string, body: unknown, query?: Record<string, string | number | undefined>) =>
     fetch(buildUrl(path, query), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: buildHeaders('application/json'),
       body: JSON.stringify(body),
     }).then(parse<T>),
   put: <T>(path: string, body: unknown, query?: Record<string, string | number | undefined>) =>
     fetch(buildUrl(path, query), {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: buildHeaders('application/json'),
       body: JSON.stringify(body),
     }).then(parse<T>),
 };

@@ -1,11 +1,20 @@
 import { env } from '../config/env.js';
 
+/**
+ * Monta a lista de origens permitidas.
+ * Em produção: apenas CORS_ALLOWLIST e VERCEL_URL (sem localhost).
+ * Em desenvolvimento: inclui localhost para dev local.
+ */
 function getAllowedOrigins() {
-  const defaults = [
-    'http://localhost:5173',
-    'http://localhost:8080',
-    'http://localhost:3000',
-  ];
+  const isProduction = env.nodeEnv === 'production' || !!process.env.VERCEL;
+
+  const defaults = isProduction
+    ? []
+    : [
+        'http://localhost:5173',
+        'http://localhost:8080',
+        'http://localhost:3000',
+      ];
 
   const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
   return new Set([...defaults, ...(vercelUrl ? [vercelUrl] : []), ...env.corsAllowlist]);
@@ -28,7 +37,8 @@ export function corsMiddleware(req, res, next) {
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept,X-API-Key');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();

@@ -1,6 +1,39 @@
+# Dependencies
 node_modules
-.vercel
+
+# Build output
+dist
+
+# Environment variables
 .env
 .env.*
 !.env.example
+
+# Google credentials
 client_secret*.json
+credentials.json
+token.json
+
+# Vercel
+.vercel
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage
+
+# Lock files (keep only one)
+bun.lockb

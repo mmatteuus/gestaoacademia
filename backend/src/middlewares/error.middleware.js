@@ -28,7 +28,9 @@ export function asyncHandler(fn) {
 
 export function errorMiddleware(err, req, res, _next) {
   const normalized = toHttpError(err);
+  const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
 
+  // Log completo no servidor (nunca vai pro cliente)
   logger.error({
     context: 'request_failed',
     path: req.path,
@@ -37,16 +39,22 @@ export function errorMiddleware(err, req, res, _next) {
     code: normalized.code,
     message: normalized.message,
     details: normalized.details,
-    errorMessage: err?.message,
+    // Stack trace apenas no log, nunca no response
+    stack: isProduction ? undefined : err?.stack,
   });
 
+  // Response sanitizado para o cliente
   const payload = {
     ok: false,
     error: normalized.code,
-    message: normalized.message,
+    // Em produção, erros 500 mostram mensagem genérica
+    message: isProduction && normalized.status >= 500
+      ? 'Internal server error'
+      : normalized.message,
   };
 
-  if (normalized.details) {
+  // Só expor detalhes de validação (400), nunca de erros internos
+  if (normalized.details && normalized.status < 500) {
     payload.details = normalized.details;
   }
 
