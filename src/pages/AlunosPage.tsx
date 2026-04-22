@@ -98,11 +98,15 @@ export default function AlunosPage() {
     setSelectedAlunoId(null);
   };
 
-  const handleFormSubmit = (values: AlunoFormValues) => {
+  const handleFormSubmit = async (values: AlunoFormValues) => {
     const patch = fromFormToAlunoPatch(values);
 
     if (editingAluno) {
-      updateAluno({ ...editingAluno, ...patch, turmaIds: patch.turmaIds || [] });
+      const result = await updateAluno({ ...editingAluno, ...patch, turmaIds: patch.turmaIds || [] });
+      if (!result.ok) {
+        toast.error(result.message || 'Falha ao atualizar aluno.');
+        return;
+      }
       toast.success('Aluno atualizado com sucesso.');
     } else {
       const newAluno: Aluno = {
@@ -111,14 +115,21 @@ export default function AlunosPage() {
         turmaIds: patch.turmaIds || [],
         dataMatricula: new Date().toISOString().split('T')[0],
       };
-      addAluno(newAluno);
+      const result = await addAluno(newAluno);
+      if (!result.ok) {
+        toast.error(result.message || 'Falha ao cadastrar aluno.');
+        return;
+      }
       toast.success('Aluno cadastrado com sucesso.');
     }
 
     setFormOpen(false);
   };
 
-  const alunoCobrancas = selectedAluno ? cobrancasList.filter((cobranca) => cobranca.alunoId === selectedAluno.id) : [];
+  const alunoCobrancas = useMemo(() => {
+    if (!selectedAluno) return [];
+    return cobrancasList.filter((cobranca) => cobranca.alunoId === selectedAluno.id);
+  }, [selectedAluno, cobrancasList]);
   const alunoCobrancasOrdenadas = useMemo(
     () => [...alunoCobrancas].sort((a, b) => (a.dataVencimento > b.dataVencimento ? -1 : 1)),
     [alunoCobrancas]

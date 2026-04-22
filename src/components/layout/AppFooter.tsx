@@ -4,7 +4,7 @@ export function AppFooter() {
       <p className="text-xs text-muted-foreground">
         Desenvolvido por{' '}
         <a
-          href="https://mtsferreira.dev"
+          href="https://MtsFerreira.dev"
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium text-primary hover:underline"

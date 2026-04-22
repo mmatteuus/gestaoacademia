@@ -23,13 +23,13 @@ interface AcademiaDataContextValue {
   graduacoesAlunosList: GraduacaoAluno[];
   responsaveisList: Responsavel[];
   isLoading: boolean;
-  addAluno: (aluno: Aluno) => void;
-  updateAluno: (aluno: Aluno) => void;
-  addTurma: (turma: Turma) => void;
-  updateTurma: (turma: Turma) => ActionResult;
+  addAluno: (aluno: Aluno) => Promise<ActionResult>;
+  updateAluno: (aluno: Aluno) => Promise<ActionResult>;
+  addTurma: (turma: Turma) => Promise<ActionResult>;
+  updateTurma: (turma: Turma) => Promise<ActionResult>;
   addAlunoToTurma: (alunoId: string, turmaId: string) => ActionResult;
   removeAlunoFromTurma: (alunoId: string, turmaId: string) => ActionResult;
-  addSessao: (sessao: SessaoAula) => ActionResult;
+  addSessao: (sessao: SessaoAula) => Promise<ActionResult>;
   syncMensalidadesParaTodos: () => ActionResult<{ created: number }>;
   syncGraduacoesParaTodos: () => ActionResult<{ created: number }>;
 }
@@ -119,28 +119,40 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addAluno = (aluno: Aluno) => {
-    alunos.create.mutate(aluno, {
-      onSuccess: () => {
-        syncTurmasForAluno(aluno.id, aluno.turmaIds);
-        ensureMensalidadesForAluno(aluno);
-        ensureGraduacaoForAluno(aluno);
-      },
-    });
+  const addAluno = async (aluno: Aluno): Promise<ActionResult> => {
+    try {
+      await alunos.create.mutateAsync(aluno);
+      syncTurmasForAluno(aluno.id, aluno.turmaIds);
+      ensureMensalidadesForAluno(aluno);
+      ensureGraduacaoForAluno(aluno);
+      return { ok: true };
+    } catch {
+      return { ok: false, message: 'Nao foi possivel cadastrar o aluno.' };
+    }
   };
 
-  const updateAluno = (aluno: Aluno) => {
-    alunos.update.mutate({ id: aluno.id, data: aluno });
-    syncTurmasForAluno(aluno.id, aluno.turmaIds);
-    ensureMensalidadesForAluno(aluno);
-    ensureGraduacaoForAluno(aluno);
+  const updateAluno = async (aluno: Aluno): Promise<ActionResult> => {
+    try {
+      await alunos.update.mutateAsync({ id: aluno.id, data: aluno });
+      syncTurmasForAluno(aluno.id, aluno.turmaIds);
+      ensureMensalidadesForAluno(aluno);
+      ensureGraduacaoForAluno(aluno);
+      return { ok: true };
+    } catch {
+      return { ok: false, message: 'Nao foi possivel atualizar o aluno.' };
+    }
   };
 
-  const addTurma = (turma: Turma) => {
-    turmas.create.mutate(turma);
+  const addTurma = async (turma: Turma): Promise<ActionResult> => {
+    try {
+      await turmas.create.mutateAsync(turma);
+      return { ok: true };
+    } catch {
+      return { ok: false, message: 'Nao foi possivel criar a turma.' };
+    }
   };
 
-  const updateTurma = (turmaAtualizada: Turma): ActionResult => {
+  const updateTurma = async (turmaAtualizada: Turma): Promise<ActionResult> => {
     const turmaAnterior = turmasList.find((turma) => turma.id === turmaAtualizada.id);
     if (!turmaAnterior) return { ok: false, message: 'Turma não encontrada.' };
 
@@ -148,7 +160,11 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
       return { ok: false, message: 'A capacidade não pode ser menor do que a quantidade atual de alunos.' };
     }
 
-    turmas.update.mutate({ id: turmaAtualizada.id, data: turmaAtualizada });
+    try {
+      await turmas.update.mutateAsync({ id: turmaAtualizada.id, data: turmaAtualizada });
+    } catch {
+      return { ok: false, message: 'Nao foi possivel atualizar a turma.' };
+    }
 
     // Sincroniza turma_ids nos alunos impactados
     for (const aluno of alunosList) {
@@ -199,15 +215,19 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   };
 
-  const addSessao = (sessao: SessaoAula): ActionResult => {
+  const addSessao = async (sessao: SessaoAula): Promise<ActionResult> => {
     const existeSessaoMesmoDia = sessoesList.some(
       (item) => item.turmaId === sessao.turmaId && item.data === sessao.data
     );
     if (existeSessaoMesmoDia) {
       return { ok: false, message: 'Já existe uma sessão lançada para esta turma nesta data.' };
     }
-    sessoes.create.mutate(sessao);
-    return { ok: true };
+    try {
+      await sessoes.create.mutateAsync(sessao);
+      return { ok: true };
+    } catch {
+      return { ok: false, message: 'Nao foi possivel salvar a frequencia.' };
+    }
   };
 
   const ensureMensalidadesForAluno = (aluno: Aluno): number => {

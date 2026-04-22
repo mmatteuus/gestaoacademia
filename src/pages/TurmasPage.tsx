@@ -44,9 +44,9 @@ export default function TurmasPage() {
     setManageOpen(true);
   };
 
-  const handleFormSubmit = (data: TurmaFormValues) => {
+  const handleFormSubmit = async (data: TurmaFormValues) => {
     if (editingTurma) {
-      const result = updateTurma({ ...editingTurma, ...data });
+      const result = await updateTurma({ ...editingTurma, ...data });
       if (!result.ok) {
         toast.error(result.message || 'Não foi possível atualizar a turma.');
         return;
@@ -58,7 +58,11 @@ export default function TurmasPage() {
         id: `t${Date.now()}`,
         alunoIds: [],
       };
-      addTurma(newTurma);
+      const result = await addTurma(newTurma);
+      if (!result.ok) {
+        toast.error(result.message || 'Falha ao criar turma.');
+        return;
+      }
       toast.success('Turma criada com sucesso');
     }
     setFormOpen(false);

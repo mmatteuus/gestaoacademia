@@ -39,7 +39,7 @@ export default function FrequenciaPage() {
     setNovaOpen(true);
   };
 
-  const handleSalvarFrequencia = () => {
+  const handleSalvarFrequencia = async () => {
     if (!turma) return;
     const novaSessao: SessaoAula = {
       id: `s${Date.now()}`,
@@ -49,7 +49,7 @@ export default function FrequenciaPage() {
       presencas: Object.entries(novaPresencas).map(([alunoId, presente]) => ({ alunoId, presente })),
     };
 
-    const result = addSessao(novaSessao);
+    const result = await addSessao(novaSessao);
     if (!result.ok) {
       toast.error(result.message || 'Não foi possível salvar a frequência.');
       return;
