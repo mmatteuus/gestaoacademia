@@ -9,9 +9,10 @@ import {
 } from '@/services/queries';
 import type { Aluno, SessaoAula, Turma, Cobranca, GraduacaoAluno, Responsavel } from '@/types';
 
-interface ActionResult {
+interface ActionResult<T = undefined> {
   ok: boolean;
   message?: string;
+  data?: T;
 }
 
 interface AcademiaDataContextValue {

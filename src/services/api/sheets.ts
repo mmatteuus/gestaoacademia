@@ -2,9 +2,14 @@ import { http } from './client';
 
 export type SheetType =
   | 'Alunos'
+  | 'Responsaveis'
   | 'Financeiro'
+  | 'Despesas'
+  | 'Receitas'
   | 'Aulas'
   | 'Frequencia'
+  | 'GraduacoesAlunos'
+  | 'RegrasGraduacao'
   | 'Ranking'
   | 'Turmas'
   | 'Graduacao'
@@ -12,7 +17,9 @@ export type SheetType =
   | 'Medalhas'
   | 'Produtos'
   | 'Vendas'
+  | 'Reservas'
   | 'Aluguel'
+  | 'PagamentosContrato'
   | 'Professores';
 
 export type SheetRow = Record<string, string>;

@@ -189,6 +189,7 @@ export const historicoGraduacaoAdapter = {
 
 export const graduacaoAlunoAdapter = {
   fromRow: (r: Row): GraduacaoAluno => ({
+    id: r.id,
     alunoId: r.aluno_id ?? '',
     faixaAtual: r.faixa_atual ?? '',
     proximaFaixa: r.proxima_faixa ?? '',

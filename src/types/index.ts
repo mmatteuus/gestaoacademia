@@ -67,6 +67,7 @@ export interface RegraGraduacao {
 }
 
 export interface GraduacaoAluno {
+  id?: string;
   alunoId: string;
   faixaAtual: string;
   proximaFaixa: string;
