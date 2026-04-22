@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { listRows, getRowById, insertRow, updateRow } from './index.js';
 
-describe('Google Sheets CRUD Integration Tests (aba Alunos)', () => {
+const runRealIntegration = process.env.RUN_REAL_INTEGRATION === 'true';
+const describeReal = runRealIntegration ? describe : describe.skip;
+
+describeReal('Google Sheets CRUD Integration Tests (aba Alunos)', () => {
   let testId;
 
   beforeAll(() => {

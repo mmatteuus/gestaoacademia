@@ -52,7 +52,7 @@ export const produtos: Produto[] = [
 // === Vendas ===
 export const vendas: Venda[] = [
   { id: 'v1', data: '2025-04-09', itens: [{ produtoId: 'p1', nomeProduto: 'Kimono Branco', quantidade: 1, precoUnitario: 189.90 }], total: 189.90, compradorNome: 'Lucas Mendes', formaPagamento: 'PIX' },
-  { id: 'v2', data: '2025-04-08', itens: [{ produtoId: 'p3', nomeProduto: 'Protetor Bucal', quantidade: 2, precoUnitario: 35.00 }, { produtoId: 'p5', nomeProduto: 'Camiseta Academia', quantidade: 1, precoUnitario: 59.90 }], total: 129.90, compradorNome: 'Ana Costa', formaPagamento: 'Cartão' },
+  { id: 'v2', data: '2025-04-08', itens: [{ produtoId: 'p3', nomeProduto: 'Protetor Bucal', quantidade: 2, precoUnitario: 35.00 }, { produtoId: 'p5', nomeProduto: 'Camiseta Academia', quantidade: 1, precoUnitario: 59.90 }], total: 129.90, compradorNome: 'Ana Costa', formaPagamento: 'Cartao' },
   { id: 'v3', data: '2025-04-05', itens: [{ produtoId: 'p4', nomeProduto: 'Luva de Treino', quantidade: 1, precoUnitario: 129.90 }], total: 129.90, compradorNome: 'Thiago Ribeiro', formaPagamento: 'Dinheiro' },
 ];
 

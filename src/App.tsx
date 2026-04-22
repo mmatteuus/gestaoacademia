@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AdminLayout } from '@/components/layout/AdminLayout';
@@ -8,19 +8,19 @@ import { AcademiaDataProvider } from '@/features/academia/AcademiaDataProvider';
 import { OperacionalDataProvider } from '@/features/operacional/OperacionalDataProvider';
 import { InsightsDataProvider } from '@/features/insights/InsightsDataProvider';
 import { ApiError } from '@/services/api/client';
-import DashboardPage from './pages/DashboardPage';
-import AlunosPage from './pages/AlunosPage';
-import TurmasPage from './pages/TurmasPage';
-import FrequenciaPage from './pages/FrequenciaPage';
-import GraduacaoPage from './pages/GraduacaoPage';
-import RankingPage from './pages/RankingPage';
-import CampeonatosPage from './pages/CampeonatosPage';
-import FinanceiroPage from './pages/FinanceiroPage';
-import FinanceiroGerencialPage from './pages/FinanceiroGerencialPage';
-import ProdutosPage from './pages/ProdutosPage';
-import AluguelPage from './pages/AluguelPage';
-import RelatoriosPage from './pages/RelatoriosPage';
-import NotFound from './pages/NotFound';
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const AlunosPage = lazy(() => import('./pages/AlunosPage'));
+const TurmasPage = lazy(() => import('./pages/TurmasPage'));
+const FrequenciaPage = lazy(() => import('./pages/FrequenciaPage'));
+const GraduacaoPage = lazy(() => import('./pages/GraduacaoPage'));
+const RankingPage = lazy(() => import('./pages/RankingPage'));
+const CampeonatosPage = lazy(() => import('./pages/CampeonatosPage'));
+const FinanceiroPage = lazy(() => import('./pages/FinanceiroPage'));
+const FinanceiroGerencialPage = lazy(() => import('./pages/FinanceiroGerencialPage'));
+const ProdutosPage = lazy(() => import('./pages/ProdutosPage'));
+const AluguelPage = lazy(() => import('./pages/AluguelPage'));
+const RelatoriosPage = lazy(() => import('./pages/RelatoriosPage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function shouldRetryQuery(failureCount: number, error: unknown) {
   if (failureCount >= 2) return false;
@@ -86,7 +86,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AdminLayout>
-          <Routes>
+          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
+            <Routes>
             <Route
               path="/"
               element={
@@ -184,7 +185,8 @@ const App = () => (
               }
             />
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
+          </Suspense>
         </AdminLayout>
       </BrowserRouter>
     </TooltipProvider>

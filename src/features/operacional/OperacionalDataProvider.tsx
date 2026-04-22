@@ -7,6 +7,8 @@ import {
   useContratosAluguel,
   usePagamentosContrato,
 } from '@/services/queries';
+import { ApiError } from '@/services/api/client';
+import { domainApi, type FinancePaymentPayload, type ReservationPayload, type SalePayload } from '@/services/api/domain';
 import type {
   Cobranca,
   ContratoAluguel,
@@ -20,6 +22,7 @@ interface ActionResult<T = undefined> {
   ok: boolean;
   message?: string;
   data?: T;
+  warnings?: string[];
 }
 
 interface OperacionalDataContextValue {
@@ -30,18 +33,21 @@ interface OperacionalDataContextValue {
   contratosList: ContratoAluguel[];
   pagamentosContratoList: PagamentoContratoAluguel[];
   isLoading: boolean;
-  updateCobranca: (cobranca: Cobranca) => void;
-  upsertProduto: (produto: Produto) => void;
-  createVenda: (venda: Venda) => ActionResult;
-  addReserva: (reserva: Reserva) => ActionResult<Reserva>;
-  addPagamentoContrato: (pagamento: PagamentoContratoAluguel) => ActionResult;
+  updateCobranca: (cobranca: Cobranca) => Promise<ActionResult<Cobranca>>;
+  upsertProduto: (produto: Produto) => Promise<ActionResult<Produto>>;
+  createVenda: (venda: SalePayload) => Promise<ActionResult<Record<string, unknown>>>;
+  addReserva: (reserva: ReservationPayload) => Promise<ActionResult<Record<string, unknown>>>;
+  addPagamentoContrato: (pagamento: PagamentoContratoAluguel) => Promise<ActionResult<PagamentoContratoAluguel>>;
+  registrarPagamentoCobranca: (payload: FinancePaymentPayload) => Promise<ActionResult<Record<string, unknown>>>;
 }
 
 const OperacionalDataContext = createContext<OperacionalDataContextValue | undefined>(undefined);
 
-function timeToMinutes(value: string) {
-  const [hours, minutes] = value.split(':').map(Number);
-  return hours * 60 + minutes;
+function toActionError(error: unknown, fallback: string): ActionResult {
+  if (error instanceof ApiError) {
+    return { ok: false, message: error.message || fallback };
+  }
+  return { ok: false, message: fallback };
 }
 
 export function OperacionalDataProvider({ children }: { children: ReactNode }) {
@@ -66,71 +72,75 @@ export function OperacionalDataProvider({ children }: { children: ReactNode }) {
     reservas.list.isLoading ||
     contratos.list.isLoading;
 
-  const updateCobranca = (cobrancaAtualizada: Cobranca) => {
-    cobrancas.update.mutate({ id: cobrancaAtualizada.id, data: cobrancaAtualizada });
-  };
-
-  const upsertProduto = (produto: Produto) => {
-    const exists = produtosList.some((item) => item.id === produto.id);
-    if (exists) {
-      produtos.update.mutate({ id: produto.id, data: produto });
-    } else {
-      produtos.create.mutate(produto);
+  const updateCobranca = async (cobrancaAtualizada: Cobranca): Promise<ActionResult<Cobranca>> => {
+    try {
+      await cobrancas.updateAsync({ id: cobrancaAtualizada.id, data: cobrancaAtualizada });
+      return { ok: true, data: cobrancaAtualizada };
+    } catch (error) {
+      return toActionError(error, 'Nao foi possivel atualizar a cobranca.');
     }
   };
 
-  const createVenda = (venda: Venda): ActionResult => {
-    for (const item of venda.itens) {
-      const produto = produtosList.find((product) => product.id === item.produtoId);
-      if (!produto) {
-        return { ok: false, message: `Produto ${item.nomeProduto} não encontrado.` };
+  const upsertProduto = async (produto: Produto): Promise<ActionResult<Produto>> => {
+    try {
+      const exists = produtosList.some((item) => item.id === produto.id);
+      if (exists) {
+        await produtos.updateAsync({ id: produto.id, data: produto });
+      } else {
+        await produtos.createAsync(produto);
       }
-      if (item.quantidade > produto.estoque) {
-        return { ok: false, message: `Estoque insuficiente para ${produto.nome}.` };
-      }
+      return { ok: true, data: produto };
+    } catch (error) {
+      return toActionError(error, 'Nao foi possivel salvar o produto.');
     }
-
-    vendas.create.mutate(venda);
-
-    for (const item of venda.itens) {
-      const produto = produtosList.find((p) => p.id === item.produtoId);
-      if (produto) {
-        produtos.update.mutate({
-          id: produto.id,
-          data: { estoque: produto.estoque - item.quantidade },
-        });
-      }
-    }
-    return { ok: true };
   };
 
-  const addReserva = (reserva: Reserva): ActionResult<Reserva> => {
-    const hasConflict = reservasList.some((current) => {
-      if (current.espaco !== reserva.espaco || current.dataInicio !== reserva.dataInicio) return false;
-      const startA = timeToMinutes(current.horaInicio);
-      const endA = timeToMinutes(current.horaFim);
-      const startB = timeToMinutes(reserva.horaInicio);
-      const endB = timeToMinutes(reserva.horaFim);
-      return startB < endA && endB > startA;
-    });
-
-    const reservaFinal = { ...reserva, conflito: hasConflict };
-    reservas.create.mutate(reservaFinal);
-
-    return {
-      ok: true,
-      data: reservaFinal,
-      message: hasConflict ? 'Reserva criada com alerta de conflito de horário.' : 'Reserva criada com sucesso.',
-    };
+  const createVenda = async (venda: SalePayload): Promise<ActionResult<Record<string, unknown>>> => {
+    try {
+      const response = await domainApi.createSale(venda);
+      await Promise.all([vendas.invalidate(), produtos.invalidate()]);
+      return { ok: true, data: response.data, warnings: response.warnings };
+    } catch (error) {
+      return toActionError(error, 'Nao foi possivel concluir a venda.');
+    }
   };
 
-  const addPagamentoContrato = (pagamento: PagamentoContratoAluguel): ActionResult => {
+  const registrarPagamentoCobranca = async (
+    payload: FinancePaymentPayload
+  ): Promise<ActionResult<Record<string, unknown>>> => {
+    try {
+      const response = await domainApi.createFinancePayment(payload);
+      await cobrancas.invalidate();
+      return { ok: true, data: response.data, warnings: response.warnings };
+    } catch (error) {
+      return toActionError(error, 'Nao foi possivel registrar o pagamento.');
+    }
+  };
+
+  const addReserva = async (reserva: ReservationPayload): Promise<ActionResult<Record<string, unknown>>> => {
+    try {
+      const response = await domainApi.createReservation(reserva);
+      await reservas.invalidate();
+      return { ok: true, data: response.data, warnings: response.warnings };
+    } catch (error) {
+      return toActionError(error, 'Nao foi possivel criar a reserva.');
+    }
+  };
+
+  const addPagamentoContrato = async (
+    pagamento: PagamentoContratoAluguel
+  ): Promise<ActionResult<PagamentoContratoAluguel>> => {
     const contrato = contratosList.find((item) => item.id === pagamento.contratoId);
     if (!contrato) {
-      return { ok: false, message: 'Contrato não encontrado.' };
+      return { ok: false, message: 'Contrato nao encontrado.' };
     }
-    pagamentosContrato.create.mutate(pagamento);
-    return { ok: true };
+
+    try {
+      await pagamentosContrato.createAsync(pagamento);
+      return { ok: true, data: pagamento };
+    } catch (error) {
+      return toActionError(error, 'Nao foi possivel registrar o pagamento do contrato.');
+    }
   };
 
   const value = useMemo<OperacionalDataContextValue>(
@@ -147,9 +157,18 @@ export function OperacionalDataProvider({ children }: { children: ReactNode }) {
       createVenda,
       addReserva,
       addPagamentoContrato,
+      registrarPagamentoCobranca,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cobrancasList, produtosList, vendasList, reservasList, contratosList, pagamentosContratoList, isLoading]
+    [
+      cobrancasList,
+      produtosList,
+      vendasList,
+      reservasList,
+      contratosList,
+      pagamentosContratoList,
+      isLoading,
+    ]
   );
 
   return <OperacionalDataContext.Provider value={value}>{children}</OperacionalDataContext.Provider>;

@@ -1,8 +1,9 @@
 import { google } from 'googleapis';
-import { oauth2Client, SPREADSHEET_ID, SHEET_CONFIG } from '../index.js';
+import { ensureOAuthClient, SPREADSHEET_ID, SHEET_CONFIG } from '../index.js';
 
 (async () => {
   try {
+    const oauth2Client = ensureOAuthClient();
     const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
     const res = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
 

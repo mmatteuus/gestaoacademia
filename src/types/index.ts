@@ -118,7 +118,7 @@ export interface ParticipanteCampeonato {
 }
 
 export type CobrancaStatus = 'aberta' | 'parcial' | 'paga' | 'vencida' | 'cancelada' | 'estornada';
-export type FormaPagamento = 'PIX' | 'Cartão' | 'Dinheiro' | 'Transferência' | 'Boleto';
+export type FormaPagamento = 'PIX' | 'Cartao' | 'Dinheiro' | 'Transferencia' | 'Boleto';
 
 export interface Cobranca {
   id: string;

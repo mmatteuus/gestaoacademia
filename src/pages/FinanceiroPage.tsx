@@ -32,7 +32,7 @@ function formatDate(dateIso: string) {
 }
 
 export default function FinanceiroPage() {
-  const { cobrancasList, updateCobranca } = useOperacionalData();
+  const { cobrancasList, registrarPagamentoCobranca } = useOperacionalData();
   const { alunosList, syncMensalidadesParaTodos } = useAcademiaData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filtro, setFiltro] = useState<CobrancaStatus | 'todas'>('todas');
@@ -95,7 +95,7 @@ export default function FinanceiroPage() {
     setPagamentoOpen(true);
   };
 
-  const handleConfirmarPagamento = () => {
+  const handleConfirmarPagamento = async () => {
     if (!cobrancaSel) return;
 
     const valor = parseFloat(valorPagamento);
@@ -112,17 +112,39 @@ export default function FinanceiroPage() {
 
     const dataPagamento = new Date().toISOString().split('T')[0];
     const comprovanteId = `CP-${Date.now()}`;
-    const atualizado: Cobranca = {
-      ...cobrancaSel,
-      valorPago: cobrancaSel.valorPago + valor,
-      status: cobrancaSel.valorPago + valor >= cobrancaSel.valor ? 'paga' : 'parcial',
-      dataPagamento,
+    const result = await registrarPagamentoCobranca({
+      cobrancaId: cobrancaSel.id,
+      valorPagamento: valor,
       formaPagamento,
       observacoes,
       comprovanteId,
+      dataPagamento,
+    });
+    if (!result.ok) {
+      toast.error(result.message || 'Falha ao registrar pagamento.');
+      return;
+    }
+
+    const paymentData = result.data as
+      | {
+          valorPago?: number;
+          status?: CobrancaStatus;
+          formaPagamento?: FormaPagamento;
+          dataPagamento?: string;
+          comprovanteId?: string;
+        }
+      | undefined;
+
+    const atualizado: Cobranca = {
+      ...cobrancaSel,
+      valorPago: paymentData?.valorPago ?? cobrancaSel.valorPago + valor,
+      status: paymentData?.status ?? (cobrancaSel.valorPago + valor >= cobrancaSel.valor ? 'paga' : 'parcial'),
+      dataPagamento: paymentData?.dataPagamento ?? dataPagamento,
+      formaPagamento: paymentData?.formaPagamento ?? formaPagamento,
+      observacoes,
+      comprovanteId: paymentData?.comprovanteId ?? comprovanteId,
     };
 
-    updateCobranca(atualizado);
     setPagamentoOpen(false);
     setCobrancaSel(null);
     toast.success(`Pagamento de R$ ${valor.toFixed(2)} registrado.`);

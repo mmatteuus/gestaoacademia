@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       "/rows": "http://localhost:3000",
       "/status": "http://localhost:3000",
+      "/api": "http://localhost:3000",
     },
   },
   plugins: [react()],

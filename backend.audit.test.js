@@ -23,6 +23,6 @@ describe('Backend audit guards', () => {
   it('rejects invalid sheet type on list route', async () => {
     const res = await request(app).get('/rows').query({ type: 'TipoInvalido' });
     expect(res.status).toBe(400);
-    expect(res.body?.error).toBe('Invalid sheet type');
+    expect(res.body?.error).toBe('validation_error');
   });
 });

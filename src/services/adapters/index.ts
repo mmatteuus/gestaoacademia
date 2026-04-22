@@ -34,6 +34,17 @@ const parseNumber = (raw: string | undefined, fallback = 0): number => {
 const parseBool = (raw: string | undefined): boolean =>
   raw === 'true' || raw === '1' || raw === 'TRUE' || raw === 'sim';
 
+const parseFormaPagamento = (raw: string | undefined): FormaPagamento | undefined => {
+  if (!raw) return undefined;
+  const lowered = raw.toLowerCase();
+  if (lowered === 'cartão' || lowered === 'cartao') return 'Cartao';
+  if (lowered === 'transferência' || lowered === 'transferencia') return 'Transferencia';
+  if (lowered === 'dinheiro') return 'Dinheiro';
+  if (lowered === 'boleto') return 'Boleto';
+  if (lowered === 'pix') return 'PIX';
+  return undefined;
+};
+
 const opt = (v: string | undefined): string | undefined =>
   v && v.trim() !== '' ? v : undefined;
 
@@ -298,7 +309,7 @@ export const cobrancaAdapter = {
     dataVencimento: r.data_vencimento ?? '',
     dataPagamento: opt(r.data_pagamento),
     status: (r.status || 'aberta') as CobrancaStatus,
-    formaPagamento: opt(r.forma_pagamento) as FormaPagamento | undefined,
+    formaPagamento: parseFormaPagamento(r.forma_pagamento),
     observacoes: opt(r.observacoes),
     comprovanteId: opt(r.comprovante_id),
   }),
@@ -313,7 +324,7 @@ export const cobrancaAdapter = {
     data_vencimento: c.dataVencimento,
     data_pagamento: c.dataPagamento,
     status: c.status,
-    forma_pagamento: c.formaPagamento,
+    forma_pagamento: parseFormaPagamento(c.formaPagamento),
     observacoes: c.observacoes,
     comprovante_id: c.comprovanteId,
   }),
@@ -395,7 +406,7 @@ export const vendaAdapter = {
     itens: parseJsonArray<Venda['itens'][number]>(r.itens),
     total: parseNumber(r.total),
     compradorNome: r.comprador_nome ?? '',
-    formaPagamento: (r.forma_pagamento || 'PIX') as Venda['formaPagamento'],
+    formaPagamento: parseFormaPagamento(r.forma_pagamento) as Venda['formaPagamento'] || 'PIX',
     observacoes: opt(r.observacoes),
     parcelado: r.parcelado ? parseBool(r.parcelado) : undefined,
     quantidadeParcelas: r.quantidade_parcelas ? parseNumber(r.quantidade_parcelas) : undefined,
@@ -407,7 +418,7 @@ export const vendaAdapter = {
     itens: v.itens ? stringifyArray(v.itens) : undefined,
     total: v.total,
     comprador_nome: v.compradorNome,
-    forma_pagamento: v.formaPagamento,
+    forma_pagamento: parseFormaPagamento(v.formaPagamento) || v.formaPagamento,
     parcelado: v.parcelado === undefined ? undefined : String(v.parcelado),
     quantidade_parcelas: v.quantidadeParcelas,
     observacoes: v.observacoes,
@@ -475,7 +486,7 @@ export const pagamentoContratoAdapter = {
     contratoId: r.contrato_id ?? '',
     dataPagamento: r.data_pagamento ?? '',
     valor: parseNumber(r.valor),
-    formaPagamento: (r.forma_pagamento || 'PIX') as PagamentoContratoAluguel['formaPagamento'],
+    formaPagamento: parseFormaPagamento(r.forma_pagamento) as PagamentoContratoAluguel['formaPagamento'] || 'PIX',
     referencia: opt(r.referencia),
     observacoes: opt(r.observacoes),
     comprovanteId: opt(r.comprovante_id),
@@ -485,7 +496,7 @@ export const pagamentoContratoAdapter = {
     contrato_id: p.contratoId,
     data_pagamento: p.dataPagamento,
     valor: p.valor,
-    forma_pagamento: p.formaPagamento,
+    forma_pagamento: parseFormaPagamento(p.formaPagamento) || p.formaPagamento,
     referencia: p.referencia,
     observacoes: p.observacoes,
     comprovante_id: p.comprovanteId,

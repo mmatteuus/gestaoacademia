@@ -51,7 +51,10 @@ function useEntity<T>(type: SheetType, adapter: Adapter<T>, options?: EntityQuer
     onSuccess: invalidate,
   });
 
-  return { list, create, update, invalidate };
+  const createAsync = (data: Partial<T>) => create.mutateAsync(data);
+  const updateAsync = (input: { id: string; data: Partial<T> }) => update.mutateAsync(input);
+
+  return { list, create, update, createAsync, updateAsync, invalidate };
 }
 
 // ============= hooks por entidade =============

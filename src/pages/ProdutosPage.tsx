@@ -28,7 +28,7 @@ type VendaDetalhada = Venda & {
   recipientPhone?: string;
 };
 
-const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência'];
+const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartao', 'Dinheiro', 'Transferencia'];
 
 export default function ProdutosPage() {
   const { produtosList, vendasList, upsertProduto, createVenda } = useOperacionalData();
@@ -157,7 +157,7 @@ export default function ProdutosPage() {
     );
   };
 
-  const finalizarVenda = () => {
+  const finalizarVenda = async () => {
     if (carrinho.length === 0) {
       toast.error('Carrinho vazio');
       return;
@@ -189,10 +189,31 @@ export default function ProdutosPage() {
       comprovanteId: `CV-${Date.now()}`,
     };
 
-    const result = createVenda(novaVenda);
+    const result = await createVenda({
+      id: novaVenda.id,
+      data: novaVenda.data,
+      itens: novaVenda.itens.map((item) => ({
+        produtoId: item.produtoId,
+        quantidade: item.quantidade,
+        nomeProduto: item.nomeProduto,
+        precoUnitario: item.precoUnitario,
+      })),
+      compradorNome: novaVenda.compradorNome,
+      compradorTelefone: novaVenda.compradorTelefone,
+      formaPagamento: novaVenda.formaPagamento,
+      observacoes: novaVenda.observacoes,
+      parcelado: novaVenda.parcelado,
+      quantidadeParcelas: novaVenda.quantidadeParcelas,
+      descontoTipo,
+      descontoValor: descontoTipo === 'percentual' ? Number(descontoInput || 0) : descontoCalculado,
+      comprovanteId: novaVenda.comprovanteId,
+    });
     if (!result.ok) {
       toast.error(result.message || 'Não foi possível concluir a venda.');
       return;
+    }
+    if (result.warnings?.length) {
+      toast.warning(result.warnings.join(' | '));
     }
 
     setCarrinho([]);

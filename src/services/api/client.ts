@@ -28,7 +28,9 @@ async function parse<T>(res: Response): Promise<T> {
   const text = await res.text();
   const body = text ? safeJson(text) : null;
   if (!res.ok) {
-    const msg = (body && typeof body === 'object' && 'error' in body ? (body as { error: string }).error : null) ??
+    const msg =
+      (body && typeof body === 'object' && 'message' in body ? (body as { message?: string }).message : null) ??
+      (body && typeof body === 'object' && 'error' in body ? (body as { error?: string }).error : null) ??
       `HTTP ${res.status}`;
     throw new ApiError(res.status, msg, body);
   }

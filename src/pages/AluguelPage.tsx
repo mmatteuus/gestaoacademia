@@ -20,7 +20,7 @@ type ReservaDetalhada = Reserva & {
   locatarioTelefone?: string;
 };
 
-const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartão', 'Dinheiro', 'Transferência'];
+const formasPagamento: Exclude<FormaPagamento, 'Boleto'>[] = ['PIX', 'Cartao', 'Dinheiro', 'Transferencia'];
 
 export default function AluguelPage() {
   const { reservasList, contratosList, pagamentosContratoList, addReserva, addPagamentoContrato } = useOperacionalData();
@@ -53,7 +53,7 @@ export default function AluguelPage() {
     }, {});
   }, [pagamentosContratoList]);
 
-  const handleSalvar = () => {
+  const handleSalvar = async () => {
     if (!locatario.trim() || !dataInicio || !horaInicio || !horaFim || !valor) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
@@ -64,8 +64,8 @@ export default function AluguelPage() {
       locatario,
       locatarioTelefone: locatarioTelefone.trim(),
       espaco,
-      dataInicio: dataInicio.split('-').reverse().join('/'),
-      dataFim: dataInicio.split('-').reverse().join('/'),
+      dataInicio,
+      dataFim: dataInicio,
       horaInicio,
       horaFim,
       status: 'confirmada',
@@ -73,12 +73,26 @@ export default function AluguelPage() {
       conflito: false,
     };
 
-    const result = addReserva(reserva);
+    const result = await addReserva({
+      id: reserva.id,
+      locatario: reserva.locatario,
+      locatarioTelefone: reserva.locatarioTelefone,
+      espaco: reserva.espaco,
+      dataInicio: reserva.dataInicio,
+      dataFim: reserva.dataFim,
+      horaInicio: reserva.horaInicio,
+      horaFim: reserva.horaFim,
+      status: reserva.status,
+      valor: reserva.valor,
+    });
     if (!result.ok) {
       toast.error(result.message || 'Não foi possível criar a reserva.');
       return;
     }
 
+    if (result.warnings?.length) {
+      toast.warning(result.warnings.join(' | '));
+    }
     toast.success(result.message || 'Reserva confirmada com sucesso!');
     setDialogOpen(false);
     setLocatario('');
@@ -119,7 +133,7 @@ export default function AluguelPage() {
     setComprovanteOpen(true);
   };
 
-  const salvarPagamento = () => {
+  const salvarPagamento = async () => {
     if (!contratoSel) return;
     const valorNumerico = parseFloat(valorPagamento);
     if (Number.isNaN(valorNumerico) || valorNumerico <= 0) {
@@ -139,7 +153,7 @@ export default function AluguelPage() {
       recipientPhone: pagamentoTelefone.trim(),
     };
 
-    const result = addPagamentoContrato(pagamento);
+    const result = await addPagamentoContrato(pagamento);
     if (!result.ok) {
       toast.error(result.message || 'Não foi possível registrar o pagamento.');
       return;

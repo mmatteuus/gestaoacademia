@@ -6,6 +6,6 @@ export default defineConfig({
     environment: 'node',
     testTimeout: 60000,
     hookTimeout: 60000,
-    include: ['integration.test.js', 'backend.audit.test.js'],
+    include: ['integration.test.js', 'backend.audit.test.js', 'backend.domain.test.js', 'backend.security.test.js'],
   },
 })
