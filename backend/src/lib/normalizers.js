@@ -35,8 +35,8 @@ export function nowDateIso() {
 export function normalizePaymentMethod(value) {
   const raw = String(value || '').trim().toLowerCase();
   if (!raw) return 'PIX';
-  if (raw === 'cartao' || raw === 'cartão') return 'Cartao';
-  if (raw === 'transferencia' || raw === 'transferência') return 'Transferencia';
+  if (raw === 'cartao' || raw === 'cartÃ£o') return 'Cartao';
+  if (raw === 'transferencia' || raw === 'transferÃªncia') return 'Transferencia';
   if (raw === 'dinheiro') return 'Dinheiro';
   if (raw === 'boleto') return 'Boleto';
   return 'PIX';

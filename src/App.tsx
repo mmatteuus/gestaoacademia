@@ -8,6 +8,8 @@ import { AcademiaDataProvider } from '@/features/academia/AcademiaDataProvider';
 import { OperacionalDataProvider } from '@/features/operacional/OperacionalDataProvider';
 import { InsightsDataProvider } from '@/features/insights/InsightsDataProvider';
 import { ApiError } from '@/services/api/client';
+import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const AlunosPage = lazy(() => import('./pages/AlunosPage'));
 const TurmasPage = lazy(() => import('./pages/TurmasPage'));
@@ -80,11 +82,25 @@ function WithAllData({ children }: { children: ReactNode }) {
   );
 }
 
+function AuthGate({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
+    return (
+      <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
+        <LoginPage />
+      </Suspense>
+    );
+  }
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
-      <BrowserRouter>
+      <AuthProvider>
+        <AuthGate>
+        <BrowserRouter>
         <AdminLayout>
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
             <Routes>
@@ -188,7 +204,9 @@ const App = () => (
             </Routes>
           </Suspense>
         </AdminLayout>
-      </BrowserRouter>
+        </BrowserRouter>
+        </AuthGate>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

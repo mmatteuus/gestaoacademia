@@ -101,12 +101,12 @@ export default function TurmasPage() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {turmasList.map((turma) => (
           <div key={turma.id} className="bg-card border border-border rounded-lg p-4 sm:p-5 hover:bg-accent/30 transition-colors group relative">
-            <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleManage(turma)}>
-                <Users className="h-3.5 w-3.5" />
+            <div className="absolute top-3 right-3 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+              <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-7 sm:w-7" onClick={() => handleManage(turma)} aria-label={`Gerenciar alunos de ${turma.nome}`}>
+                <Users className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(turma)}>
-                <Pencil className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-7 sm:w-7" onClick={() => handleEdit(turma)} aria-label={`Editar ${turma.nome}`}>
+                <Pencil className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
               </Button>
             </div>
 

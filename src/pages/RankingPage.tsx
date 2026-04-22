@@ -37,9 +37,9 @@ export default function RankingPage() {
     <div className="space-y-6">
       <PageHeader title="Ranking" subtitle="Classificação por temporada e categoria" />
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 sm:flex-wrap sm:overflow-visible">
         {categorias.map((categoria) => (
-          <Button key={categoria} variant={catSel === categoria ? 'default' : 'secondary'} size="sm" className="text-xs" onClick={() => setCatSel(categoria)}>
+          <Button key={categoria} variant={catSel === categoria ? 'default' : 'secondary'} size="sm" className="text-xs shrink-0 min-h-[36px]" onClick={() => setCatSel(categoria)}>
             {categoria}
           </Button>
         ))}

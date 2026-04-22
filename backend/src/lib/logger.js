@@ -1,4 +1,12 @@
-const SENSITIVE_KEYS = ['password', 'token', 'secret', 'authorization', 'cpf', 'card', 'cvv', 'email', 'refresh_token'];
+const SENSITIVE_KEYS = [
+  'password', 'token', 'secret', 'authorization', 'refresh_token',
+  'cpf', 'rg', 'card', 'cvv', 'email',
+  'telefone', 'phone', 'celular', 'whatsapp',
+  'endereco', 'address', 'cep', 'rua',
+  'nome_aluno', 'nomealuno', 'comprador_nome', 'compradornome',
+  'locatario', 'responsavel', 'contato',
+  'data_nascimento', 'nascimento', 'birth',
+];
 
 function redact(value, keyPath = '') {
   if (value === null || value === undefined) return value;

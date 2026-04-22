@@ -1,6 +1,6 @@
 import { getRowById, insertRow, listRows, updateRow } from '../repositories/sheets.repository.js';
 import { nowDateIso, normalizePaymentMethod, parseNumber, toIsoDate } from '../lib/normalizers.js';
-import { withLock } from '../lib/locks.js';
+import { withLock, withLocks } from '../lib/locks.js';
 
 function toMinutes(time) {
   const [hours, minutes] = String(time).split(':').map(Number);
@@ -29,9 +29,9 @@ function computePaymentStatus({ total, paid, dueDate }) {
 
 export async function executeSale(payload) {
   const saleId = payload.id || `v${Date.now()}`;
-  const saleLockKey = `sale:${payload.itens.map((item) => item.produtoId).sort().join('|')}`;
+  const productLockKeys = (payload.itens || []).map((item) => `product:${item.produtoId}`);
 
-  return withLock(saleLockKey, async () => {
+  return withLocks(productLockKeys, async () => {
     const existingSale = await getRowById(saleId, 'Vendas');
     if (existingSale) {
       return {
@@ -280,7 +280,7 @@ export async function registerFinancePayment(payload) {
 
 export async function createRentalReservation(payload) {
   const reservationId = payload.id || `res${Date.now()}`;
-  const reservationLockKey = `reservation:${payload.espaco}:${payload.dataInicio}`;
+  const reservationLockKey = `reservation:${payload.espaco}`;
 
   return withLock(reservationLockKey, async () => {
     if (payload.id) {
@@ -330,14 +330,18 @@ export async function createRentalReservation(payload) {
     }
 
     const reservations = (await listRows('Reservas')).map(normalizeReservationRow);
+    const newStartDate = nextReservation.data_inicio;
+    const newEndDate = nextReservation.data_fim || nextReservation.data_inicio;
     const hasConflict = reservations.some((row) => {
       if (row.espaco !== nextReservation.espaco) return false;
+      if (String(row.status || '').toLowerCase() === 'cancelada') return false;
 
       const rowStartDate = row.data_inicio;
       const rowEndDate = row.data_fim || row.data_inicio;
 
-      const sameDay = rowStartDate <= nextReservation.data_inicio && rowEndDate >= nextReservation.data_inicio;
-      if (!sameDay) return false;
+      // Interseção real de intervalos de datas [rowStart, rowEnd] ∩ [newStart, newEnd]
+      const datesOverlap = rowStartDate <= newEndDate && rowEndDate >= newStartDate;
+      if (!datesOverlap) return false;
 
       return overlaps(toMinutes(row.hora_inicio), toMinutes(row.hora_fim), startMinutes, endMinutes);
     });

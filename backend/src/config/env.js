@@ -58,6 +58,12 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+const isProductionRuntime = parsed.data.nodeEnv === 'production' || !!process.env.VERCEL;
+if (isProductionRuntime && !parsed.data.apiKey) {
+  console.error('\n❌ API_KEY é obrigatória em produção (defina API_KEY com pelo menos 16 caracteres).\n');
+  process.exit(1);
+}
+
 export const env = parsed.data;
 
 export function assertGoogleEnv() {

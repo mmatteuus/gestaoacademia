@@ -324,7 +324,7 @@ export const cobrancaAdapter = {
     data_vencimento: c.dataVencimento,
     data_pagamento: c.dataPagamento,
     status: c.status,
-    forma_pagamento: parseFormaPagamento(c.formaPagamento),
+    forma_pagamento: parseFormaPagamento(c.formaPagamento) || c.formaPagamento,
     observacoes: c.observacoes,
     comprovante_id: c.comprovanteId,
   }),

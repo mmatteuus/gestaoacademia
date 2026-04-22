@@ -1,11 +1,12 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Search, X, Users, BookOpen, Package, Sun, Moon } from 'lucide-react';
+import { Search, X, Users, BookOpen, Package, Sun, Moon, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAlunos, useProdutos, useTurmas } from '@/services/queries';
 import { useTheme } from 'next-themes';
+import { useAuth } from '@/features/auth/AuthContext';
 
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
@@ -32,6 +33,7 @@ export function AppTopbar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const shouldQuery = searchOpen && query.trim().length >= 2;
   const { theme, setTheme } = useTheme();
+  const { logout } = useAuth();
 
   const alunosQ = useAlunos({ enabled: shouldQuery });
   const turmasQ = useTurmas({ enabled: shouldQuery });
@@ -112,6 +114,17 @@ export function AppTopbar() {
           aria-label={theme === 'light' ? 'Tema claro ativo. Alternar para escuro' : 'Tema escuro ativo. Alternar para claro'}
         >
           {mounted && theme === 'light' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          onClick={logout}
+          aria-label="Sair"
+          title="Sair"
+        >
+          <LogOut className="h-4 w-4" />
         </Button>
       </div>
 

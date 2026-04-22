@@ -101,28 +101,30 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
   const didBootstrapSync = useRef(false);
 
   /** Propaga em turmas os alunoIds para refletir o turmaIds do aluno. */
-  const syncTurmasForAluno = (alunoId: string, turmaIds: string[]) => {
+  const syncTurmasForAluno = async (alunoId: string, turmaIds: string[]): Promise<void> => {
+    const tasks: Promise<unknown>[] = [];
     for (const turma of turmasList) {
       const shouldContain = turmaIds.includes(turma.id);
       const alreadyContains = turma.alunoIds.includes(alunoId);
       if (shouldContain && !alreadyContains) {
-        turmas.update.mutate({
+        tasks.push(turmas.update.mutateAsync({
           id: turma.id,
           data: { alunoIds: [...turma.alunoIds, alunoId] },
-        });
+        }));
       } else if (!shouldContain && alreadyContains) {
-        turmas.update.mutate({
+        tasks.push(turmas.update.mutateAsync({
           id: turma.id,
           data: { alunoIds: turma.alunoIds.filter((id) => id !== alunoId) },
-        });
+        }));
       }
     }
+    await Promise.allSettled(tasks);
   };
 
   const addAluno = async (aluno: Aluno): Promise<ActionResult> => {
     try {
       await alunos.create.mutateAsync(aluno);
-      syncTurmasForAluno(aluno.id, aluno.turmaIds);
+      await syncTurmasForAluno(aluno.id, aluno.turmaIds);
       ensureMensalidadesForAluno(aluno);
       ensureGraduacaoForAluno(aluno);
       return { ok: true };
@@ -134,7 +136,7 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
   const updateAluno = async (aluno: Aluno): Promise<ActionResult> => {
     try {
       await alunos.update.mutateAsync({ id: aluno.id, data: aluno });
-      syncTurmasForAluno(aluno.id, aluno.turmaIds);
+      await syncTurmasForAluno(aluno.id, aluno.turmaIds);
       ensureMensalidadesForAluno(aluno);
       ensureGraduacaoForAluno(aluno);
       return { ok: true };

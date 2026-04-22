@@ -21,12 +21,18 @@ function getAllowedOrigins() {
 }
 
 const allowedOrigins = getAllowedOrigins();
+const isProduction = env.nodeEnv === 'production' || !!process.env.VERCEL;
 
 export function corsMiddleware(req, res, next) {
   const origin = req.headers.origin;
 
   if (!origin) {
     if (req.method === 'OPTIONS') return res.status(204).end();
+    // Em produção, request sem Origin (curl/Postman/server-to-server) só passa se houver API key.
+    // Combinada com a obrigatoriedade de API_KEY em prod, isso fecha o bypass.
+    if (isProduction && !req.headers['x-api-key']) {
+      return res.status(403).json({ ok: false, error: 'operation_failed', message: 'Origin required' });
+    }
     return next();
   }
 
