@@ -89,20 +89,48 @@ export function PWAProvider() {
         const updateSW = registerSW({
           immediate: true,
           onNeedRefresh() {
-            toast("Nova versão disponível", {
-              description: "Atualize para ter as últimas melhorias.",
-              duration: Infinity,
-              action: {
-                label: "Atualizar",
-                onClick: () => updateSW(true),
-              },
-            });
+            // Verifica se o app está em primeiro plano para mostrar o toast
+            if (document.visibilityState === "visible") {
+              toast("Nova versão disponível", {
+                description: "Atualize para ter as últimas melhorias e correções.",
+                duration: Infinity,
+                action: {
+                  label: "Atualizar agora",
+                  onClick: () => {
+                    updateSW(true);
+                    haptic('light');
+                  },
+                },
+              });
+            } else {
+              // Se não estiver visível, ainda assim atualizar em segundo plano
+              updateSW(false);
+            }
           },
           onRegistered(registration) {
             if (!registration) return;
 
+            let updateWaiting = false;
+
             const checkForUpdates = () => {
-              registration.update().catch(() => {
+              if (updateWaiting) return; // Evitar múltiplas notificações
+              
+              registration.update().then((newWorker) => {
+                if (newWorker) {
+                  updateWaiting = true;
+                  // Se o usuário estiver visível, mostrar notificação
+                  if (document.visibilityState === "visible") {
+                    setTimeout(() => {
+                      toast("Nova versão baixada", {
+                        description: "Reiniciando para aplicar as atualizações...",
+                        duration: 3000,
+                      });
+                      // Forçar recarregagem após um curto delay
+                      setTimeout(() => window.location.reload(), 2000);
+                    }, 1000);
+                  }
+                }
+              }).catch(() => {
                 // Erro silencioso: reconexões instáveis são comuns em PWA móvel.
               });
             };
@@ -118,9 +146,10 @@ export function PWAProvider() {
             };
 
             // Atualização proativa para evitar PWA "presa" em versão antiga.
-            const intervalId = window.setInterval(checkForUpdates, 5 * 60 * 1000);
+            const intervalId = window.setInterval(checkForUpdates, 2 * 60 * 1000); // Reduzido para 2 minutos
             window.addEventListener("visibilitychange", onVisible);
             window.addEventListener("online", onOnline);
+            window.addEventListener("focus", checkForUpdates); // Verificar quando o app ganhar foco
 
             disposeRegistrationSync = () => {
               window.clearInterval(intervalId);
