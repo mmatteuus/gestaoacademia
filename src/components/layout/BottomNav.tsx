@@ -36,7 +36,8 @@ export function BottomNav() {
     <>
       <nav
         aria-label="Navegação principal"
-        className="fixed bottom-0 inset-x-0 z-30 border-t border-border/80 bg-background/85 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75 pb-[env(safe-area-inset-bottom)] border-tech"
+        style={{ position: 'fixed' }}
+        className="bottom-0 inset-x-0 z-50 border-t border-border/80 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/85 pb-[env(safe-area-inset-bottom)] border-tech"
       >
         <p className="text-center text-[10px] text-muted-foreground/70 pt-1 pb-0.5 leading-none border-b border-border/40">
           Desenvolvido por{' '}
