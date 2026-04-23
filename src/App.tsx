@@ -1,4 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -46,12 +48,27 @@ const queryClient = new QueryClient({
       // Sheets API tem cota baixa (60 reads/min/user). staleTime longo evita
       // refetches em troca de aba/foco que estouravam a quota e quebravam o app.
       staleTime: 5 * 60_000,
-      gcTime: 30 * 60_000,
+      // Persistência offline precisa de gcTime >= maxAge do persister (24h).
+      gcTime: 24 * 60 * 60_000,
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
+      networkMode: "offlineFirst",
+    },
+    mutations: {
+      networkMode: "offlineFirst",
     },
   },
 });
+
+// Persiste o cache de queries em localStorage. Ao reabrir o app sem rede,
+// a UI hidrata imediatamente com os últimos dados vistos online.
+const queryPersister = typeof window !== "undefined"
+  ? createSyncStoragePersister({
+      storage: window.localStorage,
+      key: "gemeos.rq.v1",
+      throttleTime: 1000,
+    })
+  : undefined;
 
 function WithAcademia({ children }: { children: ReactNode }) {
   return <AcademiaDataProvider>{children}</AcademiaDataProvider>;
@@ -130,7 +147,18 @@ function AdminApp() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{
+      persister: queryPersister!,
+      maxAge: 24 * 60 * 60_000,
+      buster: "v1",
+      dehydrateOptions: {
+        // Só persiste queries bem-sucedidas para não guardar erros.
+        shouldDehydrateQuery: (q) => q.state.status === "success",
+      },
+    }}
+  >
     <TooltipProvider>
       <Sonner />
       <PWAProvider />
@@ -145,7 +173,7 @@ const App = () => (
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;

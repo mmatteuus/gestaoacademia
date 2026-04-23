@@ -68,17 +68,52 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: false,
+        // Ignora querystring no match (útil para /rows?type=...)
         runtimeCaching: [
           {
-            // Dados dinâmicos da API — network-first com timeout curto
-            urlPattern: ({ url }) =>
-              url.pathname.startsWith("/rows") || url.pathname === "/status" || url.pathname.startsWith("/api/"),
+            // Leituras da API — network-first com cache longo para modo offline
+            urlPattern: ({ url, request }) =>
+              request.method === "GET" &&
+              (url.pathname.startsWith("/rows") || url.pathname === "/status" || url.pathname.startsWith("/api/")),
             handler: "NetworkFirst",
             options: {
               cacheName: "api-cache",
               networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 5 },
+              // 24h: se offline há tempo, ainda mostra dados
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Escritas da API — fila em background quando offline.
+            // Ao voltar online, o Workbox reenvia automaticamente (Background Sync API).
+            urlPattern: ({ url, request }) =>
+              (request.method === "POST" || request.method === "PUT" || request.method === "PATCH" || request.method === "DELETE") &&
+              (url.pathname.startsWith("/rows") || url.pathname.startsWith("/api/")),
+            handler: "NetworkOnly",
+            method: "POST",
+            options: {
+              backgroundSync: {
+                name: "gemeos-writes-queue",
+                options: {
+                  // Reter até 24h; depois disso o registro é descartado
+                  maxRetentionTime: 24 * 60,
+                },
+              },
+            },
+          },
+          {
+            // Mesma fila também para PUT/PATCH/DELETE
+            urlPattern: ({ url, request }) =>
+              (request.method === "PUT" || request.method === "PATCH" || request.method === "DELETE") &&
+              (url.pathname.startsWith("/rows") || url.pathname.startsWith("/api/")),
+            handler: "NetworkOnly",
+            method: "PUT",
+            options: {
+              backgroundSync: {
+                name: "gemeos-writes-queue",
+                options: { maxRetentionTime: 24 * 60 },
+              },
             },
           },
           {

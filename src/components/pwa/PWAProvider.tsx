@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Download, Wifi, WifiOff } from "lucide-react";
 
@@ -14,6 +15,8 @@ type BeforeInstallPromptEvent = Event & {
  * para oferecer um botão "Instalar app" no momento certo.
  */
 export function PWAProvider() {
+  const queryClient = useQueryClient();
+
   // --- Registro do SW + detecção de update -------------------------------
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -69,6 +72,11 @@ export function PWAProvider() {
         icon: <Wifi className="h-4 w-4" />,
         duration: 2000,
       });
+      // Dá um tempo para o Workbox drenar a fila de escritas e então força
+      // refetch das listas para refletir o que foi sincronizado.
+      setTimeout(() => {
+        queryClient.invalidateQueries();
+      }, 1500);
     };
 
     window.addEventListener("offline", onOffline);

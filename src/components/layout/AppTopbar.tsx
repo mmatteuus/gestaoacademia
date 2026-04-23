@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
-import { Search, X, Users, BookOpen, Package, Sun, Moon, LogOut, Award } from 'lucide-react';
+import { Search, X, Users, BookOpen, Package, Sun, Moon, LogOut, Award, CloudOff } from 'lucide-react';
+import { getPendingWriteCount } from '@/lib/offline-queue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -83,6 +84,7 @@ export function AppTopbar() {
         </div>
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
+        <OfflineQueueBadge />
         <InstallAppButton />
         <Button variant="ghost" size="icon" className="h-10 w-10 md:hidden text-muted-foreground" onClick={() => setSearchOpen(!searchOpen)}>
           {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
@@ -161,6 +163,53 @@ export function AppTopbar() {
         </div>
       )}
     </header>
+  );
+}
+
+/**
+ * Indicador discreto de escritas enfileiradas offline.
+ * Some quando a fila está vazia (estado online normal).
+ */
+function OfflineQueueBadge() {
+  const [pending, setPending] = useState(0);
+  const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    let mounted = true;
+    const tick = async () => {
+      const n = await getPendingWriteCount();
+      if (mounted) setPending(n);
+    };
+    tick();
+    const interval = setInterval(tick, 5000);
+    const onOnline = () => { setOnline(true); tick(); };
+    const onOffline = () => setOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
+  if (online && pending === 0) return null;
+
+  return (
+    <div
+      className="flex items-center gap-1 rounded-full border border-border/70 bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground"
+      title={
+        !online
+          ? `Offline${pending > 0 ? ` — ${pending} alteração(ões) em fila` : ''}`
+          : `${pending} alteração(ões) aguardando sincronizar`
+      }
+      aria-live="polite"
+    >
+      <CloudOff className="h-3 w-3" />
+      <span className="hidden sm:inline">{!online ? 'Offline' : 'Sincronizando'}</span>
+      {pending > 0 && <span className="font-semibold text-foreground">{pending}</span>}
+    </div>
   );
 }
 
