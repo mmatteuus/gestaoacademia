@@ -41,10 +41,6 @@ export function PWAProvider() {
     if (isStandalone) {
       sessionStorage.setItem('pwa-mode', 'true');
       console.log('App rodando em modo PWA Standalone');
-      
-      // Se estamos no PWA e não estamos na tela de login ou cadastro, 
-      // e não estamos autenticados (isso será checado pelo AuthGate), 
-      // o start_url: /login já cuida disso.
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {

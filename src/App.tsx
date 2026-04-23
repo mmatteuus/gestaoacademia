@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -121,6 +121,12 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function LoginRoute() {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <Navigate to="/" replace />;
+  return <LoginPage />;
+}
+
 function AdminApp() {
   return (
     <AuthGate>
@@ -167,6 +173,7 @@ const App = () => (
         <BrowserRouter>
           <Suspense fallback={<PageSkeleton />}>
             <Routes>
+              <Route path="/login" element={<LoginRoute />} />
               <Route path="/cadastro/aluno" element={<PublicCadastroPage />} />
               <Route path="*" element={<AdminApp />} />
             </Routes>

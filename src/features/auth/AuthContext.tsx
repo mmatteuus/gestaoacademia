@@ -120,6 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
     setIsAuthenticated(false);
+    // Redireciona para a tela de login após logout
+    window.location.href = '/login';
   }, []);
 
   const value = useMemo(
