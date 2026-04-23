@@ -194,9 +194,10 @@ export function InstallAppButton() {
     if (typeof window === "undefined") return;
 
     const checkStatus = () => {
+      const nav = window.navigator as Navigator & { standalone?: boolean };
       const standalone =
         window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as any).standalone === true;
+        nav.standalone === true;
       setIsInstalled(standalone);
       setPromptReady(!!window.deferredPWAInstallPrompt);
 
