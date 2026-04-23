@@ -552,11 +552,6 @@ function ShareCadastroButton() {
     }
     handleCopy();
   };
-  return (
-    <Button size="sm" variant="secondary" onClick={handleShare} title="Compartilhar formulário de cadastro">
-      <Share2 className="mr-1 h-4 w-4" />
-      <span className="hidden sm:inline">Enviar formulário</span>
-      <Copy className="sm:hidden h-4 w-4 ml-1" />
-    </Button>
-  );
+  void handleShare;
+  return null;
 }

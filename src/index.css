@@ -211,3 +211,64 @@
     pointer-events: none;
   }
 }
+
+/* ========================================================================
+   Native app feel — comportamento de "aplicativo" quando rodando como PWA
+   instalada (display-mode: standalone) ou em mobile em geral.
+   ======================================================================== */
+@layer base {
+  html, body {
+    /* Sem bounce/overscroll do browser e sem pull-to-refresh acidental */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    /* Remove o flash cinza do tap em mobile */
+    -webkit-tap-highlight-color: transparent;
+    /* Toques mais responsivos — remove delay de 300ms */
+    touch-action: manipulation;
+  }
+
+  body {
+    /* Safe areas para iOS notch / Android gesture bar */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: 0; /* BottomNav já trata com env() */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Chrome da UI (botões, nav, headers) não deveria ser selecionável —
+     evita a sensação "web". Texto em cards, inputs, conteúdo segue livre. */
+  button, [role="button"], nav, header, aside, .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Inputs/área de conteúdo mantêm seleção habilitada */
+  input, textarea, [contenteditable], p, span, h1, h2, h3, h4, h5, h6, li, td, th, code, pre {
+    -webkit-user-select: auto;
+    user-select: auto;
+  }
+
+  /* Em modo standalone (PWA instalada) reforçamos o feel app:
+     sem scrollbar visual pesada, sem zoom acidental. */
+  @media (display-mode: standalone) {
+    html {
+      /* Esconde a barra de rolagem do webkit deixando o comportamento */
+      scrollbar-width: none;
+    }
+    html::-webkit-scrollbar {
+      display: none;
+    }
+    body {
+      /* Trava zoom pinch-out em iOS standalone */
+      touch-action: pan-x pan-y;
+    }
+  }
+
+  /* Utilidade para marcar texto explicitamente selecionável */
+  .selectable {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+

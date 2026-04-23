@@ -9,6 +9,7 @@ import { OperacionalDataProvider } from '@/features/operacional/OperacionalDataP
 import { InsightsDataProvider } from '@/features/insights/InsightsDataProvider';
 import { ApiError } from '@/services/api/client';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
+import { PWAProvider } from '@/components/pwa/PWAProvider';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const PublicCadastroPage = lazy(() => import('./pages/PublicCadastroPage'));
@@ -132,6 +133,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
+      <PWAProvider />
       <AuthProvider>
         <BrowserRouter>
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
