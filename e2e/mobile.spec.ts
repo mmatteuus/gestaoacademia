@@ -13,7 +13,7 @@ test('login mobile, input >=16px (sem zoom iOS), navega e vê footer', async ({ 
 
   await input.fill(SENHA);
   await page.getByRole('button', { name: /entrar/i }).click();
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
 
   await page.goto('/alunos');
   await page.waitForLoadState('networkidle');
@@ -31,7 +31,7 @@ test('botão de logout é touch-friendly (>= 36px) em mobile', async ({ page }) 
   await page.goto('/');
   await page.getByRole('textbox', { name: /senha/i }).fill(SENHA);
   await page.getByRole('button', { name: /entrar/i }).click();
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
 
   const logout = page.getByRole('button', { name: /sair/i });
   const box = await logout.boundingBox();
@@ -46,7 +46,7 @@ test('dialog não estoura viewport em mobile', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('textbox', { name: /senha/i }).fill(SENHA);
   await page.getByRole('button', { name: /entrar/i }).click();
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
 
   await page.goto('/alunos');
   await page.waitForLoadState('networkidle');

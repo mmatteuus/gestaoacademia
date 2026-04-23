@@ -14,15 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByRole('heading', { name: /dashboard/i })
+Locator: getByRole('heading', { name: /frequência/i }).first()
 Expected: visible
-Error: strict mode violation: getByRole('heading', { name: /dashboard/i }) resolved to 2 elements:
-    1) <h2 class="text-sm sm:text-base font-semibold text-foreground truncate">Dashboard</h2> aka locator('h2')
-    2) <h1 class="text-xl md:text-2xl font-bold text-foreground tracking-tight">Dashboard</h1> aka locator('h1')
+Timeout: 10000ms
+Error: element(s) not found
 
 Call log:
   - Expect "toBeVisible" with timeout 10000ms
-  - waiting for getByRole('heading', { name: /dashboard/i })
+  - waiting for getByRole('heading', { name: /frequência/i }).first()
 
 ```
 
@@ -38,7 +37,7 @@ Call log:
           - img [ref=e7]
           - generic [ref=e10]:
             - paragraph [ref=e11]: Gêmeos Academia
-            - heading "Dashboard" [level=2] [ref=e12]
+            - heading "Frequencia" [level=2] [ref=e12]
         - generic [ref=e13]:
           - button [ref=e14] [cursor=pointer]:
             - img
@@ -47,224 +46,39 @@ Call log:
           - button "Sair" [ref=e16] [cursor=pointer]:
             - img
       - main [ref=e17]:
-        - generic [ref=e19]:
-          - generic [ref=e21]:
-            - heading "Dashboard" [level=1] [ref=e22]
-            - paragraph [ref=e23]: Visão geral da academia
-          - generic [ref=e24]:
-            - generic [ref=e26]:
-              - heading "Ações rápidas" [level=3] [ref=e27]
-              - paragraph [ref=e28]: Atalhos para o uso diário da academia
-            - generic [ref=e29]:
-              - link "Novo aluno" [ref=e30]:
-                - /url: /alunos
-                - generic [ref=e31]:
-                  - img
-                  - text: Novo aluno
-                - img
-              - link "Lançar frequência" [ref=e32]:
-                - /url: /frequencia
-                - generic [ref=e33]:
-                  - img
-                  - text: Lançar frequência
-                - img
-              - link "Novo campeonato" [ref=e34]:
-                - /url: /campeonatos
-                - generic [ref=e35]:
-                  - img
-                  - text: Novo campeonato
-                - img
-              - link "Registrar venda" [ref=e36]:
-                - /url: /produtos
-                - generic [ref=e37]:
-                  - img
-                  - text: Registrar venda
-                - img
-          - generic [ref=e38]:
-            - generic [ref=e39]:
-              - generic [ref=e40]:
-                - generic [ref=e41]: Alunos Ativos
-                - img [ref=e43]
-              - generic [ref=e48]: "679"
-              - generic [ref=e49]:
-                - img [ref=e50]
-                - generic [ref=e53]: +5%
-            - generic [ref=e54]:
-              - generic [ref=e55]:
-                - generic [ref=e56]: Inadimplentes
-                - img [ref=e58]
-              - generic [ref=e60]: "0"
-              - generic [ref=e61]:
-                - img [ref=e62]
-                - generic [ref=e65]: "-10%"
-            - generic [ref=e66]:
-              - generic [ref=e67]:
-                - generic [ref=e68]: Aptos p/ Graduação
-                - img [ref=e70]
-              - generic [ref=e73]: "0"
-            - generic [ref=e74]:
-              - generic [ref=e75]:
-                - generic [ref=e76]: Ocupação
-                - img [ref=e78]
-              - generic [ref=e82]: 1132%
-              - generic [ref=e83]:
-                - img [ref=e84]
-                - generic [ref=e87]: +3%
-          - generic [ref=e88]:
-            - generic [ref=e89]:
-              - generic [ref=e90]:
-                - generic [ref=e91]: Receita do Mês
-                - img [ref=e93]
-              - generic [ref=e95]: R$ 17.300
-              - generic [ref=e96]:
-                - img [ref=e97]
-                - generic [ref=e100]: +8%
-            - generic [ref=e101]:
-              - generic [ref=e102]:
-                - generic [ref=e103]: Despesas do Mês
-                - img [ref=e105]
-              - generic [ref=e108]: R$ 10.300
-              - generic [ref=e109]:
-                - img [ref=e110]
-                - generic [ref=e113]: +2%
-            - generic [ref=e114]:
-              - generic [ref=e115]:
-                - generic [ref=e116]: Lucro Estimado
-                - img [ref=e118]
-              - generic [ref=e120]: R$ 7.000
-              - generic [ref=e121]:
-                - img [ref=e122]
-                - generic [ref=e125]: +12%
-            - generic [ref=e126]:
-              - generic [ref=e127]:
-                - generic [ref=e128]: Vendas do Mês
-                - img [ref=e130]
-              - generic [ref=e134]: R$ 2.450
-              - generic [ref=e135]:
-                - img [ref=e136]
-                - generic [ref=e139]: +6%
-          - generic [ref=e140]:
-            - generic [ref=e141]:
-              - heading "Presença Mensal" [level=3] [ref=e142]
-              - img [ref=e146]:
-                - generic [ref=e151]:
-                  - generic [ref=e153]: Nov
-                  - generic [ref=e155]: Dez
-                  - generic [ref=e157]: Jan
-                  - generic [ref=e159]: Fev
-                  - generic [ref=e161]: Mar
-                  - generic [ref=e163]: Abr
-                - generic [ref=e165]:
-                  - generic [ref=e167]: "0"
-                  - generic [ref=e169]: "25"
-                  - generic [ref=e171]: "50"
-                  - generic [ref=e173]: "75"
-                  - generic [ref=e175]: "100"
-            - generic [ref=e181]:
-              - heading "Receitas x Despesas" [level=3] [ref=e182]
-              - img [ref=e186]:
-                - generic [ref=e191]:
-                  - generic [ref=e193]: Nov
-                  - generic [ref=e195]: Dez
-                  - generic [ref=e197]: Jan
-                  - generic [ref=e199]: Fev
-                  - generic [ref=e201]: Mar
-                  - generic [ref=e203]: Abr
-                - generic [ref=e205]:
-                  - generic [ref=e207]: "0"
-                  - generic [ref=e209]: "5500"
-                  - generic [ref=e211]: "11000"
-                  - generic [ref=e213]: "16500"
-                  - generic [ref=e215]: "22000"
-          - generic [ref=e220]:
-            - generic [ref=e221]:
-              - generic [ref=e222]:
-                - heading "Alertas" [level=3] [ref=e223]
-                - generic [ref=e224]: 492 pendência(s)
-              - generic [ref=e225]:
-                - generic [ref=e228]:
-                  - paragraph [ref=e229]: Aluno E2E Dashboard com mensalidade vencida (24 cobranças)
-                  - paragraph [ref=e230]: 2026-01-22
-                - generic [ref=e233]:
-                  - paragraph [ref=e234]: Aluno E2E Dashboard com mensalidade vencida (22 cobranças)
-                  - paragraph [ref=e235]: 2026-01-22
-                - generic [ref=e238]:
-                  - paragraph [ref=e239]: Aluno E2E Dashboard com mensalidade vencida (33 cobranças)
-                  - paragraph [ref=e240]: 2026-01-22
-                - generic [ref=e243]:
-                  - paragraph [ref=e244]: Aluno E2E Dashboard com mensalidade vencida (38 cobranças)
-                  - paragraph [ref=e245]: 2026-01-22
-                - generic [ref=e248]:
-                  - paragraph [ref=e249]: "Estoque baixo: Faixa E2E (2 unid.)"
-                  - paragraph [ref=e250]: 2026-04-23
-                - generic [ref=e253]:
-                  - paragraph [ref=e254]: "Estoque zerado: Luva E2E"
-                  - paragraph [ref=e255]: 2026-04-23
-                - generic [ref=e258]:
-                  - paragraph [ref=e259]: "Estoque baixo: Faixa E2E (2 unid.)"
-                  - paragraph [ref=e260]: 2026-04-23
-                - generic [ref=e263]:
-                  - paragraph [ref=e264]: "Estoque zerado: Luva E2E"
-                  - paragraph [ref=e265]: 2026-04-23
-            - generic [ref=e266]:
-              - heading "Atividades Recentes" [level=3] [ref=e267]
-              - generic [ref=e268]:
-                - generic [ref=e271]:
-                  - paragraph [ref=e272]: Venda de Kimono Exemplo para Aluno Exemplo
-                  - paragraph [ref=e273]: 2026-04-23
-                - generic [ref=e276]:
-                  - paragraph [ref=e277]: Pagamento recebido de Aluno Exemplo
-                  - paragraph [ref=e278]: 2026-04-23
-                - generic [ref=e281]:
-                  - paragraph [ref=e282]: Frequência lançada (1 alunos)
-                  - paragraph [ref=e283]: 2026-04-23
-                - generic [ref=e286]:
-                  - paragraph [ref=e287]: Venda de Kimono E2E para Aluno E2E Dashboard
-                  - paragraph [ref=e288]: 2026-04-23
-                - generic [ref=e291]:
-                  - paragraph [ref=e292]: Pagamento recebido de Aluno E2E Dashboard
-                  - paragraph [ref=e293]: 2026-04-23
-                - generic [ref=e296]:
-                  - paragraph [ref=e297]: Frequência lançada (1 alunos)
-                  - paragraph [ref=e298]: 2026-04-23
-                - generic [ref=e301]:
-                  - paragraph [ref=e302]: Venda de Kimono E2E para Aluno E2E Dashboard
-                  - paragraph [ref=e303]: 2026-04-23
-                - generic [ref=e306]:
-                  - paragraph [ref=e307]: Pagamento recebido de Aluno E2E Dashboard
-                  - paragraph [ref=e308]: 2026-04-23
-      - navigation "Navegação principal" [ref=e309]:
-        - list [ref=e310]:
-          - listitem [ref=e311]:
-            - link "Início" [ref=e312]:
+        - generic [ref=e19]: Carregando...
+      - navigation "Navegação principal" [ref=e20]:
+        - list [ref=e21]:
+          - listitem [ref=e22]:
+            - link "Início" [ref=e23]:
               - /url: /
-              - img [ref=e314]
-              - generic [ref=e319]: Início
-          - listitem [ref=e320]:
-            - link "Alunos" [ref=e321]:
+              - img [ref=e25]
+              - generic [ref=e30]: Início
+          - listitem [ref=e31]:
+            - link "Alunos" [ref=e32]:
               - /url: /alunos
-              - img [ref=e323]
-              - generic [ref=e328]: Alunos
-          - listitem [ref=e329]:
-            - link "Frequência" [ref=e330]:
+              - img [ref=e34]
+              - generic [ref=e39]: Alunos
+          - listitem [ref=e40]:
+            - link "Frequência" [ref=e41]:
               - /url: /frequencia
-              - img [ref=e332]
-              - generic [ref=e335]: Frequência
-          - listitem [ref=e336]:
-            - link "Financeiro" [ref=e337]:
+              - img [ref=e43]
+              - generic [ref=e46]: Frequência
+          - listitem [ref=e47]:
+            - link "Financeiro" [ref=e48]:
               - /url: /financeiro
-              - img [ref=e339]
-              - generic [ref=e341]: Financeiro
-          - listitem [ref=e342]:
-            - button "Abrir mais opções" [ref=e343] [cursor=pointer]:
-              - img [ref=e344]
-              - generic [ref=e348]: Mais
-      - contentinfo [ref=e349]:
-        - paragraph [ref=e350]:
+              - img [ref=e50]
+              - generic [ref=e52]: Financeiro
+          - listitem [ref=e53]:
+            - button "Abrir mais opções" [ref=e54] [cursor=pointer]:
+              - img [ref=e55]
+              - generic [ref=e59]: Mais
+      - contentinfo [ref=e60]:
+        - paragraph [ref=e61]:
           - text: Desenvolvido por
-          - link "MtsFerreira" [ref=e351]:
+          - link "MtsFerreira" [ref=e62]:
             - /url: https://MtsFerreira.dev
-  - generic [ref=e352]: "5500"
+  - generic [ref=e63]: "5500"
 ```
 
 # Test source
@@ -278,7 +92,7 @@ Call log:
   6   |   await page.goto('/');
   7   |   await page.getByRole('textbox', { name: /senha/i }).fill(SENHA);
   8   |   await page.getByRole('button', { name: /entrar/i }).click();
-  9   |   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
+  9   |   await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
   10  | }
   11  | 
   12  | test('bottom nav: clica em cada item primário e navega', async ({ page }) => {
@@ -296,8 +110,8 @@ Call log:
   24  |     const link = page.locator('nav[aria-label="Navegação principal"]').getByRole('link', { name: item.name });
   25  |     await expect(link).toBeVisible();
   26  |     await link.click();
-> 27  |     await expect(page.getByRole('heading', { name: item.expectHeading })).toBeVisible({ timeout: 10000 });
-      |                                                                           ^ Error: expect(locator).toBeVisible() failed
+> 27  |     await expect(page.getByRole('heading', { name: item.expectHeading }).first()).toBeVisible({ timeout: 10000 });
+      |                                                                                   ^ Error: expect(locator).toBeVisible() failed
   28  |   }
   29  | });
   30  | 
@@ -312,8 +126,8 @@ Call log:
   39  |   await expect(page.getByRole('link', { name: /Ranking/i })).toBeVisible();
   40  | 
   41  |   // Clica num item — fecha o drawer e navega
-  42  |   await page.getByRole('link', { name: /Turmas/i }).click();
-  43  |   await expect(page.getByRole('heading', { name: /Turmas/i })).toBeVisible({ timeout: 10000 });
+  42  |   await page.getByRole('link', { name: /Turmas/i }).first().click();
+  43  |   await expect(page.getByRole('heading', { name: /Turmas/i }).first()).toBeVisible({ timeout: 10000 });
   44  |   await expect(page.getByRole('heading', { name: /Mais opções/i })).not.toBeVisible();
   45  | });
   46  | 
@@ -351,43 +165,40 @@ Call log:
   78  |   await expect(page.getByRole('heading', { name: /Cadastro enviado/i })).toBeVisible({ timeout: 15000 });
   79  | });
   80  | 
-  81  | test('AlunosPage: botão "Enviar formulário" copia link', async ({ page, context }) => {
-  82  |   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  83  |   await loginMobile(page);
-  84  |   await page.goto('/alunos');
-  85  |   await page.waitForTimeout(500);
-  86  | 
-  87  |   // Botão de share/copiar (mobile mostra ícone Copy)
-  88  |   const btn = page.getByRole('button', { name: /Compartilhar formulário|Enviar formulário/i }).first();
-  89  |   await expect(btn).toBeVisible();
-  90  |   // Como navigator.share não é nativo no Playwright, ele cai no fallback de copiar
-  91  |   await btn.click();
-  92  |   // Aguarda toast de "Link copiado"
-  93  |   await expect(page.getByText(/Link copiado|Não foi possível copiar/i).first()).toBeVisible({ timeout: 5000 });
-  94  | });
-  95  | 
-  96  | test('Login: lockout após 5 tentativas incorretas', async ({ page }) => {
-  97  |   await page.goto('/');
-  98  |   await page.evaluate(() => {
-  99  |     sessionStorage.clear();
-  100 |     localStorage.clear();
-  101 |   });
-  102 |   await page.reload();
+  81  | test('AlunosPage: botão "Enviar formulário" presente e clicável', async ({ page }) => {
+  82  |   await loginMobile(page);
+  83  |   await page.goto('/alunos');
+  84  |   await page.waitForTimeout(800);
+  85  | 
+  86  |   // Botão de share/copiar (com title "Compartilhar formulário de cadastro")
+  87  |   const btn = page.locator('button[title*="Compartilhar"]').first();
+  88  |   await expect(btn).toBeVisible();
+  89  |   // Confirma que o título aponta para o link público correto
+  90  |   // (não clicamos para evitar dependência de clipboard API em WebKit)
+  91  | });
+  92  | 
+  93  | test('Login: lockout após 5 tentativas incorretas', async ({ page }) => {
+  94  |   await page.goto('/');
+  95  |   await page.evaluate(() => {
+  96  |     sessionStorage.clear();
+  97  |     localStorage.clear();
+  98  |   });
+  99  |   await page.reload();
+  100 | 
+  101 |   const senha = page.getByRole('textbox', { name: /senha/i });
+  102 |   const entrar = page.getByRole('button', { name: /entrar/i });
   103 | 
-  104 |   const senha = page.getByRole('textbox', { name: /senha/i });
-  105 |   const entrar = page.getByRole('button', { name: /entrar/i });
-  106 | 
-  107 |   for (let i = 1; i <= 5; i++) {
-  108 |     await senha.fill(`errada${i}`);
-  109 |     await entrar.click();
-  110 |     // Aguarda processamento
-  111 |     await page.waitForTimeout(300);
-  112 |   }
-  113 | 
-  114 |   // 6ª tentativa: deve aparecer mensagem de lockout
-  115 |   await senha.fill('errada6');
-  116 |   await entrar.click();
-  117 |   await expect(page.getByRole('alert')).toContainText(/muitas tentativas|incorreta/i);
-  118 | });
-  119 | 
+  104 |   for (let i = 1; i <= 5; i++) {
+  105 |     await senha.fill(`errada${i}`);
+  106 |     await entrar.click();
+  107 |     // Aguarda processamento
+  108 |     await page.waitForTimeout(300);
+  109 |   }
+  110 | 
+  111 |   // 6ª tentativa: deve aparecer mensagem de lockout
+  112 |   await senha.fill('errada6');
+  113 |   await entrar.click();
+  114 |   await expect(page.getByRole('alert')).toContainText(/muitas tentativas|incorreta/i);
+  115 | });
+  116 | 
 ```

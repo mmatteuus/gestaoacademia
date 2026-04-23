@@ -18,7 +18,7 @@ test('login exige senha correta, navega e faz logout', async ({ page }) => {
   await page.getByRole('textbox', { name: /senha/i }).fill(SENHA);
   await page.getByRole('button', { name: /entrar/i }).click();
 
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
 
   // Navega pelas páginas
   const rotas = ['/alunos', '/turmas', '/frequencia', '/financeiro', '/produtos', '/ranking', '/relatorios'];
@@ -62,10 +62,10 @@ test('persistência — sessão mantém no reload, cai ao limpar storage', async
   await page.goto('/');
   await page.getByRole('textbox', { name: /senha/i }).fill(SENHA);
   await page.getByRole('button', { name: /entrar/i }).click();
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
 
   await page.evaluate(() => sessionStorage.clear());
   await page.reload();
