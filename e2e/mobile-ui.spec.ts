@@ -100,6 +100,13 @@ test('AlunosPage: botão "Enviar formulário" presente e clicável', async ({ pa
   await expect(btn).toHaveAttribute('title', /Compartilhar formulário de cadastro/i);
 });
 
+test('Topbar mobile: ação "Instalar app" está visível para instalação manual/nativa', async ({ page }) => {
+  await loginMobile(page);
+
+  const installBtn = page.getByRole('button', { name: /Instalar app/i });
+  await expect(installBtn).toBeVisible();
+});
+
 test('Formulário público: falha da API mostra erro e destrava envio', async ({ page }) => {
   await page.route('**/api/public/aluno-cadastro', async (route) => {
     await route.fulfill({

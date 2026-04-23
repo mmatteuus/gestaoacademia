@@ -86,7 +86,14 @@ export function AppTopbar() {
       <div className="flex items-center gap-2 sm:gap-3">
         <OfflineQueueBadge />
         <InstallAppButton />
-        <Button variant="ghost" size="icon" className="h-10 w-10 md:hidden text-muted-foreground" onClick={() => setSearchOpen(!searchOpen)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 md:hidden text-muted-foreground"
+          onClick={() => setSearchOpen(!searchOpen)}
+          aria-label={searchOpen ? 'Fechar busca' : 'Abrir busca'}
+          title={searchOpen ? 'Fechar busca' : 'Abrir busca'}
+        >
           {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
         </Button>
 

@@ -1,18 +1,18 @@
 # Gestão Academia
 
-Leia primeiro: `./AGENTS.md`
+Leia primeiro: `./CONTEXT.md`
 
-Este repositório contém o frontend administrativo do projeto.
+Este repositório contém o frontend administrativo + backend API (Google Sheets) do projeto.
 
-## Ordem recomendada de leitura para agentes
+## Ordem recomendada de leitura
 
-1. `AGENTS.md`
-2. `README.md`
-3. `/frontend` (quando houver documentação preenchida e válida)
-4. `src/`
+1. `CONTEXT.md` (fonte única de contexto)
+2. `AGENTS.md` (diretrizes operacionais da evolução)
+3. `src/` e `backend/src/` (código real)
 
-## Estado atual
-
-- frontend existente
-- trilha de trabalho: `AUDITAR E MELHORAR`
-- foco atual: evolução do frontend com clareza de produto, UX e estrutura
+## Comandos rápidos
+- `npm run dev`
+- `npm run build`
+- `npm test`
+- `npm run test:backend`
+- `npx playwright test`

@@ -138,6 +138,7 @@ export function PWAProvider() {
 export function InstallAppButton() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
+  const [manualInstallHint, setManualInstallHint] = useState<'ios' | 'android' | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -145,6 +146,15 @@ export function InstallAppButton() {
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
     setInstalled(standalone);
+
+    const ua = window.navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    if (!standalone) {
+      if (isIOS) setManualInstallHint('ios');
+      else if (isAndroid) setManualInstallHint('android');
+      else setManualInstallHint(null);
+    }
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -162,20 +172,48 @@ export function InstallAppButton() {
     };
   }, []);
 
-  if (installed || !installEvent) return null;
+  if (installed) return null;
+
+  if (installEvent) {
+    return (
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={async () => {
+          try {
+            await installEvent.prompt();
+            await installEvent.userChoice;
+          } finally {
+            setInstallEvent(null);
+          }
+        }}
+      >
+        <Download className="mr-2 h-4 w-4" />
+        Instalar app
+      </Button>
+    );
+  }
+
+  if (!manualInstallHint) return null;
 
   return (
     <Button
       size="sm"
       variant="secondary"
-      onClick={async () => {
-        try {
-          await installEvent.prompt();
-          await installEvent.userChoice;
-        } finally {
-          setInstallEvent(null);
+      onClick={() => {
+        if (manualInstallHint === 'ios') {
+          toast('Instalar no iPhone', {
+            description: 'No Safari: Compartilhar → Adicionar à Tela de Início.',
+            duration: 5000,
+          });
+          return;
         }
+        toast('Instalar no Android', {
+          description: 'Abra o menu do navegador e toque em "Instalar app" ou "Adicionar à tela inicial".',
+          duration: 5000,
+        });
       }}
+      title="Instruções para instalar o app"
     >
       <Download className="mr-2 h-4 w-4" />
       Instalar app
