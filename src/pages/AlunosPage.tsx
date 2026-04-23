@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle, Share2, Copy } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { AlunoForm } from '@/components/forms/AlunoForm';
@@ -243,11 +243,19 @@ export default function AlunosPage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {paginated.map((aluno) => (
-            <button
+            <div
               key={aluno.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedAlunoId(aluno.id)}
-              className="rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent/20"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setSelectedAlunoId(aluno.id);
+                }
+              }}
+              aria-label={`Abrir ficha de ${aluno.nome}`}
+              className="rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent/20 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -276,7 +284,7 @@ export default function AlunosPage() {
                   Editar
                 </Button>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
@@ -309,6 +317,9 @@ export default function AlunosPage() {
         <DialogContent className="max-h-[90vh] overflow-y-auto bg-card border-border sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{editingAluno ? 'Editar aluno' : 'Novo aluno'}</DialogTitle>
+            <DialogDescription>
+              {editingAluno ? 'Atualize os dados do aluno.' : 'Preencha os dados para cadastrar um novo aluno.'}
+            </DialogDescription>
           </DialogHeader>
           <AlunoForm
             aluno={editingAluno}
