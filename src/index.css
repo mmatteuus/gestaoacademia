@@ -116,6 +116,20 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    /* Fundo sutil "tech" com gradiente radial vermelho discreto + grid quase invisível */
+    background-image:
+      radial-gradient(900px circle at 12% -10%, hsl(var(--primary) / 0.10), transparent 55%),
+      radial-gradient(700px circle at 100% 110%, hsl(var(--primary) / 0.08), transparent 55%),
+      linear-gradient(hsl(var(--border) / 0.18) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.18) 1px, transparent 1px);
+    background-size: auto, auto, 56px 56px, 56px 56px;
+    background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+    background-attachment: fixed;
+  }
+  .light body {
+    background-image:
+      radial-gradient(900px circle at 12% -10%, hsl(var(--primary) / 0.06), transparent 55%),
+      radial-gradient(700px circle at 100% 110%, hsl(var(--primary) / 0.05), transparent 55%);
   }
 
   /* Focus visible */
@@ -140,6 +154,14 @@
   }
 }
 
+/* Mobile readability: aumenta utilitárias text-xs e text-[10/11px] em telas pequenas */
+@media (max-width: 640px) {
+  .text-xs { font-size: 0.8125rem; line-height: 1.15rem; } /* 13px */
+  .text-\[10px\] { font-size: 0.6875rem; line-height: 0.95rem; } /* 11px */
+  .text-\[11px\] { font-size: 0.75rem; line-height: 1rem; } /* 12px */
+  .text-sm { font-size: 0.9375rem; line-height: 1.35rem; } /* 15px */
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -150,7 +172,7 @@
   }
 }
 
-/* Glow effect utility */
+/* Glow / glass / tech utilities */
 @layer utilities {
   .glow-primary {
     box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.4),
@@ -161,5 +183,31 @@
   }
   .text-gradient-primary {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-red-400;
+  }
+  /* Glassmorphism para cards principais — vidro fosco com borda iluminada */
+  .glass-card {
+    background-color: hsl(var(--card) / 0.65);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    border: 1px solid hsl(var(--border) / 0.8);
+    box-shadow:
+      0 1px 0 hsl(0 0% 100% / 0.04) inset,
+      0 1px 3px hsl(0 0% 0% / 0.4);
+  }
+  .light .glass-card {
+    box-shadow:
+      0 1px 0 hsl(0 0% 100% / 0.6) inset,
+      0 1px 3px hsl(220 30% 50% / 0.12);
+  }
+  /* Borda animada com gradiente — pra header/topbar */
+  .border-tech {
+    position: relative;
+  }
+  .border-tech::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px; height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), transparent);
+    pointer-events: none;
   }
 }

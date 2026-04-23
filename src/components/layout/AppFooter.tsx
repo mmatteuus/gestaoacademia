@@ -1,7 +1,8 @@
 export function AppFooter() {
+  // Fica posicionado logo acima do BottomNav, ambos fixos no fundo da viewport.
   return (
-    <footer className="sticky bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 text-center backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <p className="text-xs text-muted-foreground">
+    <footer className="fixed bottom-[64px] inset-x-0 z-20 border-t border-border bg-background/95 px-4 py-1.5 text-center backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <p className="text-[11px] text-muted-foreground">
         Desenvolvido por{' '}
         <a
           href="https://MtsFerreira.dev"

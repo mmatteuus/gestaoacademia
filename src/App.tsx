@@ -9,7 +9,9 @@ import { OperacionalDataProvider } from '@/features/operacional/OperacionalDataP
 import { InsightsDataProvider } from '@/features/insights/InsightsDataProvider';
 import { ApiError } from '@/services/api/client';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
+
 const LoginPage = lazy(() => import('./pages/LoginPage'));
+const PublicCadastroPage = lazy(() => import('./pages/PublicCadastroPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const AlunosPage = lazy(() => import('./pages/AlunosPage'));
 const TurmasPage = lazy(() => import('./pages/TurmasPage'));
@@ -39,7 +41,10 @@ const queryClient = new QueryClient({
     queries: {
       retry: shouldRetryQuery,
       retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 4_000),
-      staleTime: 30_000,
+      // Sheets API tem cota baixa (60 reads/min/user). staleTime longo evita
+      // refetches em troca de aba/foco que estouravam a quota e quebravam o app.
+      staleTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
     },
   },
 });
@@ -94,118 +99,45 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminApp() {
+  return (
+    <AuthGate>
+      <AdminLayout>
+        <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
+          <Routes>
+            <Route path="/" element={<WithAllData><DashboardPage /></WithAllData>} />
+            <Route path="/alunos" element={<WithAcademia><AlunosPage /></WithAcademia>} />
+            <Route path="/turmas" element={<WithAcademia><TurmasPage /></WithAcademia>} />
+            <Route path="/frequencia" element={<WithAcademia><FrequenciaPage /></WithAcademia>} />
+            <Route path="/graduacao" element={<WithAcademiaAndInsights><GraduacaoPage /></WithAcademiaAndInsights>} />
+            <Route path="/ranking" element={<WithInsights><RankingPage /></WithInsights>} />
+            <Route path="/campeonatos" element={<WithAcademiaAndInsights><CampeonatosPage /></WithAcademiaAndInsights>} />
+            <Route path="/financeiro" element={<WithAcademiaAndOperacional><FinanceiroPage /></WithAcademiaAndOperacional>} />
+            <Route path="/financeiro-gerencial" element={<WithInsights><FinanceiroGerencialPage /></WithInsights>} />
+            <Route path="/produtos" element={<WithOperacional><ProdutosPage /></WithOperacional>} />
+            <Route path="/aluguel" element={<WithOperacional><AluguelPage /></WithOperacional>} />
+            <Route path="/relatorios" element={<WithAllData><RelatoriosPage /></WithAllData>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </AdminLayout>
+    </AuthGate>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
       <AuthProvider>
-        <AuthGate>
         <BrowserRouter>
-        <AdminLayout>
           <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
             <Routes>
-            <Route
-              path="/"
-              element={
-                <WithAllData>
-                  <DashboardPage />
-                </WithAllData>
-              }
-            />
-            <Route
-              path="/alunos"
-              element={
-                <WithAcademia>
-                  <AlunosPage />
-                </WithAcademia>
-              }
-            />
-            <Route
-              path="/turmas"
-              element={
-                <WithAcademia>
-                  <TurmasPage />
-                </WithAcademia>
-              }
-            />
-            <Route
-              path="/frequencia"
-              element={
-                <WithAcademia>
-                  <FrequenciaPage />
-                </WithAcademia>
-              }
-            />
-            <Route
-              path="/graduacao"
-              element={
-                <WithAcademiaAndInsights>
-                  <GraduacaoPage />
-                </WithAcademiaAndInsights>
-              }
-            />
-            <Route
-              path="/ranking"
-              element={
-                <WithInsights>
-                  <RankingPage />
-                </WithInsights>
-              }
-            />
-            <Route
-              path="/campeonatos"
-              element={
-                <WithAcademiaAndInsights>
-                  <CampeonatosPage />
-                </WithAcademiaAndInsights>
-              }
-            />
-            <Route
-              path="/financeiro"
-              element={
-                <WithAcademiaAndOperacional>
-                  <FinanceiroPage />
-                </WithAcademiaAndOperacional>
-              }
-            />
-            <Route
-              path="/financeiro-gerencial"
-              element={
-                <WithInsights>
-                  <FinanceiroGerencialPage />
-                </WithInsights>
-              }
-            />
-            <Route
-              path="/produtos"
-              element={
-                <WithOperacional>
-                  <ProdutosPage />
-                </WithOperacional>
-              }
-            />
-            <Route
-              path="/aluguel"
-              element={
-                <WithOperacional>
-                  <AluguelPage />
-                </WithOperacional>
-              }
-            />
-            <Route
-              path="/relatorios"
-              element={
-                <WithAllData>
-                  <RelatoriosPage />
-                </WithAllData>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
+              <Route path="/cadastro/aluno" element={<PublicCadastroPage />} />
+              <Route path="*" element={<AdminApp />} />
             </Routes>
           </Suspense>
-        </AdminLayout>
         </BrowserRouter>
-        </AuthGate>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

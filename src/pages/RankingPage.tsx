@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useInsightsData } from '@/features/insights/InsightsDataProvider';
 import type { RankingEntry } from '@/types';
 
-const categorias = ['Todas', 'Adulto', 'Juvenil', 'Infantil'];
+const categorias = ['Todas', 'Adulto', 'Juvenil', 'Infantil', 'Regras'];
 
 export default function RankingPage() {
   const { ranking } = useInsightsData();
@@ -16,7 +16,7 @@ export default function RankingPage() {
   const [selectedEntry, setSelectedEntry] = useState<RankingEntry | null>(null);
 
   const filtered = useMemo(
-    () => (catSel === 'Todas' ? ranking : ranking.filter((item) => item.categoria === catSel)),
+    () => (catSel === 'Todas' || catSel === 'Regras' ? ranking : ranking.filter((item) => item.categoria === catSel)),
     [catSel, ranking]
   );
 
@@ -45,7 +45,9 @@ export default function RankingPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {catSel === 'Regras' ? (
+        <RankingRegras />
+      ) : filtered.length === 0 ? (
         <EmptyState title="Nenhum atleta nesta categoria" description="Selecione outra categoria ou cadastre atletas." />
       ) : (
         <div className="space-y-2">
@@ -133,6 +135,83 @@ export default function RankingPage() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function RankingRegras() {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-5">
+        <h3 className="text-base font-semibold text-foreground mb-2">Como funciona o ranking</h3>
+        <p className="text-sm text-muted-foreground">
+          A pontuação é calculada a partir de três pilares: vitórias em campeonatos, medalhas conquistadas e consistência de
+          participação. Quanto maior a participação ativa, maior a posição no ranking da temporada.
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Swords className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold text-foreground">Vitórias</h4>
+          </div>
+          <p className="text-xs text-muted-foreground">+15 pontos por vitória registrada em campeonato oficial.</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Medal className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold text-foreground">Medalhas</h4>
+          </div>
+          <p className="text-xs text-muted-foreground">+25 pontos por medalha conquistada (ouro, prata ou bronze).</p>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold text-foreground">Consistência</h4>
+          </div>
+          <p className="text-xs text-muted-foreground">Pontuação extra concedida pela participação contínua e presença em treinos.</p>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-5">
+        <h3 className="text-base font-semibold text-foreground mb-3">Categorias</h3>
+        <ul className="space-y-2 text-sm">
+          <li className="flex items-start gap-2">
+            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+            <div>
+              <span className="font-medium text-foreground">Adulto</span>
+              <span className="text-muted-foreground"> — atletas com 18 anos ou mais.</span>
+            </div>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+            <div>
+              <span className="font-medium text-foreground">Juvenil</span>
+              <span className="text-muted-foreground"> — atletas entre 14 e 17 anos.</span>
+            </div>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+            <div>
+              <span className="font-medium text-foreground">Infantil</span>
+              <span className="text-muted-foreground"> — atletas com até 13 anos.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-5">
+        <h3 className="text-base font-semibold text-foreground mb-3">Variação de posição</h3>
+        <p className="text-sm text-muted-foreground mb-3">
+          A seta ao lado da pontuação mostra a evolução do atleta em relação à temporada anterior:
+        </p>
+        <ul className="space-y-2 text-sm">
+          <li className="flex items-center gap-2 text-success"><TrendingUp className="h-4 w-4" /> subiu de posição</li>
+          <li className="flex items-center gap-2 text-destructive"><TrendingDown className="h-4 w-4" /> caiu de posição</li>
+          <li className="flex items-center gap-2 text-muted-foreground"><Minus className="h-4 w-4" /> manteve posição</li>
+        </ul>
+      </div>
     </div>
   );
 }

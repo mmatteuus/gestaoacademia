@@ -28,9 +28,9 @@ export function corsMiddleware(req, res, next) {
 
   if (!origin) {
     if (req.method === 'OPTIONS') return res.status(204).end();
-    // Em produção, request sem Origin (curl/Postman/server-to-server) só passa se houver API key.
-    // Combinada com a obrigatoriedade de API_KEY em prod, isso fecha o bypass.
-    if (isProduction && !req.headers['x-api-key']) {
+    // Em produção, request sem Origin (curl/Postman/server-to-server) só passa se houver API key
+    // OU se for endpoint público (ex.: formulário de cadastro compartilhado).
+    if (isProduction && !req.headers['x-api-key'] && !req.path.startsWith('/api/public/')) {
       return res.status(403).json({ ok: false, error: 'operation_failed', message: 'Origin required' });
     }
     return next();

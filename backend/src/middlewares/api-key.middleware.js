@@ -21,6 +21,10 @@ export function apiKeyMiddleware(req, res, next) {
   if (req.path === '/status' && req.method === 'GET') {
     return next();
   }
+  // Endpoints públicos (formulário compartilhado de cadastro)
+  if (req.path.startsWith('/api/public/')) {
+    return next();
+  }
 
   const providedKey = req.headers['x-api-key'];
 

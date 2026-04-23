@@ -162,55 +162,104 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
   }, [vendas, produtos]);
 
   const alertas = useMemo<Alerta[]>(() => {
-    const out: Alerta[] = [];
     const today = new Date().toISOString().slice(0, 10);
-    // Cobranças vencidas
+    const cobrancasAlerts: Alerta[] = [];
+    const estoqueAlerts: Alerta[] = [];
+    const gradAlerts: Alerta[] = [];
+
+    // Deduplica cobranças vencidas por aluno (uma entrada por aluno, não uma por mês)
+    const alunosVencidos = new Map<string, { nome: string; data: string; total: number }>();
     for (const c of cobrancas) {
-      if (c.status === 'vencida' || (c.status === 'aberta' && c.dataVencimento && c.dataVencimento < today)) {
-        out.push({ id: `al-cob-${c.id}`, tipo: 'urgente', mensagem: `${c.nomeAluno || 'Aluno'} com mensalidade vencida`, data: c.dataVencimento || today });
+      const isVencida = c.status === 'vencida' || (c.status === 'aberta' && c.dataVencimento && c.dataVencimento < today);
+      if (!isVencida) continue;
+      const key = c.alunoId || c.nomeAluno || c.id;
+      const cur = alunosVencidos.get(key);
+      if (!cur || (c.dataVencimento && c.dataVencimento < cur.data)) {
+        alunosVencidos.set(key, {
+          nome: c.nomeAluno || 'Aluno',
+          data: c.dataVencimento || today,
+          total: (cur?.total || 0) + 1,
+        });
+      } else {
+        cur.total += 1;
       }
     }
-    // Estoque baixo / zerado
+    for (const [key, info] of alunosVencidos) {
+      const sufixo = info.total > 1 ? ` (${info.total} cobranças)` : '';
+      cobrancasAlerts.push({ id: `al-cob-${key}`, tipo: 'urgente', mensagem: `${info.nome} com mensalidade vencida${sufixo}`, data: info.data });
+    }
+
     for (const p of produtos) {
       const est = Number(p.estoque) || 0;
       const min = Number(p.estoqueMinimo) || 0;
-      if (est === 0) out.push({ id: `al-prod-${p.id}`, tipo: 'aviso', mensagem: `Estoque zerado: ${p.nome}`, data: today });
-      else if (min > 0 && est <= min) out.push({ id: `al-prod-${p.id}`, tipo: 'aviso', mensagem: `Estoque baixo: ${p.nome} (${est} unid.)`, data: today });
+      if (est === 0) estoqueAlerts.push({ id: `al-prod-${p.id}`, tipo: 'aviso', mensagem: `Estoque zerado: ${p.nome}`, data: today });
+      else if (min > 0 && est <= min) estoqueAlerts.push({ id: `al-prod-${p.id}`, tipo: 'aviso', mensagem: `Estoque baixo: ${p.nome} (${est} unid.)`, data: today });
     }
-    // Aptos para graduação
+
     for (const g of graduacoesAlunos) {
       if (g.status === 'elegivel' || g.status === 'aprovado') {
         const aluno = alunos.find((a) => a.id === g.alunoId);
-        out.push({ id: `al-grad-${g.id}`, tipo: 'info', mensagem: `${aluno?.nome || 'Aluno'} elegível para graduação`, data: today });
+        gradAlerts.push({ id: `al-grad-${g.id}`, tipo: 'info', mensagem: `${aluno?.nome || 'Aluno'} elegível para graduação`, data: today });
       }
     }
-    return out.slice(0, 8);
+
+    // Intercala por categoria para dar visibilidade a todos os tipos de alerta,
+    // depois enche o resto até 12 com cobranças remanescentes.
+    const out: Alerta[] = [];
+    const maxByCat = 4;
+    out.push(...cobrancasAlerts.slice(0, maxByCat));
+    out.push(...estoqueAlerts.slice(0, maxByCat));
+    out.push(...gradAlerts.slice(0, maxByCat));
+    return out.slice(0, 12);
   }, [cobrancas, produtos, graduacoesAlunos, alunos]);
 
   const atividadesRecentes = useMemo<AtividadeRecente[]>(() => {
-    const out: { item: AtividadeRecente; ts: number }[] = [];
     const ts = (iso: string) => {
       const t = new Date(`${iso}T00:00:00`).getTime();
       return Number.isFinite(t) ? t : 0;
     };
-    for (const v of vendas.slice(-10)) {
+
+    const buildSorted = <T,>(items: T[], make: (item: T) => { item: AtividadeRecente; ts: number }) =>
+      items.map(make).sort((a, b) => b.ts - a.ts);
+
+    const vendasItems = buildSorted(vendas, (v) => {
       const nome = v.itens?.[0]?.nomeProduto || 'Produto';
-      out.push({ item: { id: `at-v-${v.id}`, descricao: `Venda de ${nome} para ${v.compradorNome || 'cliente'}`, data: v.data, tipo: 'venda' }, ts: ts(v.data) });
-    }
-    for (const c of cobrancas) {
-      if ((c.status === 'paga' || c.status === 'parcial') && c.dataPagamento) {
-        out.push({ item: { id: `at-c-${c.id}`, descricao: `Pagamento recebido de ${c.nomeAluno || 'aluno'}`, data: c.dataPagamento, tipo: 'pagamento' }, ts: ts(c.dataPagamento) });
+      return { item: { id: `at-v-${v.id}`, descricao: `Venda de ${nome} para ${v.compradorNome || 'cliente'}`, data: v.data, tipo: 'venda' }, ts: ts(v.data) };
+    });
+
+    const pagamentosItems = buildSorted(
+      cobrancas.filter((c) => (c.status === 'paga' || c.status === 'parcial') && c.dataPagamento),
+      (c) => ({ item: { id: `at-c-${c.id}`, descricao: `Pagamento recebido de ${c.nomeAluno || 'aluno'}`, data: c.dataPagamento || '', tipo: 'pagamento' }, ts: ts(c.dataPagamento || '') })
+    );
+
+    const cadastrosItems = buildSorted(
+      alunos.filter((a) => a.status === 'pre-cadastro'),
+      (a) => ({ item: { id: `at-a-${a.id}`, descricao: `${a.nome} realizou pré-cadastro`, data: a.dataMatricula, tipo: 'cadastro' }, ts: ts(a.dataMatricula) })
+    );
+
+    const frequenciaItems = buildSorted(sessoes, (s) => ({
+      item: { id: `at-s-${s.id}`, descricao: `Frequência lançada (${s.presencas.length} alunos)`, data: s.data, tipo: 'frequencia' },
+      ts: ts(s.data),
+    }));
+
+    // Round-robin entre categorias para garantir diversidade no Dashboard.
+    const buckets = [vendasItems, pagamentosItems, cadastrosItems, frequenciaItems];
+    const out: AtividadeRecente[] = [];
+    const max = 8;
+    let i = 0;
+    while (out.length < max) {
+      let pushedThisRound = false;
+      for (const b of buckets) {
+        if (b[i]) {
+          out.push(b[i].item);
+          pushedThisRound = true;
+          if (out.length >= max) break;
+        }
       }
+      if (!pushedThisRound) break;
+      i++;
     }
-    for (const a of alunos) {
-      if (a.status === 'pre-cadastro') {
-        out.push({ item: { id: `at-a-${a.id}`, descricao: `${a.nome} realizou pré-cadastro`, data: a.dataMatricula, tipo: 'cadastro' }, ts: ts(a.dataMatricula) });
-      }
-    }
-    for (const s of sessoes.slice(-10)) {
-      out.push({ item: { id: `at-s-${s.id}`, descricao: `Frequência lançada (${s.presencas.length} alunos)`, data: s.data, tipo: 'frequencia' }, ts: ts(s.data) });
-    }
-    return out.sort((a, b) => b.ts - a.ts).slice(0, 6).map((x) => x.item);
+    return out;
   }, [vendas, cobrancas, alunos, sessoes]);
 
   const upsertRegraGraduacao = (regra: RegraGraduacao): ActionResult<RegraGraduacao> => {

@@ -17,8 +17,17 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const ok = await login(password);
-      if (!ok) setError('Senha incorreta.');
+      const result = await login(password);
+      if (!result.ok) {
+        if (result.lockedUntil) {
+          const seconds = Math.ceil((result.lockedUntil - Date.now()) / 1000);
+          setError(`Muitas tentativas. Tente novamente em ${seconds}s.`);
+        } else if (typeof result.remaining === 'number') {
+          setError(`Senha incorreta. Restam ${result.remaining} tentativa(s).`);
+        } else {
+          setError('Senha incorreta.');
+        }
+      }
     } catch {
       setError('Não foi possível entrar. Tente novamente.');
     } finally {
@@ -30,7 +39,7 @@ export default function LoginPage() {
     <main className="min-h-[100dvh] flex items-center justify-center bg-background px-4 py-8">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-card/60 p-6 shadow-lg backdrop-blur"
+        className="w-full max-w-sm space-y-6 rounded-2xl glass-card p-6 sm:p-7"
         aria-label="Entrar no sistema"
       >
         <header className="space-y-2 text-center">

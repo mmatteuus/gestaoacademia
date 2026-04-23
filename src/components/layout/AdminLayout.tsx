@@ -1,8 +1,7 @@
 import { ReactNode } from 'react';
-import { AppSidebar } from './AppSidebar';
 import { AppTopbar } from './AppTopbar';
 import { AppFooter } from './AppFooter';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { BottomNav } from './BottomNav';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -10,17 +9,14 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
-        <div className="flex min-h-screen flex-1 flex-col overflow-hidden">
-          <AppTopbar />
-          <main className="flex-1 overflow-auto animate-fade-in p-4 pb-24 md:p-6 md:pb-24 lg:p-8 lg:pb-24">
-            {children}
-          </main>
-          <AppFooter />
-        </div>
-      </div>
-    </SidebarProvider>
+    <div className="min-h-screen flex flex-col bg-background">
+      <AppTopbar />
+      {/* pb deixa espaço para o BottomNav (~64px) + AppFooter (~44px) sem sobrepor conteúdo */}
+      <main className="flex-1 overflow-x-hidden animate-fade-in p-4 pb-[110px] md:p-6 md:pb-[110px] lg:p-8 lg:pb-[110px]">
+        <div className="mx-auto w-full max-w-6xl">{children}</div>
+      </main>
+      <BottomNav />
+      <AppFooter />
+    </div>
   );
 }

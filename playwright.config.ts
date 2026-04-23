@@ -5,6 +5,8 @@ export default defineConfig({
   timeout: 60_000,
   retries: 0,
   reporter: [['list']],
+  workers: 1,
+  fullyParallel: false,
   use: {
     baseURL: 'http://localhost:8080',
     headless: true,
@@ -14,5 +16,6 @@ export default defineConfig({
   projects: [
     { name: 'desktop', testMatch: /desktop\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', testMatch: /mobile\.spec\.ts$/, use: { ...devices['iPhone 13'] } },
+    { name: 'dashboard', testMatch: /dashboard-data\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
   ],
 });

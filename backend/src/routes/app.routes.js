@@ -12,6 +12,7 @@ import {
   createRentalReservationController,
   createSaleController,
 } from '../controllers/domain.controller.js';
+import { publicCadastroAlunoController } from '../controllers/public.controller.js';
 
 export function createAppRouter() {
   const router = Router();
@@ -25,6 +26,10 @@ export function createAppRouter() {
   router.post('/api/sales', asyncHandler(createSaleController));
   router.post('/api/finance/payments', asyncHandler(createFinancePaymentController));
   router.post('/api/rentals/reservations', asyncHandler(createRentalReservationController));
+
+  // Endpoint público (sem API key) para cadastro via formulário compartilhado.
+  // Rate limit global ainda se aplica.
+  router.post('/api/public/aluno-cadastro', asyncHandler(publicCadastroAlunoController));
 
   return router;
 }

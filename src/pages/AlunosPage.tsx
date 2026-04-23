@@ -5,7 +5,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle, Share2, Copy } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -192,10 +192,13 @@ export default function AlunosPage() {
         title="Alunos"
         subtitle={`${alunosList.length} alunos cadastrados`}
         actions={
-          <Button size="sm" onClick={handleCreate}>
-            <Plus className="mr-1 h-4 w-4" />
-            Novo Aluno
-          </Button>
+          <div className="flex items-center gap-2">
+            <ShareCadastroButton />
+            <Button size="sm" onClick={handleCreate}>
+              <Plus className="mr-1 h-4 w-4" />
+              Novo Aluno
+            </Button>
+          </div>
         }
       />
 
@@ -524,5 +527,36 @@ export default function AlunosPage() {
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+function ShareCadastroButton() {
+  const url = typeof window !== 'undefined' ? `${window.location.origin}/cadastro/aluno` : '/cadastro/aluno';
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copiado! Envie ao aluno.');
+    } catch {
+      toast.error('Não foi possível copiar. Copie manualmente do link aberto.');
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Cadastro de aluno', text: 'Preencha seus dados na Gêmeos Academia', url });
+        return;
+      } catch {
+        /* fallback abaixo */
+      }
+    }
+    handleCopy();
+  };
+  return (
+    <Button size="sm" variant="secondary" onClick={handleShare} title="Compartilhar formulário de cadastro">
+      <Share2 className="mr-1 h-4 w-4" />
+      <span className="hidden sm:inline">Enviar formulário</span>
+      <Copy className="sm:hidden h-4 w-4 ml-1" />
+    </Button>
   );
 }

@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Search, X, Users, BookOpen, Package, Sun, Moon, LogOut } from 'lucide-react';
+import { Search, X, Users, BookOpen, Package, Sun, Moon, LogOut, Award } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -72,13 +71,18 @@ export function AppTopbar() {
   };
 
   return (
-    <header className="h-14 border-b border-border flex items-center justify-between px-3 sm:px-4 bg-card/50 backdrop-blur-sm shrink-0 relative z-20">
-      <div className="flex items-center gap-3">
-        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-        <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
+    <header className="h-14 sm:h-16 border-b border-border/80 flex items-center justify-between px-3 sm:px-4 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shrink-0 sticky top-0 z-20 border-tech">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
+          <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">Gêmeos Academia</p>
+          <h2 className="text-sm sm:text-base font-semibold text-foreground truncate">{title}</h2>
+        </div>
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
-        <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden text-muted-foreground" onClick={() => setSearchOpen(!searchOpen)}>
+        <Button variant="ghost" size="icon" className="h-10 w-10 md:hidden text-muted-foreground" onClick={() => setSearchOpen(!searchOpen)}>
           {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
         </Button>
 
@@ -109,7 +113,7 @@ export function AppTopbar() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          className="h-10 w-10 text-muted-foreground hover:text-foreground"
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           aria-label={theme === 'light' ? 'Tema claro ativo. Alternar para escuro' : 'Tema escuro ativo. Alternar para claro'}
         >
@@ -119,7 +123,7 @@ export function AppTopbar() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          className="h-10 w-10 text-muted-foreground hover:text-foreground"
           onClick={logout}
           aria-label="Sair"
           title="Sair"

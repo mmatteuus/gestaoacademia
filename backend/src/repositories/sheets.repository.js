@@ -5,12 +5,36 @@ import { sanitizeSheetCellValue } from '../lib/normalizers.js';
 import { logger } from '../lib/logger.js';
 
 let oauth2Client = null;
-const CACHE_TTL_MS = 30_000;
+// Cache longo: nomes de abas e cabeçalhos quase nunca mudam em runtime;
+// `setSheetKnown` e `headerCache.set` mantêm o cache atualizado quando há criação/patch.
+const CACHE_TTL_MS = 5 * 60_000;
 const sheetNamesCache = {
   expiresAt: 0,
   names: null,
 };
 const headerCache = new Map();
+// Marca abas que já passaram por ensureSheetExists nesta sessão de processo,
+// evitando o GET de cabeçalhos a cada insert.
+const ensuredSheets = new Set();
+
+async function withRetry(fn, label) {
+  const delays = [400, 1000, 2500]; // 3 tentativas extras
+  let lastErr;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const code = err?.code || err?.response?.status;
+      const message = String(err?.message || '');
+      const retriable = code === 429 || code === 503 || code === 500 || /Quota exceeded|rateLimitExceeded/i.test(message);
+      if (!retriable || attempt === delays.length) throw err;
+      lastErr = err;
+      logger.warn({ context: 'sheets_retry', label, attempt: attempt + 1, code, message: message.slice(0, 200) });
+      await new Promise((r) => setTimeout(r, delays[attempt]));
+    }
+  }
+  throw lastErr;
+}
 
 function initAuth() {
   assertGoogleEnv();
@@ -39,7 +63,10 @@ async function listAllSheets() {
   }
 
   const sheets = getSheets();
-  const res = await sheets.spreadsheets.get({ spreadsheetId: env.spreadsheetId });
+  const res = await withRetry(
+    () => sheets.spreadsheets.get({ spreadsheetId: env.spreadsheetId }),
+    'spreadsheets.get'
+  );
   const names = (res.data.sheets || []).map((sheet) => sheet.properties.title);
   sheetNamesCache.names = names;
   sheetNamesCache.expiresAt = now + CACHE_TTL_MS;
@@ -56,9 +83,9 @@ function setSheetKnown(sheetName) {
   }
 }
 
-function invalidateSheetCaches(sheetName) {
-  sheetNamesCache.expiresAt = 0;
-  if (sheetName) headerCache.delete(sheetName);
+function invalidateSheetCaches(_sheetName) {
+  // Não invalida nome de aba nem header — eles foram atualizados na via que escreveu.
+  // Invalidar aqui forçava re-fetch desnecessário e estourava quota de leitura.
 }
 
 async function getHeaderRow(sheetName, fallbackHeaders) {
@@ -69,10 +96,13 @@ async function getHeaderRow(sheetName, fallbackHeaders) {
   }
 
   const sheets = getSheets();
-  const headRes = await sheets.spreadsheets.values.get({
-    spreadsheetId: env.spreadsheetId,
-    range: `${sheetName}!A1:ZZ1`,
-  });
+  const headRes = await withRetry(
+    () => sheets.spreadsheets.values.get({
+      spreadsheetId: env.spreadsheetId,
+      range: `${sheetName}!A1:ZZ1`,
+    }),
+    `getHeaderRow:${sheetName}`
+  );
 
   const headers = (headRes.data.values && headRes.data.values[0]) || fallbackHeaders;
   headerCache.set(sheetName, { headers, expiresAt: now + CACHE_TTL_MS });
@@ -87,10 +117,13 @@ function isSheetTabNotFound(err) {
 async function readSheetValuesSafe(sheetName, rangeSuffix) {
   const sheets = getSheets();
   try {
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: env.spreadsheetId,
-      range: `${sheetName}!${rangeSuffix}`,
-    });
+    const res = await withRetry(
+      () => sheets.spreadsheets.values.get({
+        spreadsheetId: env.spreadsheetId,
+        range: `${sheetName}!${rangeSuffix}`,
+      }),
+      `values.get:${sheetName}`
+    );
     return res.data.values || [];
   } catch (err) {
     if (isSheetTabNotFound(err)) return null;
@@ -110,6 +143,9 @@ function colLetter(n) {
 }
 
 async function ensureSheetExists(sheetName, headers) {
+  // Fast-path: já validamos esta aba no processo atual e o cache de headers cobre.
+  if (ensuredSheets.has(sheetName)) return;
+
   const sheets = getSheets();
   const existingSheets = await listAllSheets();
   const lastCol = colLetter(Math.max(headers.length, 1));
@@ -142,30 +178,42 @@ async function ensureSheetExists(sheetName, headers) {
 
     setSheetKnown(sheetName);
     headerCache.set(sheetName, { headers: [...headers], expiresAt: Date.now() + CACHE_TTL_MS });
+    ensuredSheets.add(sheetName);
     return;
   }
 
-  const headRes = await sheets.spreadsheets.values.get({
-    spreadsheetId: env.spreadsheetId,
-    range: `${sheetName}!A1:ZZ1`,
-  });
+  const headRes = await withRetry(
+    () => sheets.spreadsheets.values.get({
+      spreadsheetId: env.spreadsheetId,
+      range: `${sheetName}!A1:ZZ1`,
+    }),
+    `ensureSheetExists:${sheetName}`
+  );
 
   const current = (headRes.data.values && headRes.data.values[0]) || [];
   const missing = headers.filter((header) => !current.includes(header));
 
-  if (missing.length === 0) return;
+  if (missing.length === 0) {
+    headerCache.set(sheetName, { headers: current, expiresAt: Date.now() + CACHE_TTL_MS });
+    ensuredSheets.add(sheetName);
+    return;
+  }
 
   const merged = [...current, ...missing];
   const patchCol = colLetter(merged.length);
 
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: env.spreadsheetId,
-    range: `${sheetName}!A1:${patchCol}1`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: [merged] },
-  });
+  await withRetry(
+    () => sheets.spreadsheets.values.update({
+      spreadsheetId: env.spreadsheetId,
+      range: `${sheetName}!A1:${patchCol}1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [merged] },
+    }),
+    `ensureSheetExists.patch:${sheetName}`
+  );
 
   headerCache.set(sheetName, { headers: merged, expiresAt: Date.now() + CACHE_TTL_MS });
+  ensuredSheets.add(sheetName);
 }
 
 function rowToObject(headerRow, row, expectedHeaders) {
@@ -226,12 +274,15 @@ export async function insertRow(data) {
 
   const lastCol = colLetter(headerRow.length);
 
-  await sheets.spreadsheets.values.append({
-    spreadsheetId: env.spreadsheetId,
-    range: `${config.name}!A:${lastCol}`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: [newRow] },
-  });
+  await withRetry(
+    () => sheets.spreadsheets.values.append({
+      spreadsheetId: env.spreadsheetId,
+      range: `${config.name}!A:${lastCol}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [newRow] },
+    }),
+    `insertRow:${config.name}`
+  );
 
   invalidateSheetCaches(config.name);
   return { success: true, sheet: config.name, id: rowData.id };
@@ -264,12 +315,15 @@ export async function updateRow(id, data, type = 'Alunos') {
   const lastCol = colLetter(headerRow.length);
   const targetRange = `${config.name}!A${rowIndex + 2}:${lastCol}${rowIndex + 2}`;
 
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: env.spreadsheetId,
-    range: targetRange,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: [updatedRow] },
-  });
+  await withRetry(
+    () => sheets.spreadsheets.values.update({
+      spreadsheetId: env.spreadsheetId,
+      range: targetRange,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [updatedRow] },
+    }),
+    `updateRow:${config.name}`
+  );
 
   invalidateSheetCaches(config.name);
   return { success: true, sheet: config.name, id };
