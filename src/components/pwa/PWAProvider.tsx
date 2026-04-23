@@ -22,6 +22,16 @@ declare global {
   }
 }
 
+function isPWAStandalone() {
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    nav.standalone === true ||
+    document.referrer.includes("android-app://")
+  );
+}
+
 /**
  * Registra o Service Worker (gerado pelo vite-plugin-pwa), monitora
  * atualizações e status online/offline, e captura o evento de instalação
@@ -34,9 +44,7 @@ export function PWAProvider() {
     if (typeof window === "undefined") return;
 
     // Detecta se o app foi aberto como PWA (standalone)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                        (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
-                        document.referrer.includes('android-app://');
+    const isStandalone = isPWAStandalone();
 
     if (isStandalone) {
       sessionStorage.setItem('pwa-mode', 'true');
@@ -151,6 +159,7 @@ export function PWAProvider() {
               window.clearInterval(intervalId);
               window.removeEventListener("visibilitychange", onVisible);
               window.removeEventListener("online", onOnline);
+              window.removeEventListener("focus", checkForUpdates);
             };
 
             // Executa uma checagem inicial após registrar.
@@ -249,6 +258,7 @@ export function PWAProvider() {
  */
 export function InstallAppButton() {
   const [isInstalled, setIsInstalled] = useState(false);
+  const [promptAvailable, setPromptAvailable] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [os, setOs] = useState<'ios' | 'android' | 'other' | null>(null);
 
@@ -256,12 +266,10 @@ export function InstallAppButton() {
     if (typeof window === "undefined") return;
 
     const checkStatus = () => {
-      const nav = window.navigator as Navigator & { standalone?: boolean };
-      const isStandalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        nav.standalone === true;
+      const isStandalone = isPWAStandalone();
 
       setIsInstalled(isStandalone);
+      setPromptAvailable(!!window.deferredPWAInstallPrompt);
 
       const ua = window.navigator.userAgent;
       if (/iPhone|iPad|iPod/i.test(ua)) setOs('ios');
@@ -272,23 +280,31 @@ export function InstallAppButton() {
     checkStatus();
 
     const onPromptAvailable = () => {
-      // Evento serve como trigger de re-render caso o consumidor queira;
-      // hoje o handleInstall lê window.deferredPWAInstallPrompt direto.
+      setPromptAvailable(!!window.deferredPWAInstallPrompt);
     };
     const onInstalled = () => {
       setIsInstalled(true);
+      setPromptAvailable(false);
       setInstalling(false);
     };
+    const displayModeQuery = window.matchMedia("(display-mode: standalone)");
+    const onDisplayModeChange = () => checkStatus();
+
     window.addEventListener("pwa-prompt-available", onPromptAvailable);
     window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener("focus", checkStatus);
+    displayModeQuery.addEventListener("change", onDisplayModeChange);
 
     return () => {
       window.removeEventListener("pwa-prompt-available", onPromptAvailable);
       window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener("focus", checkStatus);
+      displayModeQuery.removeEventListener("change", onDisplayModeChange);
     };
   }, []);
 
   if (isInstalled) return null;
+  if (!promptAvailable && os !== 'ios') return null;
 
   const handleInstall = async () => {
     // Feedback tátil imediato — o usuário sente que clicou antes do browser
@@ -308,8 +324,11 @@ export function InstallAppButton() {
         // o state atualiza via evento "appinstalled" se o usuário aceitar.
         promptEvent.userChoice.then(({ outcome }) => {
           setInstalling(false);
+          window.deferredPWAInstallPrompt = undefined;
+          setPromptAvailable(false);
+
           if (outcome === 'accepted') {
-            window.deferredPWAInstallPrompt = undefined;
+            setIsInstalled(true);
             haptic('success');
             // "appinstalled" cobre o resto: esconde o botão e mostra toast.
           } else {
