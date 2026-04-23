@@ -27,5 +27,5 @@ export default defineConfig({
     preset: '2023',
   },
   preset: combinePresetAndAppleSplashScreens(preset, appleSplashScreens),
-  images: ['public/icons/icon.svg'],
+  images: ['public/icons/logo-gemeos.png'],
 })

@@ -24,7 +24,6 @@ export default defineConfig(({ mode }) => ({
       injectRegister: false,
       includeAssets: [
         "offline.html",
-        "icons/icon.svg",
         "icons/apple-touch-icon-180x180.png",
         "icons/maskable-icon-512x512.png",
         "icons/favicon.ico",
