@@ -38,6 +38,17 @@ export function BottomNav() {
         aria-label="Navegação principal"
         className="fixed bottom-0 inset-x-0 z-30 border-t border-border/80 bg-background/85 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75 pb-[env(safe-area-inset-bottom)] border-tech"
       >
+        <p className="text-center text-[10px] text-muted-foreground/70 pt-1 pb-0.5 leading-none border-b border-border/40">
+          Desenvolvido por{' '}
+          <a
+            href="https://www.mtsferreira.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary hover:underline"
+          >
+            MtsFerreira
+          </a>
+        </p>
         <ul className="mx-auto grid max-w-3xl grid-cols-5 items-stretch">
           {primary.map((item) => (
             <li key={item.url} className="flex">
@@ -84,17 +95,6 @@ export function BottomNav() {
             </button>
           </li>
         </ul>
-        <p className="text-center text-[10px] text-muted-foreground/70 pb-1 leading-none">
-          Desenvolvido por{' '}
-          <a
-            href="https://www.mtsferreira.dev/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-primary hover:underline"
-          >
-            MtsFerreira
-          </a>
-        </p>
       </nav>
 
       {moreOpen && (

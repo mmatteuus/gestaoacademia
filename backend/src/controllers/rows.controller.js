@@ -42,8 +42,20 @@ export async function batchListRowsController(req, res) {
   if (valid.length === 0) throw new HttpError(400, 'validation_error', 'no valid types in request');
   if (valid.length > 20) throw new HttpError(400, 'validation_error', 'too many types (max 20)');
 
-  const result = await batchListRows(valid);
-  res.json(result);
+  // Fallback gracioso: se o batchGet inteiro falhar (quota, network), devolve objeto vazio
+  // com 200. O frontend pode tratar caches vazios sem quebrar a UI inteira, e as queries
+  // individuais subsequentes ainda têm chance de funcionar (com cache server-side aquecido).
+  try {
+    const result = await batchListRows(valid);
+    // Cache curto no navegador: F5 dentro de 30s não estoura quota Sheets.
+    res.removeHeader('Pragma');
+    res.removeHeader('Expires');
+    res.removeHeader('Surrogate-Control');
+    res.setHeader('Cache-Control', 'private, max-age=30');
+    res.json(result);
+  } catch (_err) {
+    res.json({});
+  }
 }
 
 export async function getRowController(req, res) {

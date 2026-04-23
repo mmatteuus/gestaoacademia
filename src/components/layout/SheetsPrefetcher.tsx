@@ -1,12 +1,12 @@
 import { usePrefetchSheetsBatch } from '@/services/queries';
 import type { SheetType } from '@/services/api/sheets';
 
-// Carrega todas as entidades comuns em UMA chamada batch ao Sheets
-// no mount do AdminLayout (logo após login). Reduz drasticamente o
-// consumo de quota — o Dashboard antes disparava ~12 requests, agora 1.
+// Carrega entidades essenciais ao Dashboard em UMA chamada batch.
+// Entidades de páginas específicas (Reservas, Aluguel, etc.) ficam de fora —
+// elas serão carregadas sob demanda quando o usuário navegar para a página.
+// Isso reduz a chance de estourar a quota de leitura do Sheets logo no boot.
 const PREFETCH_TYPES: SheetType[] = [
   'Alunos',
-  'Responsaveis',
   'Turmas',
   'Aulas',
   'Financeiro',
@@ -14,13 +14,7 @@ const PREFETCH_TYPES: SheetType[] = [
   'Receitas',
   'Produtos',
   'Vendas',
-  'Reservas',
-  'Aluguel',
-  'PagamentosContrato',
   'GraduacoesAlunos',
-  'RegrasGraduacao',
-  'Ranking',
-  'Campeonatos',
 ];
 
 export function SheetsPrefetcher() {
