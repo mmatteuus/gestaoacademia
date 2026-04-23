@@ -52,9 +52,16 @@ async function createRow(api: APIRequestContext, body: Record<string, unknown>) 
 }
 
 async function listRows(api: APIRequestContext, type: string) {
-  const r = await api.get(`http://localhost:3000/rows?type=${encodeURIComponent(type)}`);
-  if (!r.ok()) throw new Error(`GET /rows failed: ${r.status()}`);
-  return (await r.json()) as Array<Record<string, string>>;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const r = await api.get(`http://localhost:3000/rows?type=${encodeURIComponent(type)}`);
+    if (r.ok()) return (await r.json()) as Array<Record<string, string>>;
+    if (r.status() === 500) {
+      await new Promise((res) => setTimeout(res, 5000));
+      continue;
+    }
+    throw new Error(`GET /rows failed: ${r.status()}`);
+  }
+  throw new Error(`GET /rows failed após 3 tentativas`);
 }
 
 test.describe.configure({ mode: 'serial' });

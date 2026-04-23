@@ -16,7 +16,7 @@ test('login mobile, input >=16px (sem zoom iOS), navega e vê footer', async ({ 
   await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
 
   await page.goto('/alunos');
-  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(500);
   await expect(page.getByText(/Desenvolvido por MtsFerreira/i).first()).toBeVisible();
 
   // Sem scroll horizontal na raiz
@@ -49,7 +49,8 @@ test('dialog não estoura viewport em mobile', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Dashboard' }).first()).toBeVisible({ timeout: 15000 });
 
   await page.goto('/alunos');
-  await page.waitForLoadState('networkidle');
+  // Aguarda página renderizar (não networkidle — batch fetcher demora)
+  await expect(page.getByRole('heading', { name: /Alunos/i }).first()).toBeVisible({ timeout: 15000 });
 
   const novoBtn = page.getByRole('button', { name: /novo/i }).first();
   const visible = await novoBtn.isVisible().catch(() => false);
