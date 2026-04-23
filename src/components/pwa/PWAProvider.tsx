@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Download, WifiOff, Wifi } from "lucide-react";
+import { Download, Wifi, WifiOff } from "lucide-react";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -14,8 +14,6 @@ type BeforeInstallPromptEvent = Event & {
  * para oferecer um botão "Instalar app" no momento certo.
  */
 export function PWAProvider() {
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-
   // --- Registro do SW + detecção de update -------------------------------
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -81,54 +79,8 @@ export function PWAProvider() {
     };
   }, []);
 
-  // --- beforeinstallprompt (Android/Chromium) ---------------------------
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallEvent(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    window.addEventListener("appinstalled", () => setInstallEvent(null));
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  // Mostra convite discreto após alguns segundos se ainda não instalou
-  useEffect(() => {
-    if (!installEvent) return;
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      // iOS Safari legacy
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-    if (isStandalone) return;
-
-    const dismissedKey = "pwa-install-dismissed-at";
-    const dismissedAt = Number(localStorage.getItem(dismissedKey) || 0);
-    if (Date.now() - dismissedAt < 1000 * 60 * 60 * 24 * 7) return; // reprompta após 7 dias
-
-    const t = setTimeout(() => {
-      toast("Instalar Gêmeos Academia", {
-        description: "Abra como app, com ícone na tela inicial.",
-        duration: Infinity,
-        icon: <Download className="h-4 w-4" />,
-        action: {
-          label: "Instalar",
-          onClick: async () => {
-            try {
-              await installEvent.prompt();
-              await installEvent.userChoice;
-            } finally {
-              setInstallEvent(null);
-            }
-          },
-        },
-        onDismiss: () => {
-          localStorage.setItem(dismissedKey, String(Date.now()));
-        },
-      });
-    }, 8000);
-    return () => clearTimeout(t);
-  }, [installEvent]);
-
+  // Botão fixo "Instalar app" no AppTopbar via <InstallAppButton /> cuida de
+  // capturar o evento `beforeinstallprompt` e apresentar o CTA.
   return null;
 }
 

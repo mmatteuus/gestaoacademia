@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAlunos, useProdutos, useTurmas } from '@/services/queries';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/features/auth/AuthContext';
+import { InstallAppButton } from '@/components/pwa/PWAProvider';
 
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
@@ -82,6 +83,7 @@ export function AppTopbar() {
         </div>
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
+        <InstallAppButton />
         <Button variant="ghost" size="icon" className="h-10 w-10 md:hidden text-muted-foreground" onClick={() => setSearchOpen(!searchOpen)}>
           {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
         </Button>
