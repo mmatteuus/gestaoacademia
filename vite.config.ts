@@ -64,10 +64,12 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff,woff2}"],
-        navigateFallback: "/offline.html",
-        // Exclui rotas de API do navigate fallback — elas nunca devem retornar offline.html.
+        // Em SPA, o fallback de navegação precisa ser o app shell.
+        // Usar offline.html aqui quebrava o PWA instalado ao abrir /login.
+        navigateFallback: "/index.html",
+        // Exclui rotas de API do navigate fallback — elas nunca devem retornar HTML.
         navigateFallbackDenylist: [/^\/rows/, /^\/status/, /^\/api/],
-        // Apenas rotas SPA usam o navigate fallback (loga, dashboard, etc.)
+        // Apenas rotas SPA usam o navigate fallback (login, dashboard etc.).
         navigateFallbackAllowlist: [/^\/(?!rows|status|api)/],
         ignoreURLParametersMatching: [/^source$/, /^version$/],
         cleanupOutdatedCaches: true,

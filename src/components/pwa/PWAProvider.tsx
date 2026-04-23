@@ -76,10 +76,13 @@ export function PWAProvider() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
-    
+
     // Em produção ou preview, registramos o SW
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (isLocal && !import.meta.env.VITE_ENABLE_PWA_DEV) return;
+
+    let unmounted = false;
+    let disposeRegistrationSync = () => {};
 
     import("virtual:pwa-register")
       .then(({ registerSW }) => {
@@ -95,17 +98,62 @@ export function PWAProvider() {
               },
             });
           },
+          onRegistered(registration) {
+            if (!registration) return;
+
+            const checkForUpdates = () => {
+              registration.update().catch(() => {
+                // Erro silencioso: reconexões instáveis são comuns em PWA móvel.
+              });
+            };
+
+            const onVisible = () => {
+              if (document.visibilityState === "visible") {
+                checkForUpdates();
+              }
+            };
+
+            const onOnline = () => {
+              checkForUpdates();
+            };
+
+            // Atualização proativa para evitar PWA "presa" em versão antiga.
+            const intervalId = window.setInterval(checkForUpdates, 5 * 60 * 1000);
+            window.addEventListener("visibilitychange", onVisible);
+            window.addEventListener("online", onOnline);
+
+            disposeRegistrationSync = () => {
+              window.clearInterval(intervalId);
+              window.removeEventListener("visibilitychange", onVisible);
+              window.removeEventListener("online", onOnline);
+            };
+
+            // Executa uma checagem inicial após registrar.
+            checkForUpdates();
+
+            if (unmounted) {
+              disposeRegistrationSync();
+            }
+          },
           onOfflineReady() {
             toast.info("Pronto para uso offline", {
               description: "O sistema funcionará mesmo sem internet.",
               duration: 5000,
             });
           },
+          onRegisterError(error) {
+            console.warn("PWA: Falha ao registrar Service Worker:", error);
+          },
         });
       })
       .catch((err) => {
         console.warn('PWA: Erro ao registrar SW:', err);
       });
+
+    return () => {
+      unmounted = true;
+      disposeRegistrationSync();
+    };
   }, []);
 
   // --- Online/Offline badge ---------------------------------------------
@@ -286,4 +334,3 @@ export function InstallAppButton() {
     </Button>
   );
 }
-
