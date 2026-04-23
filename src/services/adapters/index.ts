@@ -145,7 +145,15 @@ export const sessaoAulaAdapter = {
     turmaId: r.turma_id ?? '',
     data: r.data ?? '',
     professor: r.professor ?? '',
-    presencas: parseJsonArray<{ alunoId: string; presente: boolean }>(r.presencas),
+    presencas: (() => {
+      const raw = parseJsonArray<unknown>(r.presencas);
+      // Tolera formato legado: lista de IDs (strings) em vez de objetos.
+      return raw.map((item) => {
+        if (typeof item === 'string') return { alunoId: item, presente: true };
+        const obj = item as { alunoId?: string; presente?: boolean };
+        return { alunoId: obj.alunoId ?? '', presente: obj.presente ?? true };
+      });
+    })(),
   }),
   toRow: (s: Partial<SessaoAula>): Record<string, unknown> => stripUndef({
     id: s.id,
