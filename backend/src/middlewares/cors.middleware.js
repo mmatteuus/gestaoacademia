@@ -28,9 +28,12 @@ export function corsMiddleware(req, res, next) {
 
   if (!origin) {
     if (req.method === 'OPTIONS') return res.status(204).end();
-    // Em produção, request sem Origin (curl/Postman/server-to-server) só passa se houver API key
-    // OU se for endpoint público (ex.: formulário de cadastro compartilhado).
-    if (isProduction && !req.headers['x-api-key'] && !req.path.startsWith('/api/public/')) {
+    // Em produção, request sem Origin (curl/Postman/server-to-server) só passa se:
+    // - for GET/HEAD (same-origin do navegador frequentemente omite Origin em GET);
+    // - OU tiver API key;
+    // - OU for endpoint público.
+    const safeMethod = req.method === 'GET' || req.method === 'HEAD';
+    if (isProduction && !safeMethod && !req.headers['x-api-key'] && !req.path.startsWith('/api/public/')) {
       return res.status(403).json({ ok: false, error: 'operation_failed', message: 'Origin required' });
     }
     return next();
