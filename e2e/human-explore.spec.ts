@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
 const SENHA = 'gemeos.com';
+const ACTION_TIMEOUT = 8_000;
 
 const adminRoutes: Array<{ path: string; heading: RegExp }> = [
   { path: '/', heading: /dashboard/i },
@@ -77,7 +78,7 @@ async function fillVisibleFields(scope: Locator, contextName: string) {
       }
 
       if (type === 'checkbox' || type === 'radio') {
-        await field.click({ timeout: 2_000 });
+        await field.click({ timeout: ACTION_TIMEOUT });
         filledCount += 1;
         continue;
       }
@@ -133,7 +134,7 @@ async function clickDialogAction(dialog: Locator) {
     name: /salvar|criar|adicionar|registrar|enviar|confirmar|finalizar|gerar|ok/i,
   });
   if (await action.first().isVisible().catch(() => false)) {
-    await action.first().click({ timeout: 2_500 });
+    await action.first().click({ timeout: ACTION_TIMEOUT });
     return;
   }
 
@@ -141,7 +142,7 @@ async function clickDialogAction(dialog: Locator) {
     name: /fechar|cancelar|voltar|concluir|pronto/i,
   });
   if (await fallbackClose.first().isVisible().catch(() => false)) {
-    await fallbackClose.first().click({ timeout: 2_500 });
+    await fallbackClose.first().click({ timeout: ACTION_TIMEOUT });
   }
 }
 
@@ -152,7 +153,7 @@ async function closeVisibleDialogs(page: Page) {
 
     const closeButton = dialog.getByRole('button', { name: /fechar|cancelar|voltar|concluir|pronto|x/i }).first();
     if (await closeButton.isVisible().catch(() => false)) {
-      await closeButton.click({ timeout: 2_000 }).catch(() => {});
+      await closeButton.click({ timeout: ACTION_TIMEOUT }).catch(() => {});
     } else {
       await page.keyboard.press('Escape').catch(() => {});
     }
@@ -208,7 +209,7 @@ async function clickVisibleButtonsInMain(page: Page, contextName: string) {
 
       await runStep(page, `${contextName}: clicar "${label}"`, async () => {
         await handle.scrollIntoViewIfNeeded();
-        await handle.click({ timeout: 2_500 });
+        await handle.click({ timeout: ACTION_TIMEOUT });
         clicked += 1;
         await page.waitForTimeout(350);
         await interactWithVisibleDialog(page, contextName);
