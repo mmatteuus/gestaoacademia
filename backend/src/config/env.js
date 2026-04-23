@@ -59,9 +59,11 @@ if (!parsed.success) {
 }
 
 const isProductionRuntime = parsed.data.nodeEnv === 'production' || !!process.env.VERCEL;
+// Warning, NÃO fatal: derrubar a função serverless por falta de API_KEY
+// quebrava o app inteiro. Avisa nos logs para que o operador configure depois.
+// A proteção real continua: o middleware apiKey nega requests em prod sem a key.
 if (isProductionRuntime && !parsed.data.apiKey) {
-  console.error('\n❌ API_KEY é obrigatória em produção (defina API_KEY com pelo menos 16 caracteres).\n');
-  process.exit(1);
+  console.warn('\n⚠️  API_KEY ausente em produção. Defina API_KEY (mín. 16 chars) na Vercel para proteger a API.\n');
 }
 
 export const env = parsed.data;

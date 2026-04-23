@@ -36,7 +36,12 @@ export function corsMiddleware(req, res, next) {
     return next();
   }
 
-  if (!allowedOrigins.has(origin)) {
+  // Same-origin (frontend e API hospedados no mesmo domínio na Vercel) sempre passa.
+  // Cobrimos os dois casos: Origin batendo com o Host atual (req.headers.host).
+  const host = req.headers.host;
+  const sameOrigin = host && (origin === `https://${host}` || origin === `http://${host}`);
+
+  if (!sameOrigin && !allowedOrigins.has(origin)) {
     return res.status(403).json({ ok: false, error: 'operation_failed', message: 'Origin not allowed' });
   }
 
