@@ -100,7 +100,7 @@ export function BottomNav() {
 
       {moreOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
           onClick={() => setMoreOpen(false)}
           role="dialog"
           aria-label="Mais opções de navegação"
