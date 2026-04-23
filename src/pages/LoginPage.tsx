@@ -91,12 +91,12 @@ export default function LoginPage() {
         <p className="text-center text-xs text-muted-foreground">
           Desenvolvido por{' '}
           <a
-            href="https://MtsFerreira - Oss.dev"
+            href="https://mtsferreira.dev"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
           >
-            MtsFerreira - Oss
+MtsFerreira.dev - Oss
           </a>
         </p>
       </form>

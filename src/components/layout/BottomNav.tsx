@@ -43,12 +43,12 @@ export function BottomNav() {
         <p className="text-center text-[10px] text-muted-foreground/70 pt-1 pb-0.5 leading-none border-b border-border/40">
           Desenvolvido por{' '}
           <a
-            href="https://www.mtsferreira.dev/"
+            href="https://mtsferreira.dev"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-primary hover:underline"
           >
-            MtsFerreira - Oss
+            MtsFerreira.dev - Oss
           </a>
         </p>
         <ul className="mx-auto grid max-w-3xl grid-cols-5 items-stretch">
