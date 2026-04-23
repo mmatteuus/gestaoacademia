@@ -23,4 +23,23 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // Primitivos shadcn/ui são gerados externamente e exportam variants CVA
+    // junto com o componente por design. Providers de domínio expõem o hook
+    // consumidor (ex.: useAcademiaData) no mesmo arquivo — é o padrão do
+    // projeto. Desligar o aviso nesses casos é uma decisão consciente.
+    files: [
+      "src/components/ui/badge.tsx",
+      "src/components/ui/button.tsx",
+      "src/components/ui/form.tsx",
+      "src/components/ui/sidebar.tsx",
+      "src/components/ui/sonner.tsx",
+      "src/components/ui/toggle.tsx",
+      "src/features/academia/AcademiaDataProvider.tsx",
+      "src/features/operacional/OperacionalDataProvider.tsx",
+    ],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
 );
