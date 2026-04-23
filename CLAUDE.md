@@ -53,5 +53,26 @@ Two apps share the repo: a React admin frontend and an Express API backed by Goo
 ### Deploy (Vercel)
 `vercel.json` uses a dual-build: `@vercel/static-build` produces `dist/` from `npm run vercel-build`; `@vercel/node` wraps `server.js`. Routes split by prefix — `/rows*` and `/status` go to the API, everything else falls through `filesystem` then SPA-fallbacks to `/index.html`. Any new API route must be added to `vercel.json` `routes` or it will be swallowed by the SPA fallback.
 
+## Browser automation (Playwright MCP)
+
+Claude Code has access to the `@playwright/mcp` server (registered at user scope). That gives tools like `browser_navigate`, `browser_click`, `browser_type`, `browser_snapshot`, `browser_take_screenshot`, `browser_fill_form`, `browser_evaluate`, etc. — Claude can drive a Chromium window as a real user would.
+
+Default mode: **persistent profile** at `C:\Users\MATEUS\.claude\playwright-profile` (logins and cookies survive across Claude sessions, separate from the user's main Chrome).
+
+To switch to **CDP mode** (connect to the user's actual Chrome with all extensions/tabs/sessions), first launch Chrome once with a debugging port:
+
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="C:\Users\MATEUS\AppData\Local\Google\Chrome\User Data"
+```
+
+Then reconfigure the MCP (user scope):
+
+```bash
+claude mcp remove playwright -s user
+claude mcp add playwright -s user -- npx -y @playwright/mcp@latest --cdp-endpoint http://localhost:9222
+```
+
+Restart Claude Code after changing MCP config. **Caveat:** in CDP mode Claude can see and act on every open tab — only use it for deliberate QA sessions on this app.
+
 ### Git state caveat
 On `main` the frontend source was once removed (commit `fba87f4`) and later restored. If `src/` ever appears empty again, the last good snapshot is commit `181261d`. The `dist/` build in the repo is checked in and must be kept in sync with source when deploying, since the Vercel build runs `vite build` again anyway but the checked-in `dist/` is the historical record.
