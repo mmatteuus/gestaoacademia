@@ -2,6 +2,13 @@
 <html lang="pt-BR" style="background:#0a0a0a;color-scheme:dark">
 
 <head>
+  <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+  <script type="module" src="/@vite/client"></script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Gêmeos Academia</title>
@@ -60,12 +67,11 @@
 
   <!-- Bloquear indexação (sistema privado) -->
   <meta name="robots" content="noindex, nofollow" />
-  <script type="module" crossorigin src="/assets/index-Tpw9LCVf.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BZsm2tZE.css">
-<link rel="manifest" href="/manifest.webmanifest"></head>
+</head>
 
 <body>
   <div id="root"></div>
+  <script type="module" src="/src/main.tsx?t=1776958225286"></script>
 </body>
 
 </html>

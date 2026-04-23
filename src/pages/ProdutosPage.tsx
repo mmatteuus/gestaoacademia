@@ -269,7 +269,14 @@ export default function ProdutosPage() {
               const estoqueStatus = produto.estoque === 0 ? 'sem-estoque' : produto.estoque <= produto.estoqueMinimo ? 'estoque-baixo' : 'estoque-ok';
               return (
                 <div key={produto.id} className="bg-card border border-border rounded-lg p-4 hover:bg-accent/30 transition-colors group relative">
-                  <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleEdit(produto)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-3 right-3 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleEdit(produto)}
+                    aria-label={`Editar produto ${produto.nome}`}
+                    title={`Editar produto ${produto.nome}`}
+                  >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <div className="flex items-start justify-between mb-2 pr-8">
@@ -385,16 +392,37 @@ export default function ProdutosPage() {
                     <p className="text-xs text-muted-foreground">R$ {item.precoUnitario.toFixed(2)} cada</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQty(item.produtoId, -1)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => updateQty(item.produtoId, -1)}
+                      aria-label={`Diminuir quantidade de ${item.nomeProduto}`}
+                      title={`Diminuir quantidade de ${item.nomeProduto}`}
+                    >
                       <MinusIcon className="h-3 w-3" />
                     </Button>
                     <span className="text-sm font-medium text-foreground w-6 text-center">{item.quantidade}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQty(item.produtoId, 1)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => updateQty(item.produtoId, 1)}
+                      aria-label={`Aumentar quantidade de ${item.nomeProduto}`}
+                      title={`Aumentar quantidade de ${item.nomeProduto}`}
+                    >
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
                   <span className="text-sm font-semibold text-foreground w-20 text-right">R$ {(item.quantidade * item.precoUnitario).toFixed(2)}</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeFromCarrinho(item.produtoId)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive"
+                    onClick={() => removeFromCarrinho(item.produtoId)}
+                    aria-label={`Remover ${item.nomeProduto} do carrinho`}
+                    title={`Remover ${item.nomeProduto} do carrinho`}
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
