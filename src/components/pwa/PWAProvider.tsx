@@ -33,8 +33,8 @@ export function PWAProvider() {
     if (typeof window === "undefined") return;
 
     // Detecta se o app foi aberto como PWA (standalone)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                        (window.navigator as any).standalone || 
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                        (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
                         document.referrer.includes('android-app://');
 
     if (isStandalone) {
@@ -182,7 +182,7 @@ export function InstallAppButton() {
     if (typeof window === "undefined") return;
 
     const checkStatus = () => {
-      const nav = window.navigator as any;
+      const nav = window.navigator as Navigator & { standalone?: boolean };
       const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         nav.standalone === true;
