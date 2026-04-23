@@ -93,7 +93,7 @@ export default function LoginPage() {
         <p className="text-center text-xs text-muted-foreground">
           Desenvolvido por{' '}
           <a
-            href="https://mtsferreira.dev"
+            href="https://www.mtsferreira.dev/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"

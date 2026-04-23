@@ -43,7 +43,7 @@ export function BottomNav() {
         <p className="text-center text-[10px] text-muted-foreground/70 pt-1 pb-0.5 leading-none border-b border-border/40">
           Desenvolvido por{' '}
           <a
-            href="https://mtsferreira.dev"
+            href="https://www.mtsferreira.dev/"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-primary hover:underline"
