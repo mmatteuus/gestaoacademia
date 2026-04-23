@@ -8,8 +8,8 @@ const ROOT = process.cwd();
 const SCREEN_DIR = path.join(ROOT, 'qa-screenshots');
 const REPORT_PATH = path.join(ROOT, 'qa-report.md');
 const CONSOLE_PATH = path.join(ROOT, 'qa-console.log');
-const BASE_URL = 'http://127.0.0.1:8080';
-const BACKEND_URL = 'http://127.0.0.1:3000/status';
+const BASE_URL = 'http://localhost:8080';
+const BACKEND_URL = 'http://localhost:3000/status';
 
 const ROUTES = [
   '/',
@@ -846,10 +846,11 @@ async function campeonatosScenario(page) {
   await expectVisible(dialog);
 
   await stateAction(page, 'campeonatos-fill', async () => {
-    await typeWhenVisible(dialog.getByLabel(/Nome do Evento/i), createdData.campeonatoNome);
-    await fillWhenVisible(dialog.getByLabel(/^Data/i), '2026-10-10');
-    await typeWhenVisible(dialog.getByLabel(/^Local/i), `${TEST_PREFIX} Arena`);
-    await typeWhenVisible(dialog.getByLabel(/^Modalidade/i), 'Jiu-Jitsu');
+    const inputs = dialog.locator('input');
+    await fillWhenVisible(inputs.nth(0), createdData.campeonatoNome);
+    await fillWhenVisible(inputs.nth(1), '2026-10-10');
+    await fillWhenVisible(inputs.nth(2), `${TEST_PREFIX} Arena`);
+    await fillWhenVisible(inputs.nth(3), 'Jiu-Jitsu');
   });
 
   await stateAction(page, 'campeonatos-submit', async () => {
@@ -952,7 +953,7 @@ async function produtosScenario(page) {
     await typeWhenVisible(dialog.getByLabel(/Nome do Produto/i), createdData.produtoNome);
     await typeWhenVisible(dialog.getByLabel(/Descrição/i), `${TEST_PREFIX} item de venda`);
     await fillWhenVisible(dialog.getByLabel(/Preço/i), '150');
-    await fillWhenVisible(dialog.getByLabel(/^Estoque$/i), '12');
+    await fillWhenVisible(dialog.getByLabel(/Estoque Atual/i), '12');
     await fillWhenVisible(dialog.getByLabel(/Estoque Mínimo/i), '2');
 
     const combo = dialog.getByRole('combobox').first();
@@ -1057,12 +1058,14 @@ async function aluguelScenario(page) {
   await expectVisible(dialog);
 
   await stateAction(page, 'aluguel-fill-form', async () => {
-    await typeWhenVisible(dialog.getByLabel(/Locatário \/ Cliente/i), createdData.aluguelCliente);
-    await fillWhenVisible(dialog.getByLabel(/Telefone do cliente/i), '11900000000');
-    await fillWhenVisible(dialog.getByLabel(/^Data/i), '2026-08-20');
-    await fillWhenVisible(dialog.getByLabel(/Hora Início/i), '18:00');
-    await fillWhenVisible(dialog.getByLabel(/Hora Fim/i), '20:00');
-    await fillWhenVisible(dialog.getByLabel(/Valor Aluguel/i), '300');
+    const inputs = dialog.locator('input');
+    await fillWhenVisible(inputs.nth(0), createdData.aluguelCliente);
+    await fillWhenVisible(inputs.nth(1), '11900000000');
+    await dialog.locator('select').first().selectOption({ label: 'Tatame Principal' });
+    await fillWhenVisible(inputs.nth(2), '2026-08-20');
+    await fillWhenVisible(inputs.nth(3), '18:00');
+    await fillWhenVisible(inputs.nth(4), '20:00');
+    await fillWhenVisible(inputs.nth(5), '300');
   });
 
   await stateAction(page, 'aluguel-submit', async () => {
@@ -1656,7 +1659,7 @@ async function main() {
     recordWarning('Backend local não respondeu /status', '/status', 'Fluxos de escrita podem falhar por indisponibilidade de API local.');
   }
 
-  const previewProc = spawnProcess('npm', ['run', 'preview', '--', '--host', '127.0.0.1', '--port', '8080', '--strictPort'], {
+  const previewProc = spawnProcess('npm', ['run', 'preview', '--', '--host', 'localhost', '--port', '8080', '--strictPort'], {
     env: {
       VITE_ENABLE_PWA_DEV: 'true',
       VITE_API_KEY: process.env.API_KEY || '',
@@ -1665,7 +1668,7 @@ async function main() {
 
   const frontendOk = await waitForHttp(BASE_URL, 90000);
   if (!frontendOk) {
-    throw new Error('Frontend não subiu em http://127.0.0.1:8080');
+    throw new Error('Frontend não subiu em http://localhost:8080');
   }
 
   let browser;
