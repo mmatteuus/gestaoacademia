@@ -9,6 +9,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
+      // Em mobile preferimos toasts acima do BottomNav; desktop mantém o padrão.
+      position="top-center"
+      // Offset respeita a safe area do notch em iOS/Android.
+      offset="calc(env(safe-area-inset-top) + 12px)"
       className="toaster group"
       toastOptions={{
         classNames: {

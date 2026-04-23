@@ -25,4 +25,12 @@ describe('Backend audit guards', () => {
     expect(res.status).toBe(400);
     expect(res.body?.error).toBe('validation_error');
   });
+
+  it('validates public cadastro payload before persisting', async () => {
+    const res = await request(app)
+      .post('/api/public/aluno-cadastro')
+      .send({ nome: 'A', telefone: '123' });
+    expect(res.status).toBe(400);
+    expect(res.body?.error).toBe('validation_error');
+  });
 });

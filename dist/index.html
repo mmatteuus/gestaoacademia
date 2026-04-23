@@ -1,14 +1,18 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" style="background:#0a0a0a;color-scheme:dark">
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Gêmeos Academia</title>
   <meta name="description" content="Sistema administrativo premium para academia de artes marciais" />
 
-  <!-- PWA / Theme -->
-  <meta name="theme-color" content="#0a0a0a" />
+  <!-- Evita flash branco no primeiro paint (antes do CSS carregar) -->
+  <style>html,body{background:#0a0a0a;color:#f2f2f2;margin:0}</style>
+
+  <!-- PWA / Theme — adapta à barra de status do sistema -->
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: light)" />
   <meta name="color-scheme" content="dark" />
   <meta name="application-name" content="Gêmeos" />
 
@@ -25,10 +29,24 @@
 
   <!-- Ícones -->
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
-  <link rel="icon" type="image/png" sizes="64x64" href="/pwa-64x64.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/icons/pwa-64x64.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/pwa-192x192.png" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png" />
   <link rel="mask-icon" href="/icons/icon.svg" color="#dc2626" />
+
+  <!-- Apple splash screens (portrait) para iPhones modernos em modo standalone.
+       Quando o device não bate com nenhum media query, iOS usa background preto
+       do <html>, o que já é o efeito desejado. -->
+  <link rel="apple-touch-startup-image" href="/icons/apple-splash-portrait-dark-1290x2796.png"
+        media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/icons/apple-splash-portrait-dark-1320x2868.png"
+        media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/icons/apple-splash-portrait-dark-1206x2622.png"
+        media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/icons/apple-splash-portrait-dark-1170x2532.png"
+        media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/icons/apple-splash-portrait-dark-1179x2556.png"
+        media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
 
   <!-- Security Meta Tags (X-Frame-Options/X-Content-Type-Options vêm via HTTP header no backend) -->
   <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -42,8 +60,8 @@
 
   <!-- Bloquear indexação (sistema privado) -->
   <meta name="robots" content="noindex, nofollow" />
-  <script type="module" crossorigin src="/assets/index-DBfdoRXD.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BJ4VJcvZ.css">
+  <script type="module" crossorigin src="/assets/index-DFckVN5P.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BZsm2tZE.css">
 <link rel="manifest" href="/manifest.webmanifest"></head>
 
 <body>

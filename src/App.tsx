@@ -12,6 +12,7 @@ import { InsightsDataProvider } from '@/features/insights/InsightsDataProvider';
 import { ApiError } from '@/services/api/client';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
 import { PWAProvider } from '@/components/pwa/PWAProvider';
+import { PageSkeleton } from '@/components/shared/PageSkeleton';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const PublicCadastroPage = lazy(() => import('./pages/PublicCadastroPage'));
@@ -112,7 +113,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) {
     return (
-      <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
+      <Suspense fallback={<PageSkeleton />}>
         <LoginPage />
       </Suspense>
     );
@@ -124,7 +125,7 @@ function AdminApp() {
   return (
     <AuthGate>
       <AdminLayout>
-        <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
+        <Suspense fallback={<PageSkeleton />}>
           <Routes>
             <Route path="/" element={<WithAllData><DashboardPage /></WithAllData>} />
             <Route path="/alunos" element={<WithAcademia><AlunosPage /></WithAcademia>} />
@@ -164,7 +165,7 @@ const App = () => (
       <PWAProvider />
       <AuthProvider>
         <BrowserRouter>
-          <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando...</div>}>
+          <Suspense fallback={<PageSkeleton />}>
             <Routes>
               <Route path="/cadastro/aluno" element={<PublicCadastroPage />} />
               <Route path="*" element={<AdminApp />} />

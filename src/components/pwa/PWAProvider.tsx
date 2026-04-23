@@ -85,6 +85,45 @@ export function PWAProvider() {
       window.removeEventListener("offline", onOffline);
       window.removeEventListener("online", onOnline);
     };
+  }, [queryClient]);
+
+  // --- Back button intercepta modais/drawers abertos ----------------------
+  // Em PWA Android o back físico navega pra trás na history. Se há um dialog
+  // aberto, queremos que ele feche em vez de sair do app. Fazemos isso
+  // empurrando um state "sentinela" quando qualquer Radix Dialog abre, e
+  // consumindo esse state no popstate para enviar Escape à UI.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const SENTINEL = "__gemeos_modal__";
+    let pushed = false;
+
+    const observer = new MutationObserver(() => {
+      const hasOpenDialog = document.querySelector('[role="dialog"][data-state="open"]');
+      if (hasOpenDialog && !pushed) {
+        history.pushState({ [SENTINEL]: true }, "");
+        pushed = true;
+      } else if (!hasOpenDialog && pushed) {
+        pushed = false;
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-state"] });
+
+    const onPop = (e: PopStateEvent) => {
+      const openDialog = document.querySelector('[role="dialog"][data-state="open"]');
+      if (openDialog) {
+        // Simula Escape no dialog atual (Radix escuta).
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        pushed = false;
+      }
+      void e;
+    };
+    window.addEventListener("popstate", onPop);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("popstate", onPop);
+    };
   }, []);
 
   // Botão fixo "Instalar app" no AppTopbar via <InstallAppButton /> cuida de

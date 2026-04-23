@@ -57,6 +57,16 @@ test('Ranking: clica na aba "Regras" e vê conteúdo de regras', async ({ page }
 });
 
 test('Formulário público: preenche e envia cadastro de aluno', async ({ page }) => {
+  let capturedPayload: Record<string, unknown> | null = null;
+  await page.route('**/api/public/aluno-cadastro', async (route) => {
+    capturedPayload = (route.request().postDataJSON() ?? null) as Record<string, unknown> | null;
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, id: 'precad_ui_test' }),
+    });
+  });
+
   // Não precisa de login — rota pública
   await page.goto('/cadastro/aluno');
 
@@ -76,6 +86,8 @@ test('Formulário público: preenche e envia cadastro de aluno', async ({ page }
 
   // Tela de sucesso
   await expect(page.getByRole('heading', { name: /Cadastro enviado/i })).toBeVisible({ timeout: 15000 });
+  expect(capturedPayload?.nome).toBe(nome);
+  expect(capturedPayload?.telefone).toBe('11999999999');
 });
 
 test('AlunosPage: botão "Enviar formulário" presente e clicável', async ({ page }) => {
@@ -83,11 +95,28 @@ test('AlunosPage: botão "Enviar formulário" presente e clicável', async ({ pa
   await page.goto('/alunos');
   await page.waitForTimeout(800);
 
-  // Botão de share/copiar (com title "Compartilhar formulário de cadastro")
-  const btn = page.locator('button[title*="Compartilhar"]').first();
+  const btn = page.getByRole('button', { name: /Compartilhar formulário de cadastro/i });
   await expect(btn).toBeVisible();
-  // Confirma que o título aponta para o link público correto
-  // (não clicamos para evitar dependência de clipboard API em WebKit)
+  await expect(btn).toHaveAttribute('title', /Compartilhar formulário de cadastro/i);
+});
+
+test('Formulário público: falha da API mostra erro e destrava envio', async ({ page }) => {
+  await page.route('**/api/public/aluno-cadastro', async (route) => {
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: false, message: 'Não foi possível salvar.' }),
+    });
+  });
+
+  await page.goto('/cadastro/aluno');
+  await page.getByLabel(/Nome completo/i).fill(`Aluno Falha ${Date.now()}`);
+  await page.getByLabel(/Telefone \*/i).fill('11999999999');
+
+  await page.getByRole('button', { name: /Enviar cadastro/i }).click();
+
+  await expect(page.getByRole('alert')).toContainText(/não foi possível/i);
+  await expect(page.getByRole('button', { name: /Enviar cadastro/i })).toBeEnabled();
 });
 
 test('Login: lockout após 5 tentativas incorretas', async ({ page }) => {

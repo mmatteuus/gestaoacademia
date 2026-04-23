@@ -26,6 +26,8 @@ const initial: Form = {
   observacoes: '',
 };
 
+const REQUEST_TIMEOUT_MS = 12000;
+
 export default function PublicCadastroPage() {
   const [form, setForm] = useState<Form>(initial);
   const [loading, setLoading] = useState(false);
@@ -38,11 +40,15 @@ export default function PublicCadastroPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
     try {
       const res = await fetch('/api/public/aluno-cadastro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
+        signal: controller.signal,
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body?.ok) {
@@ -50,9 +56,14 @@ export default function PublicCadastroPage() {
         return;
       }
       setSuccess(true);
-    } catch {
-      setError('Falha de rede. Verifique sua conexão e tente novamente.');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setError('Tempo de resposta excedido. Verifique a conexão e tente novamente.');
+      } else {
+        setError('Falha de rede. Verifique sua conexão e tente novamente.');
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -68,7 +79,7 @@ export default function PublicCadastroPage() {
           <p className="text-sm text-muted-foreground">
             Recebemos seus dados. Em breve a academia vai entrar em contato para finalizar a matrícula.
           </p>
-          <p className="text-center text-xs text-muted-foreground pt-2">Desenvolvido por MtsFerreira</p>
+          <FooterCredit className="pt-2" />
         </div>
       </main>
     );
@@ -146,9 +157,25 @@ export default function PublicCadastroPage() {
           <p className="text-xs text-center text-muted-foreground">* campos obrigatórios</p>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground mt-4">Desenvolvido por MtsFerreira</p>
+        <FooterCredit className="mt-4" />
       </div>
     </main>
+  );
+}
+
+function FooterCredit({ className }: { className?: string }) {
+  return (
+    <p className={`text-center text-xs text-muted-foreground ${className || ''}`.trim()}>
+      Desenvolvido por{' '}
+      <a
+        href="https://MtsFerreira.dev"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:underline"
+      >
+        MtsFerreira
+      </a>
+    </p>
   );
 }
 

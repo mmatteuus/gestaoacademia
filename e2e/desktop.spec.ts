@@ -38,7 +38,7 @@ test('zoom não está bloqueado (viewport meta)', async ({ page }) => {
   const content = await page.locator('meta[name="viewport"]').getAttribute('content');
   expect(content).toBeTruthy();
   expect(content).not.toContain('maximum-scale');
-  expect(content).not.toContain('user-scalable=0');
+  expect(content).not.toMatch(/user-scalable\s*=\s*(0|no)/i);
 });
 
 test('bundle não expõe senha em texto puro', async ({ page, request }) => {

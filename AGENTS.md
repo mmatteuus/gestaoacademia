@@ -16,6 +16,12 @@ O sistema deve parecer um **produto real, premium e intuitivo**, e não um prot�
 - O foco atual continua sendo **FRONT-END**.
 - Backend, banco, autenticação real, integrações reais e persistência real **não são prioridade agora**, a menos que haja decisão explícita posterior.
 
+## Diretriz ativa de plataforma (PWA-first)
+
+- A trilha de APK/IPA e empacotamento nativo (Capacitor, Android, iOS) está **congelada por decisão de produto**.
+- O foco atual é tornar o **PWA mais próximo de app real**, mantendo estabilidade e sem regressão.
+- Não criar `android/`, `ios/`, `capacitor.config.*`, scripts de build nativo, ou fluxos de loja sem decisão explícita posterior.
+
 ## Regra principal para futuros agentes
 
 Antes de propor qualquer mudança, trate este projeto como um **frontend existente que precisa ser refinado, limpo, reorganizado e amadurecido**.
@@ -173,6 +179,15 @@ Todo agente deve considerar que o projeto só está maduro quando houver evidên
 - responsividade consistente
 - documentação útil
 - remoção de vestígios de scaffold no produto final
+
+## Checklist de aceitação PWA-first
+
+Para considerar uma entrega concluída na fase atual, validar:
+- UX mobile com feel de app (navegação fluida, safe areas, sem atrito desnecessário)
+- instalação PWA quando suportado (`beforeinstallprompt` / modo standalone)
+- comportamento offline previsível (fallback + fila/sincronização sem travar UI)
+- estados de erro e timeout claros (sem loading infinito)
+- acessibilidade básica preservada (zoom, foco, labels e feedbacks)
 
 ## Como trabalhar neste repositório
 

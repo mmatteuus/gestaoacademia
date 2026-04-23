@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { haptic } from '@/lib/haptics';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,7 @@ export default function FrequenciaPage() {
     }
 
     toast.success('Frequência registrada com sucesso');
+    haptic('success');
     setNovaOpen(false);
   };
 

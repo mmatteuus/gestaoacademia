@@ -1,11 +1,15 @@
 ﻿import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { haptic } from '@/lib/haptics';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/shared/PullToRefreshIndicator';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle, Share2, Copy } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil, CalendarCheck, MessageCircle, Share2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -73,6 +77,11 @@ export default function AlunosPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingAlunoId, setEditingAlunoId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+
+  const queryClient = useQueryClient();
+  const { pullDistance, refreshing, threshold } = usePullToRefresh(async () => {
+    await queryClient.invalidateQueries();
+  });
   const perPage = 6;
 
   const selectedAluno = selectedAlunoId ? alunosList.find((aluno) => aluno.id === selectedAlunoId) ?? null : null;
@@ -108,6 +117,7 @@ export default function AlunosPage() {
         return;
       }
       toast.success('Aluno atualizado com sucesso.');
+      haptic('success');
     } else {
       const newAluno: Aluno = {
         ...patch,
@@ -121,6 +131,7 @@ export default function AlunosPage() {
         return;
       }
       toast.success('Aluno cadastrado com sucesso.');
+      haptic('success');
     }
 
     setFormOpen(false);
@@ -188,6 +199,7 @@ export default function AlunosPage() {
 
   return (
     <div className="space-y-6">
+      <PullToRefreshIndicator distance={pullDistance} threshold={threshold} refreshing={refreshing} />
       <PageHeader
         title="Alunos"
         subtitle={`${alunosList.length} alunos cadastrados`}
@@ -543,26 +555,54 @@ export default function AlunosPage() {
 
 function ShareCadastroButton() {
   const url = typeof window !== 'undefined' ? `${window.location.origin}/cadastro/aluno` : '/cadastro/aluno';
+
+  const openUrlFallback = () => {
+    if (typeof window === 'undefined') return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Link copiado! Envie ao aluno.');
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copiado! Envie ao aluno.');
+        return;
+      }
+      openUrlFallback();
+      toast('Abrimos o formulário em nova aba para compartilhamento.');
     } catch {
-      toast.error('Não foi possível copiar. Copie manualmente do link aberto.');
-      window.open(url, '_blank', 'noopener,noreferrer');
+      openUrlFallback();
+      toast.error('Não foi possível copiar automaticamente. Formulário aberto em nova aba.');
     }
   };
+
   const handleShare = async () => {
-    if (navigator.share) {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: 'Cadastro de aluno', text: 'Preencha seus dados na Gêmeos Academia', url });
+        await navigator.share({
+          title: 'Cadastro de aluno',
+          text: 'Preencha seus dados na Gêmeos Academia',
+          url,
+        });
         return;
-      } catch {
-        /* fallback abaixo */
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
       }
     }
-    handleCopy();
+    await handleCopy();
   };
-  void handleShare;
-  return null;
+
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      className="h-9"
+      title="Compartilhar formulário de cadastro"
+      aria-label="Compartilhar formulário de cadastro"
+      onClick={handleShare}
+    >
+      <Share2 className="mr-1 h-4 w-4" />
+      Enviar formulário
+    </Button>
+  );
 }

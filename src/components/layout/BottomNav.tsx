@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
+import { haptic } from '@/lib/haptics';
 import {
   LayoutDashboard, Users, BookOpen, CalendarCheck,
   Award, Trophy, DollarSign, Package, Building2,
@@ -42,7 +43,7 @@ export function BottomNav() {
         <p className="text-center text-[10px] text-muted-foreground/70 pt-1 pb-0.5 leading-none border-b border-border/40">
           Desenvolvido por{' '}
           <a
-            href="https://www.mtsferreira.dev/"
+            href="https://MtsFerreira.dev"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-primary hover:underline"
@@ -56,6 +57,7 @@ export function BottomNav() {
               <RouterNavLink
                 to={item.url}
                 end={item.url === '/'}
+                onClick={() => haptic('light')}
                 className={({ isActive }) =>
                   cn(
                     'flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] sm:text-xs min-h-[56px] transition-colors',
@@ -84,7 +86,7 @@ export function BottomNav() {
           <li className="flex">
             <button
               type="button"
-              onClick={() => setMoreOpen(true)}
+              onClick={() => { haptic('light'); setMoreOpen(true); }}
               aria-label="Abrir mais opções"
               className={cn(
                 'flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] sm:text-xs min-h-[56px] transition-colors',

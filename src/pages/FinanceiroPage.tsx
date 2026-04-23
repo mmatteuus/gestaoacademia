@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { haptic } from '@/lib/haptics';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { KpiCard } from '@/components/shared/KpiCard';
@@ -148,6 +149,7 @@ export default function FinanceiroPage() {
     setPagamentoOpen(false);
     setCobrancaSel(null);
     toast.success(`Pagamento de R$ ${valor.toFixed(2)} registrado.`);
+    haptic('success');
     abrirComprovante(atualizado);
   };
 

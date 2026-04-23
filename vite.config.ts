@@ -23,11 +23,12 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       injectRegister: false,
       includeAssets: [
-        "favicon.svg",
-        "apple-touch-icon-180x180.png",
-        "maskable-icon-512x512.png",
         "offline.html",
         "icons/icon.svg",
+        "icons/apple-touch-icon-180x180.png",
+        "icons/maskable-icon-512x512.png",
+        "icons/favicon.ico",
+        "icons/apple-splash-*.png",
       ],
       manifest: {
         name: "Gêmeos Academia",
@@ -45,11 +46,11 @@ export default defineConfig(({ mode }) => ({
         dir: "ltr",
         categories: ["business", "productivity", "sports"],
         icons: [
-          { src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
-          { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
-          { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
+          { src: "icons/pwa-64x64.png", sizes: "64x64", type: "image/png" },
+          { src: "icons/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "icons/pwa-512x512.png", sizes: "512x512", type: "image/png" },
           {
-            src: "maskable-icon-512x512.png",
+            src: "icons/maskable-icon-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
@@ -88,7 +89,7 @@ export default defineConfig(({ mode }) => ({
             // Escritas da API — fila em background quando offline.
             // Ao voltar online, o Workbox reenvia automaticamente (Background Sync API).
             urlPattern: ({ url, request }) =>
-              (request.method === "POST" || request.method === "PUT" || request.method === "PATCH" || request.method === "DELETE") &&
+              request.method === "POST" &&
               (url.pathname.startsWith("/rows") || url.pathname.startsWith("/api/")),
             handler: "NetworkOnly",
             method: "POST",
@@ -103,12 +104,40 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
-            // Mesma fila também para PUT/PATCH/DELETE
+            // Mesma fila para PUT.
             urlPattern: ({ url, request }) =>
-              (request.method === "PUT" || request.method === "PATCH" || request.method === "DELETE") &&
+              request.method === "PUT" &&
               (url.pathname.startsWith("/rows") || url.pathname.startsWith("/api/")),
             handler: "NetworkOnly",
             method: "PUT",
+            options: {
+              backgroundSync: {
+                name: "gemeos-writes-queue",
+                options: { maxRetentionTime: 24 * 60 },
+              },
+            },
+          },
+          {
+            // Mesma fila para PATCH.
+            urlPattern: ({ url, request }) =>
+              request.method === "PATCH" &&
+              (url.pathname.startsWith("/rows") || url.pathname.startsWith("/api/")),
+            handler: "NetworkOnly",
+            method: "PATCH",
+            options: {
+              backgroundSync: {
+                name: "gemeos-writes-queue",
+                options: { maxRetentionTime: 24 * 60 },
+              },
+            },
+          },
+          {
+            // Mesma fila para DELETE.
+            urlPattern: ({ url, request }) =>
+              request.method === "DELETE" &&
+              (url.pathname.startsWith("/rows") || url.pathname.startsWith("/api/")),
+            handler: "NetworkOnly",
+            method: "DELETE",
             options: {
               backgroundSync: {
                 name: "gemeos-writes-queue",

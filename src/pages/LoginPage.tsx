@@ -86,7 +86,17 @@ export default function LoginPage() {
           {loading ? 'Entrando...' : 'Entrar'}
         </Button>
 
-        <p className="text-center text-xs text-muted-foreground">Desenvolvido por MtsFerreira</p>
+        <p className="text-center text-xs text-muted-foreground">
+          Desenvolvido por{' '}
+          <a
+            href="https://MtsFerreira.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            MtsFerreira
+          </a>
+        </p>
       </form>
     </main>
   );

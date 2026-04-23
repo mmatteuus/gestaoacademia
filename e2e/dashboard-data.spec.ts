@@ -31,7 +31,7 @@ async function login(page: Page) {
   await page.goto('/');
   await page.getByRole('textbox', { name: /senha/i }).fill(SENHA);
   await page.getByRole('button', { name: /entrar/i }).click();
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('main').getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible({ timeout: 15000 });
 }
 
 async function createRow(api: APIRequestContext, body: Record<string, unknown>) {
@@ -171,7 +171,7 @@ test('dashboard reflete dados reais inseridos via API', async ({ page, request }
   await login(page);
 
   // Dashboard renderiza
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+  await expect(page.locator('main').getByRole('heading', { level: 1, name: 'Dashboard' })).toBeVisible();
 
   // Aguarda fim do skeleton + dados chegarem
   await page.waitForLoadState('networkidle');
