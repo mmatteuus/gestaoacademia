@@ -8,8 +8,10 @@ const ROOT = process.cwd();
 const SCREEN_DIR = path.join(ROOT, 'qa-screenshots');
 const REPORT_PATH = path.join(ROOT, 'qa-report.md');
 const CONSOLE_PATH = path.join(ROOT, 'qa-console.log');
-const BASE_URL = 'http://localhost:8080';
-const BACKEND_URL = 'http://localhost:3000/status';
+const FRONTEND_PORT = 8090;
+const BACKEND_PORT = 3100;
+const BASE_URL = `http://localhost:${FRONTEND_PORT}`;
+const BACKEND_URL = `http://localhost:${BACKEND_PORT}/status`;
 
 const ROUTES = [
   '/',
@@ -1643,7 +1645,12 @@ async function main() {
   ensureCleanArtifacts();
 
   // Build para garantir assets PWA e preview estável.
-  const build = spawnProcess('npm', ['run', 'build']);
+  const build = spawnProcess('npm', ['run', 'build'], {
+    env: {
+      VITE_API_URL: `http://localhost:${BACKEND_PORT}`,
+      VITE_API_KEY: process.env.API_KEY || '',
+    },
+  });
   const buildExit = await new Promise((resolve) => build.on('exit', resolve));
   if (buildExit !== 0) {
     throw new Error(`Build falhou com exit code ${buildExit}`);
@@ -1651,7 +1658,10 @@ async function main() {
 
   const backendProc = spawnProcess('node', ['server.js'], {
     env: {
+      PORT: String(BACKEND_PORT),
       API_KEY: '',
+      CORS_ALLOWLIST: `http://localhost:${FRONTEND_PORT}`,
+      NODE_ENV: 'development',
     },
   });
   const backendOk = await waitForHttp(BACKEND_URL, 25000);
@@ -1659,16 +1669,17 @@ async function main() {
     recordWarning('Backend local não respondeu /status', '/status', 'Fluxos de escrita podem falhar por indisponibilidade de API local.');
   }
 
-  const previewProc = spawnProcess('npm', ['run', 'preview', '--', '--host', 'localhost', '--port', '8080', '--strictPort'], {
+  const previewProc = spawnProcess('npm', ['run', 'preview', '--', '--host', 'localhost', '--port', String(FRONTEND_PORT), '--strictPort'], {
     env: {
       VITE_ENABLE_PWA_DEV: 'true',
+      VITE_API_URL: `http://localhost:${BACKEND_PORT}`,
       VITE_API_KEY: process.env.API_KEY || '',
     },
   });
 
   const frontendOk = await waitForHttp(BASE_URL, 90000);
   if (!frontendOk) {
-    throw new Error('Frontend não subiu em http://localhost:8080');
+    throw new Error(`Frontend não subiu em ${BASE_URL}`);
   }
 
   let browser;
@@ -1676,7 +1687,10 @@ async function main() {
   let page;
 
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({
+      headless: false,
+      slowMo: Number(process.env.QA_SLOWMO || 140),
+    });
     context = await browser.newContext({
       ...devices['iPhone 13'],
       viewport: { width: 390, height: 844 },
