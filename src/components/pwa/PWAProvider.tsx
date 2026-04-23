@@ -1,13 +1,9 @@
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Download, Wifi, WifiOff } from "lucide-react";
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-};
+// Estendendo o objeto window para suportar o evento de instalação globalmente
+declare global {
+  interface Window {
+    deferredPWAInstallPrompt?: BeforeInstallPromptEvent;
+  }
+}
 
 /**
  * Registra o Service Worker (gerado pelo vite-plugin-pwa), monitora
@@ -16,6 +12,34 @@ type BeforeInstallPromptEvent = Event & {
  */
 export function PWAProvider() {
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Captura o evento de instalação globalmente para que qualquer botão possa usar
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      window.deferredPWAInstallPrompt = e as BeforeInstallPromptEvent;
+      // Notifica os componentes que o prompt está pronto
+      window.dispatchEvent(new CustomEvent("pwa-prompt-available"));
+    };
+
+    const handleAppInstalled = () => {
+      window.deferredPWAInstallPrompt = undefined;
+      toast.success("Aplicativo instalado!", {
+        description: "Abra o Gêmeos Academia na sua tela inicial para fazer login.",
+        duration: 6000,
+      });
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
 
   // --- Registro do SW + detecção de update -------------------------------
   useEffect(() => {
@@ -121,10 +145,6 @@ export function PWAProvider() {
   }, [queryClient]);
 
   // --- Back button intercepta modais/drawers abertos ----------------------
-  // Em PWA Android o back físico navega pra trás na history. Se há um dialog
-  // aberto, queremos que ele feche em vez de sair do app. Fazemos isso
-  // empurrando um state "sentinela" quando qualquer Radix Dialog abre, e
-  // consumindo esse state no popstate para enviar Escape à UI.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -145,7 +165,6 @@ export function PWAProvider() {
     const onPop = (e: PopStateEvent) => {
       const openDialog = document.querySelector('[role="dialog"][data-state="open"]');
       if (openDialog) {
-        // Simula Escape no dialog atual (Radix escuta).
         document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
         pushed = false;
       }
@@ -159,97 +178,92 @@ export function PWAProvider() {
     };
   }, []);
 
-  // Botão fixo "Instalar app" no AppTopbar via <InstallAppButton /> cuida de
-  // capturar o evento `beforeinstallprompt` e apresentar o CTA.
   return null;
 }
 
 /**
- * Botão explícito de instalação (ex: dentro do menu "Mais").
- * Só aparece se o browser suportar PWA install e o app ainda não estiver instalado.
+ * Botão explícito de instalação.
+ * Prioriza a instalação automática (nativa) e oferece fallback de instruções se necessário.
  */
 export function InstallAppButton() {
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(false);
-  const [manualInstallHint, setManualInstallHint] = useState<'ios' | 'android' | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [promptReady, setPromptReady] = useState(false);
+  const [os, setOs] = useState<'ios' | 'android' | 'other' | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-    setInstalled(standalone);
 
-    const ua = window.navigator.userAgent;
-    const isIOS = /iPhone|iPad|iPod/i.test(ua);
-    const isAndroid = /Android/i.test(ua);
-    if (!standalone) {
-      if (isIOS) setManualInstallHint('ios');
-      else if (isAndroid) setManualInstallHint('android');
-      else setManualInstallHint(null);
-    }
+    const checkStatus = () => {
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true;
+      setIsInstalled(standalone);
+      setPromptReady(!!window.deferredPWAInstallPrompt);
 
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallEvent(e as BeforeInstallPromptEvent);
+      const ua = window.navigator.userAgent;
+      if (/iPhone|iPad|iPod/i.test(ua)) setOs('ios');
+      else if (/Android/i.test(ua)) setOs('android');
+      else setOs('other');
     };
-    const installedHandler = () => {
-      setInstalled(true);
-      setInstallEvent(null);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    window.addEventListener("appinstalled", installedHandler);
+
+    checkStatus();
+    
+    const onPromptAvailable = () => setPromptReady(true);
+    window.addEventListener("pwa-prompt-available", onPromptAvailable);
+    window.addEventListener("appinstalled", () => setIsInstalled(true));
+
     return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      window.removeEventListener("appinstalled", installedHandler);
+      window.removeEventListener("pwa-prompt-available", onPromptAvailable);
     };
   }, []);
 
-  if (installed) return null;
+  if (isInstalled) return null;
 
-  if (installEvent) {
-    return (
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={async () => {
-          try {
-            await installEvent.prompt();
-            await installEvent.userChoice;
-          } finally {
-            setInstallEvent(null);
-          }
-        }}
-      >
-        <Download className="mr-2 h-4 w-4" />
-        Instalar app
-      </Button>
-    );
-  }
-
-  if (!manualInstallHint) return null;
+  const handleInstall = async () => {
+    const promptEvent = window.deferredPWAInstallPrompt;
+    
+    if (promptEvent) {
+      // INSTALAÇÃO AUTOMÁTICA (Chrome, Edge, Android Chrome, etc)
+      try {
+        await promptEvent.prompt();
+        const { outcome } = await promptEvent.userChoice;
+        if (outcome === 'accepted') {
+          window.deferredPWAInstallPrompt = undefined;
+          setPromptReady(false);
+        }
+      } catch (err) {
+        console.error("Erro ao iniciar instalação PWA:", err);
+      }
+    } else {
+      // FALLBACK DE INSTRUÇÕES (iOS Safari, etc)
+      if (os === 'ios') {
+        toast('Instalação no iPhone/iPad', {
+          description: 'Toque no ícone "Compartilhar" (quadrado com seta) e selecione "Adicionar à Tela de Início".',
+          duration: 8000,
+        });
+      } else if (os === 'android') {
+        toast('Instalação no Android', {
+          description: 'Toque nos três pontos do navegador e selecione "Instalar aplicativo" ou "Adicionar à tela inicial".',
+          duration: 8000,
+        });
+      } else {
+        toast('Instalação PWA', {
+          description: 'Clique no ícone de instalação na barra de endereços do seu navegador.',
+          duration: 5000,
+        });
+      }
+    }
+  };
 
   return (
     <Button
       size="sm"
       variant="secondary"
-      onClick={() => {
-        if (manualInstallHint === 'ios') {
-          toast('Instalar no iPhone', {
-            description: 'No Safari: Compartilhar → Adicionar à Tela de Início.',
-            duration: 5000,
-          });
-          return;
-        }
-        toast('Instalar no Android', {
-          description: 'Abra o menu do navegador e toque em "Instalar app" ou "Adicionar à tela inicial".',
-          duration: 5000,
-        });
-      }}
-      title="Instruções para instalar o app"
+      onClick={handleInstall}
+      className="bg-primary/10 hover:bg-primary/20 text-primary border-none font-medium animate-pulse-subtle"
     >
       <Download className="mr-2 h-4 w-4" />
-      Instalar app
+      {promptReady ? 'Instalar App' : 'Como Instalar'}
     </Button>
   );
 }
