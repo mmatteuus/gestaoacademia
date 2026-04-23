@@ -106,7 +106,7 @@ export function BottomNav() {
           aria-label="Mais opções de navegação"
         >
           <div
-            className="absolute bottom-0 inset-x-0 rounded-t-2xl border-t border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl"
+            className="absolute bottom-0 inset-x-0 rounded-t-2xl border-t border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl max-h-[85dvh] overflow-y-auto overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto h-1 w-12 rounded-full bg-muted mb-3" aria-hidden />
