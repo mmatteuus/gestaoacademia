@@ -1,9 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 const STORAGE_KEY = 'gemeos.auth.v1';
+const EXPIRY_KEY = 'gemeos.auth.expiry.v1';
 const LOCKOUT_KEY = 'gemeos.auth.lockout.v1';
 const ATTEMPTS_KEY = 'gemeos.auth.attempts.v1';
 const SESSION_TOKEN = 'ok';
+// Sessão válida por 24h — elimina login obrigatório ao reabrir o PWA,
+// mas expira após um dia de inatividade por segurança.
+const SESSION_DURATION_MS = 24 * 60 * 60_000;
 const PASSWORD_HASH = '61ff9d5cda6880fa4b1a059e79e7c48dc6e55ed92d25037d246fbb0b6ab8a674';
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 60_000;
@@ -27,18 +31,30 @@ async function sha256Hex(input: string): Promise<string> {
     .join('');
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem(STORAGE_KEY) === SESSION_TOKEN;
-    } catch {
+function isSessionValid(): boolean {
+  try {
+    const token = localStorage.getItem(STORAGE_KEY);
+    if (token !== SESSION_TOKEN) return false;
+    const expiry = Number(localStorage.getItem(EXPIRY_KEY) || '0');
+    if (!expiry || expiry <= Date.now()) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(EXPIRY_KEY);
       return false;
     }
-  });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isSessionValid());
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) setIsAuthenticated(e.newValue === SESSION_TOKEN);
+      if (e.key === STORAGE_KEY || e.key === EXPIRY_KEY) {
+        setIsAuthenticated(isSessionValid());
+      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -67,7 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const ok = hash === PASSWORD_HASH;
     if (ok) {
       try {
-        sessionStorage.setItem(STORAGE_KEY, SESSION_TOKEN);
+        // Persiste em localStorage com expiração de 24h para que o PWA
+        // não exija login toda vez que é reaberto.
+        localStorage.setItem(STORAGE_KEY, SESSION_TOKEN);
+        localStorage.setItem(EXPIRY_KEY, String(Date.now() + SESSION_DURATION_MS));
         localStorage.removeItem(ATTEMPTS_KEY);
         localStorage.removeItem(LOCKOUT_KEY);
       } catch {
@@ -95,7 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     try {
-      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(EXPIRY_KEY);
     } catch {
       /* ignore */
     }

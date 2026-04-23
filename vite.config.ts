@@ -65,7 +65,10 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff,woff2}"],
         navigateFallback: "/offline.html",
+        // Exclui rotas de API do navigate fallback — elas nunca devem retornar offline.html.
         navigateFallbackDenylist: [/^\/rows/, /^\/status/, /^\/api/],
+        // Apenas rotas SPA usam o navigate fallback (loga, dashboard, etc.)
+        navigateFallbackAllowlist: [/^\/(?!rows|status|api)/],
         ignoreURLParametersMatching: [/^source$/, /^version$/],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
@@ -73,14 +76,15 @@ export default defineConfig(({ mode }) => ({
         // Ignora querystring no match (útil para /rows?type=...)
         runtimeCaching: [
           {
-            // Leituras da API — network-first com cache longo para modo offline
+            // Leituras da API — network-first com cache para modo offline.
+            // timeout maior para acomodar cold start da Vercel (serverless pode levar 8-10s).
             urlPattern: ({ url, request }) =>
               request.method === "GET" &&
               (url.pathname.startsWith("/rows") || url.pathname === "/status" || url.pathname.startsWith("/api/")),
             handler: "NetworkFirst",
             options: {
               cacheName: "api-cache",
-              networkTimeoutSeconds: 5,
+              networkTimeoutSeconds: 10,
               // 24h: se offline há tempo, ainda mostra dados
               expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [0, 200] },
