@@ -1,13 +1,10 @@
 import { timingSafeEqual as cryptoTimingSafeEqual } from 'node:crypto';
 
 /**
- * Middleware de API Key simples para proteger rotas da API.
- * 
- * Se API_KEY está definida no env, todas as requests precisam enviar
- * o header `X-API-Key` com o valor correto.
- * 
- * Se API_KEY NÃO está definida, o middleware passa direto (modo aberto).
- * Isso permite migração gradual.
+ * Protects API routes with an optional API key.
+ *
+ * Production and Vercel deployments fail closed when API_KEY is missing.
+ * Local development and tests stay open so the app can run without secrets.
  */
 export function apiKeyMiddleware(req, res, next) {
   const expectedKey = process.env.API_KEY;
@@ -17,21 +14,23 @@ export function apiKeyMiddleware(req, res, next) {
   const isStatusRoute = req.path === '/status' && req.method === 'GET';
   const isPublicRoute = req.path.startsWith('/api/public/');
 
-  // OPTIONS é tratado pelo CORS, mas mantemos bypass explícito por segurança.
   if (req.method === 'OPTIONS') {
     return next();
   }
 
-  // Rotas que não precisam de autenticação
   if (isStatusRoute || isPublicRoute) {
     return next();
   }
 
-  // Em produção, ausência de API_KEY é falha de configuração e deve falhar fechado.
-  // Em desenvolvimento/teste mantemos comportamento aberto para DX.
   if (!expectedKey) {
-    // Se a chave não estiver configurada, permitimos a passagem (modo aberto).
-    // O aviso de configuração ausente já é emitido pelo env.js no boot.
+    if (isProductionRuntime) {
+      return res.status(503).json({
+        ok: false,
+        error: 'service_unavailable',
+        message: 'API key is not configured',
+      });
+    }
+
     return next();
   }
 
@@ -45,7 +44,6 @@ export function apiKeyMiddleware(req, res, next) {
     });
   }
 
-  // Comparação em tempo constante para prevenir timing attacks
   if (!safeCompare(expectedKey, String(providedKey))) {
     return res.status(403).json({
       ok: false,
@@ -57,16 +55,12 @@ export function apiKeyMiddleware(req, res, next) {
   return next();
 }
 
-/**
- * Comparação em tempo constante para prevenir timing attacks.
- */
 function safeCompare(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
 
   const bufA = Buffer.from(a, 'utf-8');
   const bufB = Buffer.from(b, 'utf-8');
 
-  // Se tamanhos diferentes, compara bufA consigo mesmo para gastar o mesmo tempo
   if (bufA.length !== bufB.length) {
     cryptoTimingSafeEqual(bufA, bufA);
     return false;
