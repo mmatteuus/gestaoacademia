@@ -20,8 +20,14 @@ app.use(securityHeadersMiddleware);
 // CORS
 app.use(corsMiddleware);
 
-// Body parser com limite
-app.use(express.json({ limit: env.bodyLimit }));
+// Body parser com limite + reviver que descarta chaves perigosas
+// (defesa em profundidade contra prototype pollution).
+const FORBIDDEN_JSON_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+function safeJsonReviver(key, value) {
+  if (FORBIDDEN_JSON_KEYS.has(key)) return undefined;
+  return value;
+}
+app.use(express.json({ limit: env.bodyLimit, reviver: safeJsonReviver }));
 
 // Rate limit global (inclui leitura)
 const globalLimiter = createGlobalRateLimiter({

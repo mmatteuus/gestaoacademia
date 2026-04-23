@@ -27,9 +27,16 @@ const safeValue = z.union([
   z.null(),
 ]).optional();
 
+// Chaves bloqueadas para prevenir prototype pollution e overrides perigosos.
+const FORBIDDEN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
 export const rowPayloadSchema = z
   .record(
-    z.string().min(1).max(64).regex(/^[a-zA-Z0-9_]+$/, 'chave inválida'),
+    z.string()
+      .min(1)
+      .max(64)
+      .regex(/^[a-zA-Z0-9_]+$/, 'chave inválida')
+      .refine((k) => !FORBIDDEN_KEYS.has(k), { message: 'chave proibida' }),
     safeValue,
   )
   .refine(
@@ -39,6 +46,10 @@ export const rowPayloadSchema = z
   .refine(
     (obj) => !obj.id || (typeof obj.id === 'string' && ID_SAFE.test(obj.id) && obj.id.length <= 100),
     { message: 'id contém caracteres não permitidos' }
+  )
+  .refine(
+    (obj) => !Object.keys(obj).some((k) => FORBIDDEN_KEYS.has(k)),
+    { message: 'chave proibida no payload' }
   );
 
 export const salesPayloadSchema = z.object({

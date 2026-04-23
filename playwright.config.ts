@@ -16,6 +16,7 @@ export default defineConfig({
   projects: [
     { name: 'desktop', testMatch: /desktop\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', testMatch: /mobile\.spec\.ts$/, use: { ...devices['iPhone 13'] } },
+    { name: 'mobile-ui', testMatch: /mobile-ui\.spec\.ts$/, use: { ...devices['iPhone 13'] } },
     { name: 'dashboard', testMatch: /dashboard-data\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
   ],
 });
