@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import {
   useAlunos,
   useCampeonatos,
@@ -52,6 +52,15 @@ interface InsightsDataContextValue {
 }
 
 const InsightsDataContext = createContext<InsightsDataContextValue | undefined>(undefined);
+const MES_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'] as const;
+const EMPTY_GRADUACOES_ALUNOS: GraduacaoAluno[] = [];
+const EMPTY_HISTORICO_GRADUACOES: HistoricoGraduacao[] = [];
+const EMPTY_REGRAS_GRADUACAO: RegraGraduacao[] = [];
+const EMPTY_RANKING: RankingEntry[] = [];
+const EMPTY_CAMPEONATOS: Campeonato[] = [];
+const EMPTY_RECEITAS: Receita[] = [];
+const EMPTY_DESPESAS: Despesa[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 export function InsightsDataProvider({ children }: { children: ReactNode }) {
   // Entidades reais vindas do Google Sheets
@@ -68,21 +77,18 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
   const produtosQ = useProdutos();
   const alunosQ = useAlunos();
 
-  const graduacoesAlunos = graduacoesAlunosQ.list.data ?? [];
-  const historicoGraduacoes = historicoGraduacoesQ.list.data ?? [];
-  const regrasGraduacao = regrasGraduacaoQ.list.data ?? [];
-  const ranking = rankingQ.list.data ?? [];
-  const campeonatos = campeonatosQ.list.data ?? [];
-  const receitas = receitasQ.list.data ?? [];
-  const despesas = despesasQ.list.data ?? [];
-  const sessoes = sessoesQ.list.data ?? [];
-  const cobrancas = cobrancasQ.list.data ?? [];
-  const vendas = vendasQ.list.data ?? [];
-  const produtos = produtosQ.list.data ?? [];
-  const alunos = alunosQ.list.data ?? [];
-
-  // ===== Séries agregadas a partir dos dados reais =====
-  const MES_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const graduacoesAlunos = graduacoesAlunosQ.list.data || EMPTY_GRADUACOES_ALUNOS;
+  const historicoGraduacoes = historicoGraduacoesQ.list.data || EMPTY_HISTORICO_GRADUACOES;
+  const regrasGraduacao = regrasGraduacaoQ.list.data || EMPTY_REGRAS_GRADUACAO;
+  const ranking = rankingQ.list.data || EMPTY_RANKING;
+  const campeonatos = campeonatosQ.list.data || EMPTY_CAMPEONATOS;
+  const receitas = receitasQ.list.data || EMPTY_RECEITAS;
+  const despesas = despesasQ.list.data || EMPTY_DESPESAS;
+  const sessoes = sessoesQ.list.data || EMPTY_ARRAY;
+  const cobrancas = cobrancasQ.list.data || EMPTY_ARRAY;
+  const vendas = vendasQ.list.data || EMPTY_ARRAY;
+  const produtos = produtosQ.list.data || EMPTY_ARRAY;
+  const alunos = alunosQ.list.data || EMPTY_ARRAY;
 
   const frequenciaMensal = useMemo(() => {
     if (sessoes.length === 0) return [];
@@ -262,7 +268,7 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
     return out;
   }, [vendas, cobrancas, alunos, sessoes]);
 
-  const upsertRegraGraduacao = (regra: RegraGraduacao): ActionResult<RegraGraduacao> => {
+  const upsertRegraGraduacao = useCallback((regra: RegraGraduacao): ActionResult<RegraGraduacao> => {
     if (!regra.faixaOrigem.trim() || !regra.faixaDestino.trim()) {
       return { ok: false, message: 'Preencha as faixas de origem e destino.' };
     }
@@ -274,14 +280,14 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
       regrasGraduacaoQ.create.mutate(regra);
     }
     return { ok: true, data: regra };
-  };
+  }, [regrasGraduacao, regrasGraduacaoQ.create, regrasGraduacaoQ.update]);
 
-  const createCampeonato = (campeonato: Campeonato): ActionResult<Campeonato> => {
+  const createCampeonato = useCallback((campeonato: Campeonato): ActionResult<Campeonato> => {
     campeonatosQ.create.mutate(campeonato);
     return { ok: true, data: campeonato };
-  };
+  }, [campeonatosQ.create]);
 
-  const addParticipantesCampeonato = (
+  const addParticipantesCampeonato = useCallback((
     campeonatoId: string,
     participantes: Campeonato['participantes']
   ): ActionResult => {
@@ -296,7 +302,7 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
       data: { participantes: [...campeonato.participantes, ...novos] },
     });
     return { ok: true };
-  };
+  }, [campeonatos, campeonatosQ.update]);
 
   const value = useMemo<InsightsDataContextValue>(
     () => ({
@@ -318,7 +324,6 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
       createCampeonato,
       addParticipantesCampeonato,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       alertas,
       atividadesRecentes,
@@ -334,6 +339,9 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
       vendasPorCategoria,
       receitas,
       despesas,
+      upsertRegraGraduacao,
+      createCampeonato,
+      addParticipantesCampeonato,
     ]
   );
 

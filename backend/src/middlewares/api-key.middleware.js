@@ -11,18 +11,32 @@ import { timingSafeEqual as cryptoTimingSafeEqual } from 'node:crypto';
  */
 export function apiKeyMiddleware(req, res, next) {
   const expectedKey = process.env.API_KEY;
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const isTestRuntime = nodeEnv === 'test';
+  const isProductionRuntime = nodeEnv === 'production' || (!isTestRuntime && !!process.env.VERCEL);
+  const isStatusRoute = req.path === '/status' && req.method === 'GET';
+  const isPublicRoute = req.path.startsWith('/api/public/');
 
-  // Se não tem API_KEY configurada, passa direto (modo aberto)
-  if (!expectedKey) {
+  // OPTIONS é tratado pelo CORS, mas mantemos bypass explícito por segurança.
+  if (req.method === 'OPTIONS') {
     return next();
   }
 
   // Rotas que não precisam de autenticação
-  if (req.path === '/status' && req.method === 'GET') {
+  if (isStatusRoute || isPublicRoute) {
     return next();
   }
-  // Endpoints públicos (formulário compartilhado de cadastro)
-  if (req.path.startsWith('/api/public/')) {
+
+  // Em produção, ausência de API_KEY é falha de configuração e deve falhar fechado.
+  // Em desenvolvimento/teste mantemos comportamento aberto para DX.
+  if (!expectedKey) {
+    if (isProductionRuntime) {
+      return res.status(503).json({
+        ok: false,
+        error: 'service_unavailable',
+        message: 'API key not configured',
+      });
+    }
     return next();
   }
 

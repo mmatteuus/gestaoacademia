@@ -30,6 +30,16 @@ export function securityHeadersMiddleware(_req, res, next) {
     'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()'
   );
 
+  // Impede carregamento de conteúdo ativo em contextos não esperados.
+  // Como este servidor expõe API JSON, podemos usar política bem restritiva.
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+  );
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+
   // HSTS — forçar HTTPS (apenas em produção)
   if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
     res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
