@@ -43,11 +43,13 @@ export default function LoginPage() {
         aria-label="Entrar no sistema"
       >
         <header className="space-y-2 text-center">
-          <img
-            src="/icons/logo-gemeos-white-bg.png"
-            alt="Gêmeos Academia"
-            className="mx-auto h-14 w-auto"
-          />
+          <div className="mx-auto w-fit rounded-xl bg-white p-2">
+            <img
+              src="/icons/logo-gemeos-white-bg.png"
+              alt="Gêmeos Academia"
+              className="h-14 w-auto object-contain"
+            />
+          </div>
           <h1 className="text-xl font-semibold">Gêmeos Academia</h1>
           <p className="text-sm text-muted-foreground">Acesso restrito. Informe a senha para continuar.</p>
         </header>
