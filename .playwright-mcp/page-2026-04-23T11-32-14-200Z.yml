@@ -1,0 +1,99 @@
+- generic [ref=e2]:
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: Gêmeos Academia
+          - heading "Alunos" [level=2] [ref=e12]
+      - generic [ref=e13]:
+        - button [ref=e14] [cursor=pointer]:
+          - img
+        - button "Tema escuro ativo. Alternar para claro" [ref=e15] [cursor=pointer]:
+          - img
+        - button "Sair" [ref=e16] [cursor=pointer]:
+          - img
+    - main [ref=e17]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - heading "Alunos" [level=1] [ref=e22]
+            - paragraph [ref=e23]: 2 alunos cadastrados
+          - button "Novo Aluno" [ref=e26] [cursor=pointer]:
+            - img
+            - text: Novo Aluno
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - img [ref=e29]
+            - textbox "Buscar aluno..." [ref=e32]
+          - generic [ref=e33]:
+            - button "Todos" [ref=e34] [cursor=pointer]
+            - button "Ativo" [ref=e35] [cursor=pointer]
+            - button "Inadimplente" [ref=e36] [cursor=pointer]
+            - button "Trancado" [ref=e37] [cursor=pointer]
+            - button "Inativo" [ref=e38] [cursor=pointer]
+            - button "Pre-cadastro" [ref=e39] [cursor=pointer]
+        - generic [ref=e92]:
+          - button "Abrir ficha de João Exemplo" [ref=e93] [cursor=pointer]:
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - paragraph [ref=e96]: João Exemplo
+                - paragraph [ref=e97]: Adulto • Branca
+              - generic [ref=e98]: Ativo
+            - generic [ref=e99]:
+              - paragraph [ref=e100]: "11999990001"
+              - paragraph [ref=e101]: joao@exemplo.com
+              - paragraph [ref=e102]: 1 turma(s)
+            - button "Editar" [ref=e104]:
+              - img
+              - text: Editar
+          - button "Abrir ficha de [TESTE] Maria da Silva" [ref=e105] [cursor=pointer]:
+            - generic [ref=e106]:
+              - generic [ref=e107]:
+                - paragraph [ref=e108]: "[TESTE] Maria da Silva"
+                - paragraph [ref=e109]: Adulto • Branca
+              - generic [ref=e110]: Ativo
+            - generic [ref=e111]:
+              - paragraph [ref=e112]: "11900000001"
+              - paragraph [ref=e113]: teste.maria@teste.local
+              - paragraph [ref=e114]: 0 turma(s)
+            - button "Editar" [ref=e116]:
+              - img
+              - text: Editar
+        - generic [ref=e48]:
+          - button [disabled]:
+            - img
+          - generic [ref=e49]: Pagina 1 de 1
+          - button [disabled]:
+            - img
+    - navigation "Navegação principal" [ref=e50]:
+      - paragraph [ref=e51]:
+        - text: Desenvolvido por
+        - link "MtsFerreira" [ref=e52] [cursor=pointer]:
+          - /url: https://www.mtsferreira.dev/
+      - list [ref=e53]:
+        - listitem [ref=e54]:
+          - link "Início" [ref=e55] [cursor=pointer]:
+            - /url: /
+            - img [ref=e57]
+            - generic [ref=e62]: Início
+        - listitem [ref=e63]:
+          - link "Alunos" [ref=e64] [cursor=pointer]:
+            - /url: /alunos
+            - img [ref=e66]
+            - generic [ref=e71]: Alunos
+        - listitem [ref=e72]:
+          - link "Frequência" [ref=e73] [cursor=pointer]:
+            - /url: /frequencia
+            - img [ref=e75]
+            - generic [ref=e78]: Frequência
+        - listitem [ref=e79]:
+          - link "Financeiro" [ref=e80] [cursor=pointer]:
+            - /url: /financeiro
+            - img [ref=e82]
+            - generic [ref=e84]: Financeiro
+        - listitem [ref=e85]:
+          - button "Abrir mais opções" [ref=e86] [cursor=pointer]:
+            - img [ref=e87]
+            - generic [ref=e91]: Mais

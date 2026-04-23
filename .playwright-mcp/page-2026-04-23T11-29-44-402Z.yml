@@ -1,0 +1,157 @@
+- generic:
+  - generic:
+    - region "Notifications alt+T"
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - paragraph: Gêmeos Academia
+            - heading [level=2]: Alunos
+        - generic:
+          - button:
+            - img
+          - button:
+            - img
+          - button:
+            - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Alunos
+                - paragraph: 1 alunos cadastrados
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                    - text: Novo Aluno
+            - generic:
+              - generic:
+                - img
+                - textbox:
+                  - /placeholder: Buscar aluno...
+              - generic:
+                - button: Todos
+                - button: Ativo
+                - button: Inadimplente
+                - button: Trancado
+                - button: Inativo
+                - button: Pre-cadastro
+            - generic:
+              - button:
+                - generic:
+                  - generic:
+                    - paragraph: João Exemplo
+                    - paragraph: Adulto • Branca
+                  - generic: Ativo
+                - generic:
+                  - paragraph: "11999990001"
+                  - paragraph: joao@exemplo.com
+                  - paragraph: 1 turma(s)
+                - generic:
+                  - button:
+                    - img
+                    - text: Editar
+            - generic:
+              - button [disabled]:
+                - img
+              - generic: Pagina 1 de 1
+              - button [disabled]:
+                - img
+      - navigation:
+        - paragraph:
+          - text: Desenvolvido por
+          - link:
+            - /url: https://www.mtsferreira.dev/
+            - text: MtsFerreira
+        - list:
+          - listitem:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic: Início
+          - listitem:
+            - link:
+              - /url: /alunos
+              - generic:
+                - img
+              - generic: Alunos
+          - listitem:
+            - link:
+              - /url: /frequencia
+              - generic:
+                - img
+              - generic: Frequência
+          - listitem:
+            - link:
+              - /url: /financeiro
+              - generic:
+                - img
+              - generic: Financeiro
+          - listitem:
+            - button:
+              - img
+              - generic: Mais
+  - generic: "500"
+  - dialog "Novo aluno" [ref=e319]:
+    - heading "Novo aluno" [level=2] [ref=e321]
+    - generic [ref=e322]:
+      - generic [ref=e323]:
+        - generic [ref=e324]:
+          - text: Nome Completo
+          - textbox "Nome Completo" [ref=e325]: "[TESTE] Maria da Silva"
+        - generic [ref=e326]:
+          - text: Email
+          - textbox "Email" [ref=e327]: teste.maria@teste.local
+        - generic [ref=e328]:
+          - text: Telefone
+          - textbox "Telefone" [ref=e329]:
+            - /placeholder: (11) 99999-9999
+            - text: "11900000001"
+        - generic [ref=e330]:
+          - text: CPF
+          - textbox "CPF" [ref=e331]:
+            - /placeholder: 000.000.000-00
+            - text: "00000000001"
+        - generic [ref=e332]:
+          - text: Data de Nascimento
+          - textbox "Data de Nascimento" [ref=e333]: 2000-05-15
+        - generic [ref=e334]:
+          - text: Categoria
+          - combobox "Categoria" [ref=e335] [cursor=pointer]:
+            - generic: Adulto
+            - img [ref=e336]
+          - combobox [ref=e338]
+        - generic [ref=e339]:
+          - text: Faixa Atual
+          - combobox "Faixa Atual" [ref=e340] [cursor=pointer]:
+            - generic: Branca
+            - img [ref=e341]
+          - combobox [ref=e343]
+        - generic [ref=e344]:
+          - text: Status
+          - combobox "Status" [active] [ref=e345] [cursor=pointer]:
+            - generic: Ativo
+            - img [ref=e346]
+          - combobox [ref=e348]
+        - generic [ref=e349]:
+          - text: Responsável (opcional)
+          - combobox "Responsável (opcional)" [ref=e350] [cursor=pointer]:
+            - generic: Nenhum
+            - img [ref=e351]
+          - combobox [ref=e353]
+          - button "Cadastrar responsável rápido" [ref=e355] [cursor=pointer]
+        - paragraph [ref=e357]: "Turmas: [PENDENTE] seleção no formulário (backend e regras finais)."
+      - generic [ref=e358]:
+        - text: Observações
+        - textbox "Observações" [ref=e359]
+      - generic [ref=e360]:
+        - button "Cancelar" [ref=e361] [cursor=pointer]
+        - button "Cadastrar Aluno" [ref=e362] [cursor=pointer]
+    - button "Close" [ref=e363] [cursor=pointer]:
+      - img [ref=e364]
+      - generic [ref=e367]: Close

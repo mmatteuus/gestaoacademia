@@ -1,0 +1,101 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications alt+T"
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e7]
+          - generic [ref=e10]:
+            - paragraph [ref=e11]: Gêmeos Academia
+            - heading "Alunos" [level=2] [ref=e281]
+        - generic [ref=e13]:
+          - button [ref=e14] [cursor=pointer]:
+            - img
+          - button "Tema escuro ativo. Alternar para claro" [ref=e15] [cursor=pointer]:
+            - img
+          - button "Sair" [ref=e16] [cursor=pointer]:
+            - img
+      - main [ref=e17]:
+        - generic [ref=e282]:
+          - generic [ref=e283]:
+            - generic [ref=e284]:
+              - heading "Alunos" [level=1] [ref=e285]
+              - paragraph [ref=e286]: 2 alunos cadastrados
+            - button "Novo Aluno" [ref=e289] [cursor=pointer]:
+              - img
+              - text: Novo Aluno
+          - generic [ref=e290]:
+            - generic [ref=e291]:
+              - img [ref=e292]
+              - textbox "Buscar aluno..." [ref=e295]
+            - generic [ref=e296]:
+              - button "Todos" [ref=e297] [cursor=pointer]
+              - button "Ativo" [ref=e298] [cursor=pointer]
+              - button "Inadimplente" [ref=e299] [cursor=pointer]
+              - button "Trancado" [ref=e300] [cursor=pointer]
+              - button "Inativo" [ref=e301] [cursor=pointer]
+              - button "Pre-cadastro" [ref=e302] [cursor=pointer]
+          - generic [ref=e303]:
+            - button "João Exemplo Adulto • Branca Ativo 11999990001 joao@exemplo.com 1 turma(s) Editar" [ref=e304] [cursor=pointer]:
+              - generic [ref=e305]:
+                - generic [ref=e306]:
+                  - paragraph [ref=e307]: João Exemplo
+                  - paragraph [ref=e308]: Adulto • Branca
+                - generic [ref=e309]: Ativo
+              - generic [ref=e310]:
+                - paragraph [ref=e311]: "11999990001"
+                - paragraph [ref=e312]: joao@exemplo.com
+                - paragraph [ref=e313]: 1 turma(s)
+              - button "Editar" [ref=e315]:
+                - img
+                - text: Editar
+            - button "[TESTE] Maria da Silva Adulto • Branca Ativo 11900000001 teste.maria@teste.local 0 turma(s) Editar" [ref=e403] [cursor=pointer]:
+              - generic [ref=e404]:
+                - generic [ref=e405]:
+                  - paragraph [ref=e406]: "[TESTE] Maria da Silva"
+                  - paragraph [ref=e407]: Adulto • Branca
+                - generic [ref=e408]: Ativo
+              - generic [ref=e409]:
+                - paragraph [ref=e410]: "11900000001"
+                - paragraph [ref=e411]: teste.maria@teste.local
+                - paragraph [ref=e412]: 0 turma(s)
+              - button "Editar" [ref=e414]:
+                - img
+                - text: Editar
+          - generic [ref=e316]:
+            - button [disabled]:
+              - img
+            - generic [ref=e317]: Pagina 1 de 1
+            - button [disabled]:
+              - img
+      - navigation "Navegação principal" [ref=e20]:
+        - paragraph [ref=e21]:
+          - text: Desenvolvido por
+          - link "MtsFerreira" [ref=e22] [cursor=pointer]:
+            - /url: https://www.mtsferreira.dev/
+        - list [ref=e23]:
+          - listitem [ref=e24]:
+            - link "Início" [ref=e25] [cursor=pointer]:
+              - /url: /
+              - img [ref=e27]
+              - generic [ref=e32]: Início
+          - listitem [ref=e33]:
+            - link "Alunos" [ref=e34] [cursor=pointer]:
+              - /url: /alunos
+              - img [ref=e36]
+              - generic [ref=e41]: Alunos
+          - listitem [ref=e42]:
+            - link "Frequência" [ref=e43] [cursor=pointer]:
+              - /url: /frequencia
+              - img [ref=e45]
+              - generic [ref=e48]: Frequência
+          - listitem [ref=e49]:
+            - link "Financeiro" [ref=e50] [cursor=pointer]:
+              - /url: /financeiro
+              - img [ref=e52]
+              - generic [ref=e54]: Financeiro
+          - listitem [ref=e55]:
+            - button "Abrir mais opções" [ref=e56] [cursor=pointer]:
+              - img [ref=e57]
+              - generic [ref=e61]: Mais
+  - generic [ref=e280]: "500"
