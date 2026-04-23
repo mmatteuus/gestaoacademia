@@ -35,9 +35,20 @@ async function login(page: Page) {
 }
 
 async function createRow(api: APIRequestContext, body: Record<string, unknown>) {
-  const r = await api.post('http://localhost:3000/rows', { data: body });
-  if (!r.ok()) throw new Error(`POST /rows failed ${r.status()}: ${await r.text()}`);
-  return r.json();
+  // Pequeno delay entre inserts para não estourar quota Sheets (60 reads/min/usuário).
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const r = await api.post('http://localhost:3000/rows', { data: body });
+    if (r.ok()) return r.json();
+    const text = await r.text();
+    lastErr = new Error(`POST /rows failed ${r.status()}: ${text}`);
+    if (r.status() === 500 && /Quota|quota|exceeded/i.test(text)) {
+      await new Promise((res) => setTimeout(res, 8000));
+      continue;
+    }
+    throw lastErr;
+  }
+  throw lastErr;
 }
 
 async function listRows(api: APIRequestContext, type: string) {

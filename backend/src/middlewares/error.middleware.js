@@ -13,6 +13,16 @@ export function toHttpError(error) {
   if (error instanceof HttpError) return error;
 
   const message = String(error?.message || 'Internal server error');
+
+  // Body parser do Express joga SyntaxError quando JSON é inválido
+  if (error?.type === 'entity.parse.failed' || error instanceof SyntaxError) {
+    return new HttpError(400, 'validation_error', 'Invalid JSON body');
+  }
+  // Body parser quando estoura limite
+  if (error?.type === 'entity.too.large') {
+    return new HttpError(413, 'payload_too_large', 'Payload too large');
+  }
+
   if (message.startsWith('Tipo invalido') || message.startsWith('Tipo nao reconhecido')) {
     return new HttpError(400, 'validation_error', 'Invalid request');
   }

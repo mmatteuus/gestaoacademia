@@ -27,24 +27,27 @@ const RelatoriosPage = lazy(() => import('./pages/RelatoriosPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function shouldRetryQuery(failureCount: number, error: unknown) {
-  if (failureCount >= 2) return false;
+  // Mais retries para 429/500 (Sheets quota é a causa mais comum)
+  if (failureCount >= 4) return false;
   if (error instanceof ApiError) {
-    if (error.status === 429) return true;
-    if (error.status >= 500) return true;
+    if (error.status === 429 || error.status >= 500) return true;
     return false;
   }
-  return true;
+  return failureCount < 2;
 }
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: shouldRetryQuery,
-      retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 4_000),
+      // Backoff mais agressivo: 1s, 2s, 4s, 8s — dá tempo da quota Sheets refrescar.
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10_000),
       // Sheets API tem cota baixa (60 reads/min/user). staleTime longo evita
       // refetches em troca de aba/foco que estouravam a quota e quebravam o app.
       staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
     },
   },
 });

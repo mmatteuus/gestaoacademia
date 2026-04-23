@@ -238,6 +238,42 @@ export async function listRows(type = 'Alunos') {
   return rows.map((row) => rowToObject(headerRow, row, config.headers));
 }
 
+/**
+ * batchListRows: faz UMA chamada Sheets (`values.batchGet`) para várias abas.
+ * Reduz drasticamente o consumo de quota quando o frontend precisa carregar
+ * muitas entidades de uma vez (ex.: Dashboard).
+ */
+export async function batchListRows(types) {
+  const validTypes = types.filter((t) => SHEET_CONFIG[t]);
+  if (validTypes.length === 0) return {};
+
+  const sheets = getSheets();
+  const ranges = validTypes.map((t) => `${SHEET_CONFIG[t].name}!A1:ZZ`);
+
+  const res = await withRetry(
+    () => sheets.spreadsheets.values.batchGet({
+      spreadsheetId: env.spreadsheetId,
+      ranges,
+    }),
+    `batchGet:${validTypes.join(',')}`
+  );
+
+  const out = {};
+  const valueRanges = res.data.valueRanges || [];
+  validTypes.forEach((type, idx) => {
+    const config = SHEET_CONFIG[type];
+    const values = valueRanges[idx]?.values || [];
+    if (values.length <= 1) {
+      out[type] = [];
+      return;
+    }
+    const [headerRow, ...rows] = values;
+    out[type] = rows.map((row) => rowToObject(headerRow, row, config.headers));
+  });
+
+  return out;
+}
+
 export async function getRowById(id, type = 'Alunos') {
   const config = SHEET_CONFIG[type];
   if (!config) throw new Error(`Tipo invalido: ${type}`);
@@ -255,6 +291,15 @@ export async function getRowById(id, type = 'Alunos') {
   return rowToObject(headerRow, match, config.headers);
 }
 
+export class DuplicateIdError extends Error {
+  constructor(id, type) {
+    super(`Row with id "${id}" already exists in ${type}`);
+    this.code = 'duplicate_id';
+    this.id = id;
+    this.type = type;
+  }
+}
+
 export async function insertRow(data) {
   const type = detectSheetType(data);
   const config = SHEET_CONFIG[type];
@@ -266,6 +311,16 @@ export async function insertRow(data) {
   const rowData = { ...data };
   if (!rowData.id) rowData.id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   if (!rowData.created_at) rowData.created_at = new Date().toISOString();
+
+  // Garante unicidade de ID — append cego sem essa checagem permitia sobrescrever
+  // dados (atacante mandando id="demo_aluno" criava linha duplicada).
+  // Se o caller passar um id explícito que já existe, recusa.
+  if (data.id) {
+    const existing = await getRowById(rowData.id, type);
+    if (existing) {
+      throw new DuplicateIdError(rowData.id, type);
+    }
+  }
 
   const headerRow = await getHeaderRow(config.name, config.headers);
   const newRow = headerRow.map((header) =>

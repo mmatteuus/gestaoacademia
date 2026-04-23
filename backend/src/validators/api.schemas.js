@@ -7,8 +7,12 @@ export const rowsQuerySchema = z.object({
   type: sheetTypeSchema.optional().default('Alunos'),
 });
 
+// IDs aceitam apenas caracteres seguros: letras, números, hífen, underline, dois-pontos e ponto.
+// Bloqueia HTML/JS injection no ID (que poderia vazar em logs ou ser refletido em UI).
+const ID_SAFE = /^[\w\-:.]+$/;
+
 export const rowIdParamsSchema = z.object({
-  id: z.string().min(1).max(100),
+  id: z.string().min(1).max(100).regex(ID_SAFE, 'id contém caracteres não permitidos'),
 });
 
 /**
@@ -17,7 +21,7 @@ export const rowIdParamsSchema = z.object({
  * Valores são convertidos para string ou número — objetos aninhados são rejeitados.
  */
 const safeValue = z.union([
-  z.string().max(5000),
+  z.string().max(2000),
   z.number(),
   z.boolean(),
   z.null(),
@@ -25,12 +29,16 @@ const safeValue = z.union([
 
 export const rowPayloadSchema = z
   .record(
-    z.string().min(1).max(100),
+    z.string().min(1).max(64).regex(/^[a-zA-Z0-9_]+$/, 'chave inválida'),
     safeValue,
   )
   .refine(
-    (obj) => Object.keys(obj).length <= 100,
-    { message: 'Too many fields (max 100)' }
+    (obj) => Object.keys(obj).length <= 60,
+    { message: 'Too many fields (max 60)' }
+  )
+  .refine(
+    (obj) => !obj.id || (typeof obj.id === 'string' && ID_SAFE.test(obj.id) && obj.id.length <= 100),
+    { message: 'id contém caracteres não permitidos' }
   );
 
 export const salesPayloadSchema = z.object({

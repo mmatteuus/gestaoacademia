@@ -2,6 +2,7 @@ import { HttpError } from '../middlewares/error.middleware.js';
 import { rowIdParamsSchema, rowPayloadSchema, rowsQuerySchema, validate } from '../validators/api.schemas.js';
 import { createRow, editRow, getRow, listRowsByType } from '../services/rows.service.js';
 import { SHEET_TYPES } from '../config/sheet-config.js';
+import { DuplicateIdError, batchListRows } from '../repositories/sheets.repository.js';
 
 function parseRowsQuery(query) {
   const parsed = validate(rowsQuerySchema, query);
@@ -33,6 +34,18 @@ export async function listRowsController(req, res) {
   res.json(rows);
 }
 
+export async function batchListRowsController(req, res) {
+  const raw = String(req.query.types || '').trim();
+  if (!raw) throw new HttpError(400, 'validation_error', 'types query is required (comma-separated)');
+  const requested = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  const valid = requested.filter((t) => SHEET_TYPES.includes(t));
+  if (valid.length === 0) throw new HttpError(400, 'validation_error', 'no valid types in request');
+  if (valid.length > 20) throw new HttpError(400, 'validation_error', 'too many types (max 20)');
+
+  const result = await batchListRows(valid);
+  res.json(result);
+}
+
 export async function getRowController(req, res) {
   const { id } = parseRowId(req.params);
   const { type } = parseRowsQuery(req.query);
@@ -47,8 +60,15 @@ export async function getRowController(req, res) {
 
 export async function createRowController(req, res) {
   const payload = parsePayload(req.body || {});
-  const result = await createRow(payload);
-  res.status(201).json({ ok: true, data: result });
+  try {
+    const result = await createRow(payload);
+    res.status(201).json({ ok: true, data: result });
+  } catch (err) {
+    if (err instanceof DuplicateIdError) {
+      throw new HttpError(409, 'duplicate_id', `id "${err.id}" já existe em ${err.type}`);
+    }
+    throw err;
+  }
 }
 
 export async function updateRowController(req, res) {

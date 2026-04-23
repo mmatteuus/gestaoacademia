@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middlewares/error.middleware.js';
 import {
+  batchListRowsController,
   createRowController,
   getRowController,
   listRowsController,
@@ -18,6 +19,7 @@ export function createAppRouter() {
   const router = Router();
 
   router.get('/rows', asyncHandler(listRowsController));
+  router.get('/rows/batch', asyncHandler(batchListRowsController));
   router.get('/rows/:id', asyncHandler(getRowController));
   router.post('/rows', asyncHandler(createRowController));
   router.put('/rows/:id', asyncHandler(updateRowController));

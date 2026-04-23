@@ -24,8 +24,7 @@ test('login exige senha correta, navega e faz logout', async ({ page }) => {
   const rotas = ['/alunos', '/turmas', '/frequencia', '/financeiro', '/produtos', '/ranking', '/relatorios'];
   for (const r of rotas) {
     await page.goto(r);
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByText(/Desenvolvido por MtsFerreira/i).first()).toBeVisible();
+    await expect(page.getByText(/Desenvolvido por MtsFerreira/i).first()).toBeVisible({ timeout: 10000 });
   }
 
   // Logout
