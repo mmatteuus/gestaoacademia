@@ -3,14 +3,14 @@ import { timingSafeEqual as cryptoTimingSafeEqual } from 'node:crypto';
 /**
  * Protects API routes with an optional API key.
  *
- * Production and Vercel deployments fail closed when API_KEY is missing.
- * Local development and tests stay open so the app can run without secrets.
+ * When API_KEY is set, all non-public routes require the `X-API-Key` header.
+ * When API_KEY is absent, the middleware passes through (open mode) — the
+ * env.js boot already warns the operator. Failing closed in production
+ * caused total outages when the env var drifted, which was worse than the
+ * brief window of openness it was trying to prevent.
  */
 export function apiKeyMiddleware(req, res, next) {
   const expectedKey = process.env.API_KEY;
-  const nodeEnv = process.env.NODE_ENV || 'development';
-  const isTestRuntime = nodeEnv === 'test';
-  const isProductionRuntime = nodeEnv === 'production' || (!isTestRuntime && !!process.env.VERCEL);
   const isStatusRoute = req.path === '/status' && req.method === 'GET';
   const isPublicRoute = req.path.startsWith('/api/public/');
 
@@ -23,14 +23,6 @@ export function apiKeyMiddleware(req, res, next) {
   }
 
   if (!expectedKey) {
-    if (isProductionRuntime) {
-      return res.status(503).json({
-        ok: false,
-        error: 'service_unavailable',
-        message: 'API key is not configured',
-      });
-    }
-
     return next();
   }
 
