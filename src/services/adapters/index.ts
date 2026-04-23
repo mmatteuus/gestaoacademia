@@ -290,7 +290,13 @@ export const campeonatoAdapter = {
     local: r.local ?? '',
     modalidade: r.modalidade ?? '',
     status: (r.status || 'planejado') as Campeonato['status'],
-    participantes: parseJsonArray<ParticipanteCampeonato>(r.participantes),
+    participantes: parseJsonArray<unknown>(r.participantes).map((item) => {
+      // Tolera formato legado: lista de IDs de alunos (strings).
+      if (typeof item === 'string') {
+        return { alunoId: item, nomeAluno: '', categoria: 'Adulto' } as ParticipanteCampeonato;
+      }
+      return item as ParticipanteCampeonato;
+    }),
   }),
   toRow: (c: Partial<Campeonato>): Record<string, unknown> => stripUndef({
     id: c.id,
