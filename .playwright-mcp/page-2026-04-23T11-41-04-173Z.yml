@@ -1,0 +1,208 @@
+- generic:
+  - generic:
+    - region "Notifications alt+T"
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - paragraph: Gêmeos Academia
+            - heading [level=2]: Financeiro
+        - generic:
+          - button:
+            - img
+          - button:
+            - img
+          - button:
+            - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Financeiro Escolar
+                - paragraph: Cobranças vinculadas ao aluno
+              - generic:
+                - button:
+                  - img
+                  - text: Gerar mensalidades pendentes
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Total em Aberto
+                  - generic:
+                    - img
+                - generic: R$ 180
+              - generic:
+                - generic:
+                  - generic: Total Vencido
+                  - generic:
+                    - img
+                - generic: R$ 600
+              - generic:
+                - generic:
+                  - generic: Mensalidades Pendentes
+                - generic: "5"
+              - generic:
+                - generic:
+                  - generic: Cobrancas
+                - generic: "5"
+            - generic:
+              - generic:
+                - img
+                - textbox:
+                  - /placeholder: Buscar por aluno...
+              - combobox
+              - generic:
+                - button: Todas
+                - button: Abertas
+                - button: Vencidas
+                - button: Pagas
+                - button: Parciais
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - paragraph: João Exemplo
+                    - paragraph: Mensalidade Abril
+                    - paragraph: "Tipo: mensalidade"
+                  - generic: pago
+                - generic:
+                  - generic:
+                    - generic: R$ 200.00
+                    - generic: "Pago: R$ 200.00"
+                  - generic: 10/04/2026
+                - generic:
+                  - button:
+                    - img
+                    - text: Ver Comprovante
+              - generic:
+                - generic:
+                  - generic:
+                    - paragraph: João Exemplo
+                    - paragraph: Mensalidade 01/2026
+                    - paragraph: "Tipo: mensalidade"
+                  - generic: Vencida
+                - generic:
+                  - generic:
+                    - generic: R$ 200.00
+                  - generic: 10/01/2026
+                - generic:
+                  - button:
+                    - img
+                    - text: Registrar Pagamento
+              - generic:
+                - generic:
+                  - generic:
+                    - paragraph: João Exemplo
+                    - paragraph: Mensalidade 02/2026
+                    - paragraph: "Tipo: mensalidade"
+                  - generic: Vencida
+                - generic:
+                  - generic:
+                    - generic: R$ 200.00
+                  - generic: 10/02/2026
+                - generic:
+                  - button:
+                    - img
+                    - text: Registrar Pagamento
+              - generic:
+                - generic:
+                  - generic:
+                    - paragraph: João Exemplo
+                    - paragraph: Mensalidade 03/2026
+                    - paragraph: "Tipo: mensalidade"
+                  - generic: Vencida
+                - generic:
+                  - generic:
+                    - generic: R$ 200.00
+                  - generic: 10/03/2026
+                - generic:
+                  - button:
+                    - img
+                    - text: Registrar Pagamento
+              - generic:
+                - generic:
+                  - generic:
+                    - paragraph: "[TESTE] Maria da Silva"
+                    - paragraph: Mensalidade 04/2026
+                    - paragraph: "Tipo: mensalidade"
+                  - generic: Aberta
+                - generic:
+                  - generic:
+                    - generic: R$ 180.00
+                  - generic: 23/04/2026
+                - generic:
+                  - button:
+                    - img
+                    - text: Registrar Pagamento
+      - navigation:
+        - paragraph:
+          - text: Desenvolvido por
+          - link:
+            - /url: https://www.mtsferreira.dev/
+            - text: MtsFerreira
+        - list:
+          - listitem:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic: Início
+          - listitem:
+            - link:
+              - /url: /alunos
+              - generic:
+                - img
+              - generic: Alunos
+          - listitem:
+            - link:
+              - /url: /frequencia
+              - generic:
+                - img
+              - generic: Frequência
+          - listitem:
+            - link:
+              - /url: /financeiro
+              - generic:
+                - img
+              - generic: Financeiro
+          - listitem:
+            - button:
+              - img
+              - generic: Mais
+  - dialog "Registrar Pagamento" [ref=e173]:
+    - heading "Registrar Pagamento" [level=2] [ref=e175]
+    - generic [ref=e176]:
+      - generic [ref=e177]:
+        - paragraph [ref=e178]: "Aluno: [TESTE] Maria da Silva"
+        - paragraph [ref=e179]: "Cobranca: Mensalidade 04/2026"
+        - paragraph [ref=e180]:
+          - text: "Valor total:"
+          - generic [ref=e181]: R$ 180.00
+        - paragraph [ref=e182]:
+          - text: "Ja pago:"
+          - generic [ref=e183]: R$ 0.00
+      - generic [ref=e184]:
+        - generic [ref=e185]: Valor do pagamento (R$)
+        - spinbutton "Valor do pagamento (R$)" [active] [ref=e186]: "180.00"
+      - generic [ref=e187]:
+        - generic [ref=e188]: Forma de pagamento
+        - combobox "Forma de pagamento" [ref=e189]:
+          - option "PIX" [selected]
+          - option "Cartao"
+          - option "Dinheiro"
+          - option "Transferencia"
+          - option "Boleto"
+      - generic [ref=e190]:
+        - generic [ref=e191]: Observacoes
+        - textbox "Observacoes" [ref=e192]:
+          - /placeholder: "Ex.: pagamento referente ao mes atual"
+          - text: Gerada automaticamente pela data de matricula.
+    - generic [ref=e193]:
+      - button "Cancelar" [ref=e194] [cursor=pointer]
+      - button "Confirmar Pagamento" [ref=e195] [cursor=pointer]
+    - button "Close" [ref=e196] [cursor=pointer]:
+      - img [ref=e197]
+      - generic [ref=e200]: Close

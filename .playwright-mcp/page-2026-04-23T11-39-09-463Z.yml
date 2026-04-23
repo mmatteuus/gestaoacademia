@@ -1,0 +1,116 @@
+- generic:
+  - generic:
+    - region "Notifications alt+T"
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - paragraph: Gêmeos Academia
+            - heading [level=2]: Ranking
+        - generic:
+          - button:
+            - img
+          - button:
+            - img
+          - button:
+            - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Ranking
+                - paragraph: Classificação por temporada e categoria
+            - generic:
+              - button: Todas
+              - button: Adulto
+              - button: Juvenil
+              - button: Infantil
+              - button: Regras
+            - generic:
+              - button:
+                - generic:
+                  - img
+                - generic:
+                  - generic:
+                    - generic: João Exemplo
+                  - generic:
+                    - generic: 5V
+                    - generic: 2M
+                    - generic: Adulto
+                - generic:
+                  - generic: "100"
+                  - generic:
+                    - img
+                    - generic: —
+      - navigation:
+        - paragraph:
+          - text: Desenvolvido por
+          - link:
+            - /url: https://www.mtsferreira.dev/
+            - text: MtsFerreira
+        - list:
+          - listitem:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic: Início
+          - listitem:
+            - link:
+              - /url: /alunos
+              - generic:
+                - img
+              - generic: Alunos
+          - listitem:
+            - link:
+              - /url: /frequencia
+              - generic:
+                - img
+              - generic: Frequência
+          - listitem:
+            - link:
+              - /url: /financeiro
+              - generic:
+                - img
+              - generic: Financeiro
+          - listitem:
+            - button:
+              - img
+              - generic: Mais
+  - dialog "Como João Exemplo chegou à posição 1" [ref=e101]:
+    - heading "Como João Exemplo chegou à posição 1" [level=2] [ref=e103]
+    - generic [ref=e104]:
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - paragraph [ref=e108]: Categoria
+          - paragraph [ref=e109]: Adulto
+        - generic [ref=e110]:
+          - paragraph [ref=e111]: Temporada
+          - paragraph [ref=e112]: "2026"
+      - generic [ref=e113]:
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - img [ref=e116]
+            - generic [ref=e125]: Vitórias acumuladas
+          - generic [ref=e126]: 5 (75 pts)
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - img [ref=e129]
+            - generic [ref=e135]: Medalhas conquistadas
+          - generic [ref=e136]: 2 (50 pts)
+        - generic [ref=e137]:
+          - generic [ref=e138]:
+            - img [ref=e139]
+            - generic [ref=e145]: Consistência / participação
+          - generic [ref=e146]: 0 pts
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - img [ref=e149]
+            - generic [ref=e155]: Pontuação total
+          - generic [ref=e156]: 100 pts
+    - button "Close" [active] [ref=e157] [cursor=pointer]:
+      - img [ref=e158]
+      - generic [ref=e161]: Close

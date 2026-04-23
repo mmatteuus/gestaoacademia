@@ -1,0 +1,147 @@
+- generic:
+  - generic:
+    - region "Notifications alt+T"
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - paragraph: Gêmeos Academia
+            - heading [level=2]: Turmas
+        - generic:
+          - button:
+            - img
+          - button:
+            - img
+          - button:
+            - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Turmas
+                - paragraph: 1 turmas ativas
+              - generic:
+                - button:
+                  - img
+                  - text: Nova Turma
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - heading [level=3]: Infantil Manhã
+                    - paragraph: Jiu-Jitsu • Prof. Exemplo
+                  - generic:
+                    - img
+                    - generic: 1/20
+                - generic:
+                  - generic:
+                    - generic: 08:00-09:00
+                    - generic: •
+                    - generic: Seg, Qua
+                - generic:
+                  - generic: João
+                - generic:
+                  - button: Gerenciar alunos
+      - navigation:
+        - paragraph:
+          - text: Desenvolvido por
+          - link:
+            - /url: https://www.mtsferreira.dev/
+            - text: MtsFerreira
+        - list:
+          - listitem:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic: Início
+          - listitem:
+            - link:
+              - /url: /alunos
+              - generic:
+                - img
+              - generic: Alunos
+          - listitem:
+            - link:
+              - /url: /frequencia
+              - generic:
+                - img
+              - generic: Frequência
+          - listitem:
+            - link:
+              - /url: /financeiro
+              - generic:
+                - img
+              - generic: Financeiro
+          - listitem:
+            - button:
+              - img
+              - generic: Mais
+  - dialog "Nova Turma" [ref=e97]:
+    - heading "Nova Turma" [level=2] [ref=e99]
+    - generic [ref=e100]:
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - text: Nome da Turma
+          - textbox "Nome da Turma" [active] [ref=e103]
+        - generic [ref=e104]:
+          - text: Modalidade
+          - combobox "Modalidade" [ref=e105] [cursor=pointer]:
+            - generic: Selecione
+            - img [ref=e106]
+          - combobox [ref=e108]
+        - generic [ref=e109]:
+          - text: Professor
+          - textbox "Professor" [ref=e110]
+        - generic [ref=e111]:
+          - text: Horário
+          - textbox "Horário" [ref=e112]:
+            - /placeholder: 08:00 - 09:30
+        - generic [ref=e113]:
+          - text: Capacidade
+          - spinbutton "Capacidade" [ref=e114]: "20"
+      - generic [ref=e115]:
+        - text: Dias da Semana
+        - generic [ref=e116]:
+          - generic [ref=e117] [cursor=pointer]:
+            - checkbox "Seg" [ref=e118]
+            - checkbox
+            - generic [ref=e119]: Seg
+          - generic [ref=e120] [cursor=pointer]:
+            - checkbox "Ter" [ref=e121]
+            - checkbox
+            - generic [ref=e122]: Ter
+          - generic [ref=e123] [cursor=pointer]:
+            - checkbox "Qua" [ref=e124]
+            - checkbox
+            - generic [ref=e125]: Qua
+          - generic [ref=e126] [cursor=pointer]:
+            - checkbox "Qui" [ref=e127]
+            - checkbox
+            - generic [ref=e128]: Qui
+          - generic [ref=e129] [cursor=pointer]:
+            - checkbox "Sex" [ref=e130]
+            - checkbox
+            - generic [ref=e131]: Sex
+          - generic [ref=e132] [cursor=pointer]:
+            - checkbox "Sáb" [ref=e133]
+            - checkbox
+            - generic [ref=e134]: Sáb
+          - generic [ref=e135] [cursor=pointer]:
+            - checkbox "Dom" [ref=e136]
+            - checkbox
+            - generic [ref=e137]: Dom
+      - generic [ref=e138]:
+        - button "Cancelar" [ref=e139] [cursor=pointer]
+        - button "Criar Turma" [ref=e140] [cursor=pointer]
+    - button "Close" [ref=e141] [cursor=pointer]:
+      - img [ref=e142]
+      - generic [ref=e145]: Close

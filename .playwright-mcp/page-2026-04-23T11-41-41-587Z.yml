@@ -1,0 +1,108 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications alt+T"
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e7]
+          - generic [ref=e10]:
+            - paragraph [ref=e11]: Gêmeos Academia
+            - heading "Financeiro Gerencial" [level=2] [ref=e12]
+        - generic [ref=e13]:
+          - button [ref=e14] [cursor=pointer]:
+            - img
+          - button "Tema escuro ativo. Alternar para claro" [ref=e15] [cursor=pointer]:
+            - img
+          - button "Sair" [ref=e16] [cursor=pointer]:
+            - img
+      - main [ref=e17]:
+        - generic [ref=e19]:
+          - generic [ref=e21]:
+            - heading "Financeiro Gerencial" [level=1] [ref=e22]
+            - paragraph [ref=e23]: Fluxo de caixa e visão consolidada
+          - generic [ref=e24]:
+            - generic [ref=e25]:
+              - generic [ref=e26]:
+                - generic [ref=e27]: Receitas
+                - img [ref=e29]
+              - generic [ref=e32]: R$ 2.000
+              - generic [ref=e33]:
+                - img [ref=e34]
+                - generic [ref=e37]: +8%
+            - generic [ref=e38]:
+              - generic [ref=e39]:
+                - generic [ref=e40]: Despesas
+                - img [ref=e42]
+              - generic [ref=e45]: R$ 1.500
+              - generic [ref=e46]:
+                - img [ref=e47]
+                - generic [ref=e50]: +2%
+            - generic [ref=e51]:
+              - generic [ref=e52]:
+                - generic [ref=e53]: Lucro
+                - img [ref=e55]
+              - generic [ref=e58]: R$ 500
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - generic [ref=e61]: Fluxo de Caixa
+                - img [ref=e63]
+              - generic [ref=e65]: Positivo
+          - generic [ref=e66]:
+            - heading "Receita vs Despesa por Mês" [level=3] [ref=e67]
+            - img [ref=e125]:
+              - generic [ref=e130]:
+                - generic [ref=e132]: Nov
+                - generic [ref=e134]: Dez
+                - generic [ref=e136]: Jan
+                - generic [ref=e138]: Fev
+                - generic [ref=e140]: Mar
+                - generic [ref=e142]: Abr
+              - generic [ref=e144]:
+                - generic [ref=e146]: "0"
+                - generic [ref=e148]: "550"
+                - generic [ref=e150]: "1100"
+                - generic [ref=e152]: "1650"
+                - generic [ref=e154]: "2200"
+          - generic [ref=e70]:
+            - tablist [ref=e71]:
+              - tab "Receitas" [ref=e72] [cursor=pointer]
+              - tab "Despesas" [active] [selected] [ref=e73] [cursor=pointer]
+            - tabpanel "Despesas" [ref=e172]:
+              - generic [ref=e174]:
+                - generic [ref=e175]:
+                  - paragraph [ref=e176]: Aluguel do tatame
+                  - generic [ref=e177]: Aberta
+                - generic [ref=e178]:
+                  - generic [ref=e179]: fixa
+                  - generic [ref=e180]: R$ 1.500
+      - navigation "Navegação principal" [ref=e82]:
+        - paragraph [ref=e83]:
+          - text: Desenvolvido por
+          - link "MtsFerreira" [ref=e84] [cursor=pointer]:
+            - /url: https://www.mtsferreira.dev/
+        - list [ref=e85]:
+          - listitem [ref=e86]:
+            - link "Início" [ref=e87] [cursor=pointer]:
+              - /url: /
+              - img [ref=e89]
+              - generic [ref=e94]: Início
+          - listitem [ref=e95]:
+            - link "Alunos" [ref=e96] [cursor=pointer]:
+              - /url: /alunos
+              - img [ref=e98]
+              - generic [ref=e103]: Alunos
+          - listitem [ref=e104]:
+            - link "Frequência" [ref=e105] [cursor=pointer]:
+              - /url: /frequencia
+              - img [ref=e107]
+              - generic [ref=e110]: Frequência
+          - listitem [ref=e111]:
+            - link "Financeiro" [ref=e112] [cursor=pointer]:
+              - /url: /financeiro
+              - img [ref=e114]
+              - generic [ref=e116]: Financeiro
+          - listitem [ref=e117]:
+            - button "Abrir mais opções" [ref=e118] [cursor=pointer]:
+              - img [ref=e119]
+              - generic [ref=e123]: Mais
+  - generic [ref=e171]: "2200"

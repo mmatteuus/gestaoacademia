@@ -1,0 +1,97 @@
+- generic [ref=e2]:
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e168]:
+        - img [ref=e170]
+        - generic [ref=e173]: Turma criada com sucesso
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: Gêmeos Academia
+          - heading "Turmas" [level=2] [ref=e12]
+      - generic [ref=e13]:
+        - button [ref=e14] [cursor=pointer]:
+          - img
+        - button "Tema escuro ativo. Alternar para claro" [ref=e15] [cursor=pointer]:
+          - img
+        - button "Sair" [ref=e16] [cursor=pointer]:
+          - img
+    - main [ref=e17]:
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - heading "Turmas" [level=1] [ref=e65]
+            - paragraph [ref=e66]: 2 turmas ativas
+          - button "Nova Turma" [ref=e68] [cursor=pointer]:
+            - img
+            - text: Nova Turma
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - generic [ref=e71]:
+              - button "Gerenciar alunos de Infantil Manhã" [ref=e72] [cursor=pointer]:
+                - img
+              - button "Editar Infantil Manhã" [ref=e73] [cursor=pointer]:
+                - img
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - heading "Infantil Manhã" [level=3] [ref=e76]
+                - paragraph [ref=e77]: Jiu-Jitsu • Prof. Exemplo
+              - generic [ref=e78]:
+                - img [ref=e79]
+                - generic [ref=e84]: 1/20
+            - generic [ref=e86]:
+              - generic [ref=e87]: 08:00-09:00
+              - generic [ref=e88]: •
+              - generic [ref=e89]: Seg, Qua
+            - generic [ref=e93]: João
+            - button "Gerenciar alunos" [ref=e95] [cursor=pointer]
+          - generic [ref=e174]:
+            - generic [ref=e175]:
+              - button "Gerenciar alunos de [TESTE] Adulto Noite" [ref=e176] [cursor=pointer]:
+                - img
+              - button "Editar [TESTE] Adulto Noite" [ref=e177] [cursor=pointer]:
+                - img
+            - generic [ref=e178]:
+              - generic [ref=e179]:
+                - heading "[TESTE] Adulto Noite" [level=3] [ref=e180]
+                - paragraph [ref=e181]: Muay Thai • [TESTE] Prof. Bruno
+              - generic [ref=e182]:
+                - img [ref=e183]
+                - generic [ref=e188]: 0/20
+            - generic [ref=e190]:
+              - generic [ref=e191]: 19:00 - 20:30
+              - generic [ref=e192]: •
+              - generic [ref=e193]: Seg, Qui
+            - button "Gerenciar alunos" [ref=e196] [cursor=pointer]
+    - navigation "Navegação principal" [ref=e20]:
+      - paragraph [ref=e21]:
+        - text: Desenvolvido por
+        - link "MtsFerreira" [ref=e22] [cursor=pointer]:
+          - /url: https://www.mtsferreira.dev/
+      - list [ref=e23]:
+        - listitem [ref=e24]:
+          - link "Início" [ref=e25] [cursor=pointer]:
+            - /url: /
+            - img [ref=e27]
+            - generic [ref=e32]: Início
+        - listitem [ref=e33]:
+          - link "Alunos" [ref=e34] [cursor=pointer]:
+            - /url: /alunos
+            - img [ref=e36]
+            - generic [ref=e41]: Alunos
+        - listitem [ref=e42]:
+          - link "Frequência" [ref=e43] [cursor=pointer]:
+            - /url: /frequencia
+            - img [ref=e45]
+            - generic [ref=e48]: Frequência
+        - listitem [ref=e49]:
+          - link "Financeiro" [ref=e50] [cursor=pointer]:
+            - /url: /financeiro
+            - img [ref=e52]
+            - generic [ref=e54]: Financeiro
+        - listitem [ref=e55]:
+          - button "Abrir mais opções" [ref=e56] [cursor=pointer]:
+            - img [ref=e57]
+            - generic [ref=e61]: Mais

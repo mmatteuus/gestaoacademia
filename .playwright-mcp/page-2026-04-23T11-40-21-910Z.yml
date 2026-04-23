@@ -1,0 +1,102 @@
+- generic:
+  - generic:
+    - region "Notifications alt+T"
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - paragraph: Gêmeos Academia
+            - heading [level=2]: Campeonatos
+        - generic:
+          - button:
+            - img
+          - button:
+            - img
+          - button:
+            - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Campeonatos
+                - paragraph: 1 campeonatos registrados
+              - generic:
+                - button:
+                  - img
+                  - text: Novo Campeonato
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=3]:
+                      - img
+                      - generic: Campeonato Exemplo
+                    - paragraph: 2026-06-15 • Ginásio Exemplo • Jiu-Jitsu
+                  - generic: agendado
+                - generic:
+                  - button:
+                    - img
+                    - text: Adicionar Alunos
+                - generic:
+                  - paragraph: Participantes (1)
+                  - generic:
+                    - button
+      - navigation:
+        - paragraph:
+          - text: Desenvolvido por
+          - link:
+            - /url: https://www.mtsferreira.dev/
+            - text: MtsFerreira
+        - list:
+          - listitem:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic: Início
+          - listitem:
+            - link:
+              - /url: /alunos
+              - generic:
+                - img
+              - generic: Alunos
+          - listitem:
+            - link:
+              - /url: /frequencia
+              - generic:
+                - img
+              - generic: Frequência
+          - listitem:
+            - link:
+              - /url: /financeiro
+              - generic:
+                - img
+              - generic: Financeiro
+          - listitem:
+            - button:
+              - img
+              - generic: Mais
+  - dialog "Novo Campeonato" [ref=e90]:
+    - heading "Novo Campeonato" [level=2] [ref=e92]
+    - generic [ref=e93]:
+      - generic [ref=e94]:
+        - generic [ref=e95]: Nome do Evento *
+        - textbox "Ex. Copa de Jiu-Jitsu" [active] [ref=e96]
+      - generic [ref=e97]:
+        - generic [ref=e98]: Data *
+        - textbox [ref=e99]
+      - generic [ref=e100]:
+        - generic [ref=e101]: Local
+        - textbox "Ex. Ginásio Municipal" [ref=e102]
+      - generic [ref=e103]:
+        - generic [ref=e104]: Modalidade
+        - textbox "Ex. Jiu-Jitsu" [ref=e105]: Jiu-Jitsu
+    - generic [ref=e106]:
+      - button "Cancelar" [ref=e107] [cursor=pointer]
+      - button "Agendar Evento" [ref=e108] [cursor=pointer]
+    - button "Close" [ref=e109] [cursor=pointer]:
+      - img [ref=e110]
+      - generic [ref=e113]: Close
