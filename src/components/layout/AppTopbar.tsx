@@ -11,15 +11,15 @@ const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
   '/alunos': 'Alunos',
   '/turmas': 'Turmas',
-  '/frequencia': 'Frequencia',
-  '/graduacao': 'Graduacao',
+  '/frequencia': 'Frequência',
+  '/graduacao': 'Graduação',
   '/ranking': 'Ranking',
   '/campeonatos': 'Campeonatos',
-  '/financeiro': 'Financeiro Escolar',
+  '/financeiro': 'Financeiro',
   '/financeiro-gerencial': 'Financeiro Gerencial',
   '/produtos': 'Produtos & Vendas',
   '/aluguel': 'Aluguel',
-  '/relatorios': 'Relatorios',
+  '/relatorios': 'Relatórios',
 };
 
 export function AppTopbar() {

@@ -36,7 +36,7 @@ export function BottomNav() {
     <>
       <nav
         aria-label="Navegação principal"
-        className="fixed bottom-0 inset-x-0 z-30 border-t border-border/80 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 pb-[env(safe-area-inset-bottom)] border-tech"
+        className="fixed bottom-0 inset-x-0 z-30 border-t border-border/80 bg-background/85 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75 pb-[env(safe-area-inset-bottom)] border-tech"
       >
         <ul className="mx-auto grid max-w-3xl grid-cols-5 items-stretch">
           {primary.map((item) => (
@@ -84,6 +84,17 @@ export function BottomNav() {
             </button>
           </li>
         </ul>
+        <p className="text-center text-[10px] text-muted-foreground/70 pb-1 leading-none">
+          Desenvolvido por{' '}
+          <a
+            href="https://www.mtsferreira.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary hover:underline"
+          >
+            MtsFerreira
+          </a>
+        </p>
       </nav>
 
       {moreOpen && (
