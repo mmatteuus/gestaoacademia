@@ -8,7 +8,7 @@ const SESSION_TOKEN = 'ok';
 // Sessão válida por 24h — elimina login obrigatório ao reabrir o PWA,
 // mas expira após um dia de inatividade por segurança.
 const SESSION_DURATION_MS = 24 * 60 * 60_000;
-const PASSWORD_HASH = '61ff9d5cda6880fa4b1a059e79e7c48dc6e55ed92d25037d246fbb0b6ab8a674';
+const PASSWORD_HASH = 'ec940280d9c421414b4dc3d5f40f1bcf4eba3adab9802abf07bfaf099d73bbec';
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 60_000;
 
