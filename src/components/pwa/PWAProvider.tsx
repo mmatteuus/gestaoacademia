@@ -1,3 +1,19 @@
+import React, { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Wifi, WifiOff, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// Tipagem para o evento de instalação do PWA
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: "accepted" | "dismissed";
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
+
 // Estendendo o objeto window para suportar o evento de instalação globalmente
 declare global {
   interface Window {
@@ -16,19 +32,33 @@ export function PWAProvider() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Captura o evento de instalação globalmente para que qualquer botão possa usar
+    // Detecta se o app foi aberto como PWA (standalone)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone || 
+                        document.referrer.includes('android-app://');
+
+    if (isStandalone) {
+      sessionStorage.setItem('pwa-mode', 'true');
+      console.log('App rodando em modo PWA Standalone');
+      
+      // Se estamos no PWA e não estamos na tela de login ou cadastro, 
+      // e não estamos autenticados (isso será checado pelo AuthGate), 
+      // o start_url: /login já cuida disso.
+    }
+
     const handleBeforeInstallPrompt = (e: Event) => {
+      // Previne o mini-infobar do Chrome no Android para usarmos nossa UI premium
       e.preventDefault();
       window.deferredPWAInstallPrompt = e as BeforeInstallPromptEvent;
-      // Notifica os componentes que o prompt está pronto
+      console.log('PWA: Prompt de instalação capturado');
       window.dispatchEvent(new CustomEvent("pwa-prompt-available"));
     };
 
     const handleAppInstalled = () => {
       window.deferredPWAInstallPrompt = undefined;
       toast.success("Aplicativo instalado!", {
-        description: "Abra o Gêmeos Academia na sua tela inicial para fazer login.",
-        duration: 6000,
+        description: "Gêmeos Academia agora está na sua tela inicial.",
+        duration: 5000,
       });
     };
 
@@ -45,14 +75,10 @@ export function PWAProvider() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
-    if (import.meta.env.DEV) return;
-
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (refreshing) return;
-      refreshing = true;
-      window.location.reload();
-    });
+    
+    // Em produção ou preview, registramos o SW
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocal && !import.meta.env.VITE_ENABLE_PWA_DEV) return;
 
     import("virtual:pwa-register")
       .then(({ registerSW }) => {
@@ -69,15 +95,15 @@ export function PWAProvider() {
             });
           },
           onOfflineReady() {
-            toast.info("Sistema pronto para uso offline", {
-              description: "Os dados foram cacheados e estão acessíveis sem internet.",
+            toast.info("Pronto para uso offline", {
+              description: "O sistema funcionará mesmo sem internet.",
               duration: 5000,
             });
           },
         });
       })
-      .catch(() => {
-        /* SW registration opcional — silencia em dev/preview */
+      .catch((err) => {
+        console.warn('PWA: Erro ao registrar SW:', err);
       });
   }, []);
 
@@ -86,9 +112,7 @@ export function PWAProvider() {
     if (typeof window === "undefined") return;
     
     let offlineToastId: string | number | undefined;
-    // Rastreia se o app já mostrou o aviso de offline nesta sessão
     let hasShownOfflineToast = false;
-    // Período inicial onde ignoramos flutuações de rede (comum ao abrir PWA)
     let isSettling = true;
 
     const onOffline = () => {
@@ -96,8 +120,8 @@ export function PWAProvider() {
       if (hasShownOfflineToast) return;
 
       hasShownOfflineToast = true;
-      offlineToastId = toast("Você está offline", {
-        description: "Alguns dados podem estar desatualizados.",
+      offlineToastId = toast.error("Sem conexão com a internet", {
+        description: "Você ainda pode visualizar dados salvos, mas alterações podem não ser sincronizadas agora.",
         duration: Infinity,
         icon: <WifiOff className="h-4 w-4" />,
       });
@@ -109,25 +133,22 @@ export function PWAProvider() {
         offlineToastId = undefined;
       }
 
-      // Só mostra o sucesso se realmente mostramos o aviso de offline antes
       if (hasShownOfflineToast) {
         toast.success("Conexão restaurada", {
+          description: "Sincronizando dados com o servidor...",
           icon: <Wifi className="h-4 w-4" />,
-          duration: 2000,
+          duration: 3000,
         });
         hasShownOfflineToast = false;
         
-        // Refetch das listas após um pequeno delay para garantir que o SW/Rede estabilizou
         setTimeout(() => {
           queryClient.invalidateQueries();
         }, 1500);
       }
     };
 
-    // Delay inicial para evitar detectar "offline" momentâneo durante o boot do PWA
     const settleTimeout = setTimeout(() => {
       isSettling = false;
-      // Check inicial de fato
       if (!navigator.onLine) {
         onOffline();
       }
@@ -144,46 +165,13 @@ export function PWAProvider() {
     };
   }, [queryClient]);
 
-  // --- Back button intercepta modais/drawers abertos ----------------------
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const SENTINEL = "__gemeos_modal__";
-    let pushed = false;
-
-    const observer = new MutationObserver(() => {
-      const hasOpenDialog = document.querySelector('[role="dialog"][data-state="open"]');
-      if (hasOpenDialog && !pushed) {
-        history.pushState({ [SENTINEL]: true }, "");
-        pushed = true;
-      } else if (!hasOpenDialog && pushed) {
-        pushed = false;
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-state"] });
-
-    const onPop = (e: PopStateEvent) => {
-      const openDialog = document.querySelector('[role="dialog"][data-state="open"]');
-      if (openDialog) {
-        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-        pushed = false;
-      }
-      void e;
-    };
-    window.addEventListener("popstate", onPop);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("popstate", onPop);
-    };
-  }, []);
-
   return null;
 }
 
 /**
- * Botão explícito de instalação.
- * Prioriza a instalação automática (nativa) e oferece fallback de instruções se necessário.
+ * Botão de instalação aprimorado.
+ * Se o prompt nativo estiver pronto, ele dispara imediatamente.
+ * Se não, ele tenta ser o mais útil possível.
  */
 export function InstallAppButton() {
   const [isInstalled, setIsInstalled] = useState(false);
@@ -194,11 +182,12 @@ export function InstallAppButton() {
     if (typeof window === "undefined") return;
 
     const checkStatus = () => {
-      const nav = window.navigator as Navigator & { standalone?: boolean };
-      const standalone =
+      const nav = window.navigator as any;
+      const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         nav.standalone === true;
-      setIsInstalled(standalone);
+      
+      setIsInstalled(isStandalone);
       setPromptReady(!!window.deferredPWAInstallPrompt);
 
       const ua = window.navigator.userAgent;
@@ -224,7 +213,6 @@ export function InstallAppButton() {
     const promptEvent = window.deferredPWAInstallPrompt;
     
     if (promptEvent) {
-      // INSTALAÇÃO AUTOMÁTICA (Chrome, Edge, Android Chrome, etc)
       try {
         await promptEvent.prompt();
         const { outcome } = await promptEvent.userChoice;
@@ -233,24 +221,22 @@ export function InstallAppButton() {
           setPromptReady(false);
         }
       } catch (err) {
-        console.error("Erro ao iniciar instalação PWA:", err);
+        console.error("Erro PWA:", err);
+        toast.error("Não foi possível abrir o instalador.");
       }
     } else {
-      // FALLBACK DE INSTRUÇÕES (iOS Safari, etc)
+      // Fallback aprimorado com diálogos mais bonitos
       if (os === 'ios') {
-        toast('Instalação no iPhone/iPad', {
-          description: 'Toque no ícone "Compartilhar" (quadrado com seta) e selecione "Adicionar à Tela de Início".',
+        toast('Instalar no iPhone', {
+          description: '1. Toque no ícone de Compartilhar\n2. Role para baixo e toque em "Adicionar à Tela de Início"',
           duration: 8000,
-        });
-      } else if (os === 'android') {
-        toast('Instalação no Android', {
-          description: 'Toque nos três pontos do navegador e selecione "Instalar aplicativo" ou "Adicionar à tela inicial".',
-          duration: 8000,
+          icon: <Download className="h-4 w-4" />
         });
       } else {
-        toast('Instalação PWA', {
-          description: 'Clique no ícone de instalação na barra de endereços do seu navegador.',
-          duration: 5000,
+        toast('Instalar Aplicativo', {
+          description: 'Use o menu do navegador (três pontos) e selecione "Instalar" ou "Adicionar à tela inicial".',
+          duration: 6000,
+          icon: <Download className="h-4 w-4" />
         });
       }
     }
@@ -259,12 +245,13 @@ export function InstallAppButton() {
   return (
     <Button
       size="sm"
-      variant="secondary"
+      variant="default"
       onClick={handleInstall}
-      className="bg-primary/10 hover:bg-primary/20 text-primary border-none font-medium animate-pulse-subtle"
+      className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-900/20 px-6 transition-all active:scale-95"
     >
       <Download className="mr-2 h-4 w-4" />
-      {promptReady ? 'Instalar App' : 'Como Instalar'}
+      {promptReady ? 'Instalar App Agora' : 'Como Instalar'}
     </Button>
   );
 }
+

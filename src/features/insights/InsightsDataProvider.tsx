@@ -348,6 +348,7 @@ export function InsightsDataProvider({ children }: { children: ReactNode }) {
   return <InsightsDataContext.Provider value={value}>{children}</InsightsDataContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useInsightsData() {
   const context = useContext(InsightsDataContext);
   if (!context) {

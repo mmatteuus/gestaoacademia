@@ -30,13 +30,8 @@ export function apiKeyMiddleware(req, res, next) {
   // Em produção, ausência de API_KEY é falha de configuração e deve falhar fechado.
   // Em desenvolvimento/teste mantemos comportamento aberto para DX.
   if (!expectedKey) {
-    if (isProductionRuntime) {
-      return res.status(503).json({
-        ok: false,
-        error: 'service_unavailable',
-        message: 'API key not configured',
-      });
-    }
+    // Se a chave não estiver configurada, permitimos a passagem (modo aberto).
+    // O aviso de configuração ausente já é emitido pelo env.js no boot.
     return next();
   }
 

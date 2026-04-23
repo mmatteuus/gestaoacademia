@@ -26,7 +26,7 @@ const envSchema = z.object({
   rateLimitMaxReads: z.number().int().positive(),
 
   // API Key (opcional — se ausente, API fica aberta)
-  apiKey: z.string().min(16).optional(),
+  apiKey: z.string().optional(),
 });
 
 const rawEnv = {

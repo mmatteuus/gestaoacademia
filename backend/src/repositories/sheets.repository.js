@@ -248,19 +248,33 @@ export async function batchListRows(types) {
   if (validTypes.length === 0) return {};
 
   const sheets = getSheets();
-  const ranges = validTypes.map((t) => `${SHEET_CONFIG[t].name}!A1:ZZ`);
+  const existingNames = await listAllSheets();
+  
+  // Filtra apenas tipos cujas abas já existem na planilha
+  const existingTypes = validTypes.filter(t => existingNames.includes(SHEET_CONFIG[t].name));
+  
+  if (existingTypes.length === 0) {
+    const empty = {};
+    validTypes.forEach(t => empty[t] = []);
+    return empty;
+  }
+
+  const ranges = existingTypes.map((t) => `${SHEET_CONFIG[t].name}!A1:ZZ`);
 
   const res = await withRetry(
     () => sheets.spreadsheets.values.batchGet({
       spreadsheetId: env.spreadsheetId,
       ranges,
     }),
-    `batchGet:${validTypes.join(',')}`
+    `batchGet:${existingTypes.join(',')}`
   );
 
   const out = {};
+  // Inicializa todos os tipos solicitados com array vazio para consistência
+  validTypes.forEach(t => out[t] = []);
+
   const valueRanges = res.data.valueRanges || [];
-  validTypes.forEach((type, idx) => {
+  existingTypes.forEach((type, idx) => {
     const config = SHEET_CONFIG[type];
     const values = valueRanges[idx]?.values || [];
     if (values.length <= 1) {
