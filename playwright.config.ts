@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   use: {
-    baseURL: 'http://localhost:8080',
+    baseURL: process.env.BASE_URL || 'http://localhost:8080',
     headless: true,
     trace: 'off',
     screenshot: 'only-on-failure',

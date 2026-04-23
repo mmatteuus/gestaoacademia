@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { Search, X, Users, BookOpen, Package, Sun, Moon, LogOut, Award, CloudOff } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
 import { getPendingWriteCount } from '@/lib/offline-queue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -75,11 +76,8 @@ export function AppTopbar() {
   return (
     <header className="h-14 sm:h-16 border-b border-border/80 flex items-center justify-between px-3 sm:px-4 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shrink-0 sticky top-0 z-20 border-tech">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
-        </div>
+        <Logo />
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">Gêmeos Academia</p>
           <h2 className="text-sm sm:text-base font-semibold text-foreground truncate">{title}</h2>
         </div>
       </div>
