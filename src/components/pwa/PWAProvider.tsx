@@ -245,12 +245,14 @@ export function InstallAppButton() {
   return (
     <Button
       size="sm"
-      variant="default"
+      variant="secondary"
       onClick={handleInstall}
-      className="bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-900/20 px-6 transition-all active:scale-95"
+      className="h-9 text-xs sm:text-sm whitespace-nowrap"
+      aria-label="Instalar app"
+      title="Instalar app"
     >
-      <Download className="mr-2 h-4 w-4" />
-      {promptReady ? 'Instalar App Agora' : 'Como Instalar'}
+      <Download className="mr-1.5 h-4 w-4" />
+      Instalar app
     </Button>
   );
 }

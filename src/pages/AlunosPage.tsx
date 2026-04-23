@@ -592,17 +592,8 @@ function ShareCadastroButton() {
     await handleCopy();
   };
 
-  return (
-    <Button
-      size="sm"
-      variant="secondary"
-      className="h-9"
-      title="Compartilhar formulário de cadastro"
-      aria-label="Compartilhar formulário de cadastro"
-      onClick={handleShare}
-    >
-      <Share2 className="mr-1 h-4 w-4" />
-      Enviar formulário
-    </Button>
-  );
+  // Botão escondido do visual por decisão de produto; a função `handleShare`
+  // (com fallback de copiar link) segue disponível para uso futuro.
+  void handleShare;
+  return null;
 }
