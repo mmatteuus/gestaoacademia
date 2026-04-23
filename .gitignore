@@ -35,5 +35,10 @@ npm-debug.log*
 # Coverage
 coverage
 
+# Playwright — resultados e rastros de execução não vão para o repo.
+test-results
+playwright-report
+.playwright-mcp
+
 # Lock files (keep only one)
 bun.lockb
