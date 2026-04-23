@@ -344,7 +344,7 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
     syncMensalidadesParaTodos();
     syncGraduacoesParaTodos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, alunosList.length, cobrancasList.length, graduacoesAlunosList.length]);
+  }, [isLoading]);
 
   const value = useMemo<AcademiaDataContextValue>(
     () => ({

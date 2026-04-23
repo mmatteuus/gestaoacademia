@@ -76,24 +76,26 @@ export function PWAProvider() {
     };
   }, []);
 
-  // --- Registro do SW + detecção de update -------------------------------
+// --- Registro do SW + detecção de update -------------------------------
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
 
-    // Em produção ou preview, registramos o SW
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (isLocal && !import.meta.env.VITE_ENABLE_PWA_DEV) return;
 
     let unmounted = false;
     let disposeRegistrationSync = () => {};
+    let hasShownUpdateToast = false;
+    let hasReloadedForUpdate = false;
 
     import("virtual:pwa-register")
       .then(({ registerSW }) => {
         const updateSW = registerSW({
           immediate: true,
           onNeedRefresh() {
-            // Verifica se o app está em primeiro plano para mostrar o toast
+            if (hasReloadedForUpdate) return;
+            
             if (document.visibilityState === "visible") {
               toast("Nova versão disponível", {
                 description: "Atualize para ter as últimas melhorias e correções.",
@@ -101,69 +103,68 @@ export function PWAProvider() {
                 action: {
                   label: "Atualizar agora",
                   onClick: () => {
+                    hasReloadedForUpdate = true;
                     updateSW(true);
                     haptic('light');
                   },
                 },
               });
-            } else {
-              // Se não estiver visível, ainda assim atualizar em segundo plano
-              updateSW(false);
             }
           },
           onRegistered(registration) {
             if (!registration) return;
 
-            let updateWaiting = false;
-
             const checkForUpdates = () => {
-              if (updateWaiting) return; // Evitar múltiplas notificações
+              if (hasShownUpdateToast || hasReloadedForUpdate) return;
               
               registration.update().then((newWorker) => {
-                if (newWorker) {
-                  updateWaiting = true;
-                  // Se o usuário estiver visível, mostrar notificação
+                if (newWorker && !hasShownUpdateToast) {
+                  hasShownUpdateToast = true;
                   if (document.visibilityState === "visible") {
                     setTimeout(() => {
                       toast("Nova versão baixada", {
                         description: "Reiniciando para aplicar as atualizações...",
                         duration: 3000,
                       });
-                      // Forçar recarregagem após um curto delay
+                      hasReloadedForUpdate = true;
                       setTimeout(() => window.location.reload(), 2000);
                     }, 1000);
                   }
                 }
-              }).catch(() => {
-                // Erro silencioso: reconexões instáveis são comuns em PWA móvel.
-              });
+              }).catch(() => {});
             };
 
             const onVisible = () => {
-              if (document.visibilityState === "visible") {
+              if (document.visibilityState === "visible" && !hasReloadedForUpdate) {
                 checkForUpdates();
               }
             };
 
             const onOnline = () => {
-              checkForUpdates();
+              if (!hasReloadedForUpdate) {
+                checkForUpdates();
+              }
             };
 
-            // Atualização proativa para evitar PWA "presa" em versão antiga.
-            const intervalId = window.setInterval(checkForUpdates, 2 * 60 * 1000); // Reduzido para 2 minutos
+            const intervalId = window.setInterval(() => {
+              if (!hasReloadedForUpdate) {
+                checkForUpdates();
+              }
+            }, 10 * 60 * 1000); // 10 minutos - menos agressivo
+            
             window.addEventListener("visibilitychange", onVisible);
             window.addEventListener("online", onOnline);
-            window.addEventListener("focus", checkForUpdates); // Verificar quando o app ganhar foco
+            window.addEventListener("focus", onVisible);
 
             disposeRegistrationSync = () => {
               window.clearInterval(intervalId);
               window.removeEventListener("visibilitychange", onVisible);
               window.removeEventListener("online", onOnline);
-              window.removeEventListener("focus", checkForUpdates);
+              window.removeEventListener("focus", onVisible);
             };
 
-            // Executa uma checagem inicial após registrar.
-            checkForUpdates();
+            // Primeira checagem após 30 segundos (em vez de imediata)
+            setTimeout(checkForUpdates, 30000);
 
             if (unmounted) {
               disposeRegistrationSync();
