@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Wifi, WifiOff, Download } from "lucide-react";
+import { Wifi, WifiOff, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { haptic } from "@/lib/haptics";
 
 // Tipagem para o evento de instalação do PWA
 interface BeforeInstallPromptEvent extends Event {
@@ -175,7 +176,7 @@ export function PWAProvider() {
  */
 export function InstallAppButton() {
   const [isInstalled, setIsInstalled] = useState(false);
-  const [promptReady, setPromptReady] = useState(false);
+  const [installing, setInstalling] = useState(false);
   const [os, setOs] = useState<'ios' | 'android' | 'other' | null>(null);
 
   useEffect(() => {
@@ -186,9 +187,8 @@ export function InstallAppButton() {
       const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         nav.standalone === true;
-      
+
       setIsInstalled(isStandalone);
-      setPromptReady(!!window.deferredPWAInstallPrompt);
 
       const ua = window.navigator.userAgent;
       if (/iPhone|iPad|iPod/i.test(ua)) setOs('ios');
@@ -197,46 +197,71 @@ export function InstallAppButton() {
     };
 
     checkStatus();
-    
-    const onPromptAvailable = () => setPromptReady(true);
+
+    const onPromptAvailable = () => {
+      // Evento serve como trigger de re-render caso o consumidor queira;
+      // hoje o handleInstall lê window.deferredPWAInstallPrompt direto.
+    };
+    const onInstalled = () => {
+      setIsInstalled(true);
+      setInstalling(false);
+    };
     window.addEventListener("pwa-prompt-available", onPromptAvailable);
-    window.addEventListener("appinstalled", () => setIsInstalled(true));
+    window.addEventListener("appinstalled", onInstalled);
 
     return () => {
       window.removeEventListener("pwa-prompt-available", onPromptAvailable);
+      window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
 
   if (isInstalled) return null;
 
   const handleInstall = async () => {
+    // Feedback tátil imediato — o usuário sente que clicou antes do browser
+    // abrir o diálogo do sistema (que pode levar 100–400ms).
+    haptic('medium');
+
     const promptEvent = window.deferredPWAInstallPrompt;
-    
+
     if (promptEvent) {
+      setInstalling(true);
       try {
+        // Dispara o diálogo nativo do browser na hora. Não dá pra pular essa
+        // confirmação — é regra de segurança dos browsers.
         await promptEvent.prompt();
-        const { outcome } = await promptEvent.userChoice;
-        if (outcome === 'accepted') {
-          window.deferredPWAInstallPrompt = undefined;
-          setPromptReady(false);
-        }
+
+        // Não ficamos awaiting userChoice: o botão libera rapidamente e
+        // o state atualiza via evento "appinstalled" se o usuário aceitar.
+        promptEvent.userChoice.then(({ outcome }) => {
+          setInstalling(false);
+          if (outcome === 'accepted') {
+            window.deferredPWAInstallPrompt = undefined;
+            haptic('success');
+            // "appinstalled" cobre o resto: esconde o botão e mostra toast.
+          } else {
+            // Usuário cancelou — silêncio é melhor que toast.
+          }
+        }).catch(() => setInstalling(false));
       } catch (err) {
-        console.error("Erro PWA:", err);
+        setInstalling(false);
+        console.error("PWA install falhou:", err);
         toast.error("Não foi possível abrir o instalador.");
       }
     } else {
-      // Fallback aprimorado com diálogos mais bonitos
+      // Fallback: browser ainda não emitiu beforeinstallprompt (critério
+      // de engajamento não batido) ou plataforma não suporta (iOS Safari).
       if (os === 'ios') {
-        toast('Instalar no iPhone', {
-          description: '1. Toque no ícone de Compartilhar\n2. Role para baixo e toque em "Adicionar à Tela de Início"',
+        toast('Para instalar no iPhone', {
+          description: 'Toque em Compartilhar (⎋) e depois em "Adicionar à Tela de Início".',
           duration: 8000,
-          icon: <Download className="h-4 w-4" />
+          icon: <Download className="h-4 w-4" />,
         });
       } else {
-        toast('Instalar Aplicativo', {
-          description: 'Use o menu do navegador (três pontos) e selecione "Instalar" ou "Adicionar à tela inicial".',
+        toast('Instalação não disponível ainda', {
+          description: 'Use o menu do navegador (⋮) e selecione "Instalar app". Ou volte mais tarde.',
           duration: 6000,
-          icon: <Download className="h-4 w-4" />
+          icon: <Download className="h-4 w-4" />,
         });
       }
     }
@@ -247,12 +272,17 @@ export function InstallAppButton() {
       size="sm"
       variant="secondary"
       onClick={handleInstall}
+      disabled={installing}
       className="h-9 text-xs sm:text-sm whitespace-nowrap"
       aria-label="Instalar app"
       title="Instalar app"
     >
-      <Download className="mr-1.5 h-4 w-4" />
-      Instalar app
+      {installing ? (
+        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="mr-1.5 h-4 w-4" />
+      )}
+      {installing ? 'Instalando…' : 'Instalar app'}
     </Button>
   );
 }
