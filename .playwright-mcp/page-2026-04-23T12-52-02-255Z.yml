@@ -1,0 +1,134 @@
+- generic:
+  - generic:
+    - region "Notifications alt+T":
+      - list:
+        - listitem:
+          - generic:
+            - img
+          - generic:
+            - generic: Reserva confirmada com sucesso!
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - paragraph: Gêmeos Academia
+            - heading [level=2]: Aluguel
+        - generic:
+          - button:
+            - img
+          - button:
+            - img
+          - button:
+            - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Aluguel da Academia
+                - paragraph: Reservas, contratos e agenda de espaços
+              - generic:
+                - button:
+                  - img
+                  - text: Nova Reserva
+            - generic:
+              - tablist:
+                - tab [selected]: Reservas
+                - tab: Contratos
+              - tabpanel:
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading [level=3]:
+                        - generic: Cliente Exemplo
+                      - paragraph: Sala 1
+                    - generic: Confirmada
+                  - generic:
+                    - generic: 2026-05-01
+                    - generic: 14:00 - 16:00
+                    - generic: Telefone não informado
+                    - generic: R$ 150.00
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading [level=3]:
+                        - generic: "[TESTE] Cliente Fictício"
+                      - paragraph: Tatame Principal
+                    - generic: Confirmada
+                  - generic:
+                    - generic: 2026-05-10
+                    - generic: 18:00 - 20:00
+                    - generic: Telefone não informado
+                    - generic: R$ 200.00
+      - navigation:
+        - paragraph:
+          - text: Desenvolvido por
+          - link:
+            - /url: https://www.mtsferreira.dev/
+            - text: MtsFerreira
+        - list:
+          - listitem:
+            - link:
+              - /url: /
+              - generic:
+                - img
+              - generic: Início
+          - listitem:
+            - link:
+              - /url: /alunos
+              - generic:
+                - img
+              - generic: Alunos
+          - listitem:
+            - link:
+              - /url: /frequencia
+              - generic:
+                - img
+              - generic: Frequência
+          - listitem:
+            - link:
+              - /url: /financeiro
+              - generic:
+                - img
+              - generic: Financeiro
+          - listitem:
+            - button:
+              - img
+              - generic: Mais
+  - dialog "Nova Reserva" [ref=e87]:
+    - heading "Nova Reserva" [level=2] [ref=e89]
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - generic [ref=e92]: Locatário / Cliente *
+        - textbox "Nome do cliente" [ref=e93]
+      - generic [ref=e94]:
+        - generic [ref=e95]: Telefone do cliente
+        - generic [ref=e96]:
+          - img [ref=e97]
+          - textbox "(63) 99999-9999" [ref=e99]
+      - generic [ref=e100]:
+        - generic [ref=e101]: Espaço *
+        - combobox [ref=e102]:
+          - option "Tatame Principal" [selected]
+          - option "Área de Musculação"
+          - option "Sala Multiuso"
+      - generic [ref=e103]:
+        - generic [ref=e104]: Data *
+        - textbox [ref=e105]
+      - generic [ref=e106]:
+        - generic [ref=e107]: Hora Início *
+        - textbox [ref=e108]
+      - generic [ref=e109]:
+        - generic [ref=e110]: Hora Fim *
+        - textbox [ref=e111]
+      - generic [ref=e112]:
+        - generic [ref=e113]: Valor Aluguel (R$) *
+        - spinbutton [ref=e114]
+    - generic [ref=e115]:
+      - button "Cancelar" [ref=e116] [cursor=pointer]
+      - button "Confirmar Reserva" [active] [ref=e117] [cursor=pointer]
+    - button "Close" [ref=e118] [cursor=pointer]:
+      - img [ref=e119]
+      - generic [ref=e122]: Close

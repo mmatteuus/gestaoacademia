@@ -1,0 +1,90 @@
+- generic [ref=e2]:
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: Gêmeos Academia
+          - heading "Relatórios" [level=2] [ref=e12]
+      - generic [ref=e13]:
+        - button [ref=e14] [cursor=pointer]:
+          - img
+        - button "Tema escuro ativo. Alternar para claro" [ref=e15] [cursor=pointer]:
+          - img
+        - button "Sair" [ref=e16] [cursor=pointer]:
+          - img
+    - main [ref=e17]:
+      - generic [ref=e62]:
+        - generic [ref=e64]:
+          - heading "Relatórios" [level=1] [ref=e65]
+          - paragraph [ref=e66]: Visualizações analíticas avançadas
+        - generic [ref=e67]:
+          - tablist [ref=e68]:
+            - tab "Alunos" [selected] [ref=e69] [cursor=pointer]
+            - tab "Frequência" [ref=e70] [cursor=pointer]
+            - tab "Financeiro" [ref=e71] [cursor=pointer]
+            - tab "Graduação" [ref=e72] [cursor=pointer]
+            - tab "Ranking" [ref=e73] [cursor=pointer]
+            - tab "Vendas" [ref=e74] [cursor=pointer]
+          - tabpanel "Alunos" [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]:
+                - heading "Status dos Alunos" [level=3] [ref=e78]
+                - img [ref=e82]:
+                  - generic [ref=e83]:
+                    - img [ref=e85]
+                    - generic [ref=e86]:
+                      - generic [ref=e88]: "2"
+                      - generic [ref=e90]: "0"
+                      - generic [ref=e92]: "0"
+                      - generic [ref=e94]: "0"
+                      - generic [ref=e96]: "0"
+              - generic [ref=e97]:
+                - heading "Resumo de Alunos" [level=3] [ref=e98]
+                - generic [ref=e99]:
+                  - generic [ref=e100]:
+                    - generic [ref=e101]: Ativo
+                    - generic [ref=e102]: "2"
+                  - generic [ref=e103]:
+                    - generic [ref=e104]: Inadimplente
+                    - generic [ref=e105]: "0"
+                  - generic [ref=e106]:
+                    - generic [ref=e107]: Trancado
+                    - generic [ref=e108]: "0"
+                  - generic [ref=e109]:
+                    - generic [ref=e110]: Inativo
+                    - generic [ref=e111]: "0"
+                  - generic [ref=e112]:
+                    - generic [ref=e113]: Pré-cadastro
+                    - generic [ref=e114]: "0"
+    - navigation "Navegação principal" [ref=e20]:
+      - paragraph [ref=e21]:
+        - text: Desenvolvido por
+        - link "MtsFerreira" [ref=e22] [cursor=pointer]:
+          - /url: https://www.mtsferreira.dev/
+      - list [ref=e23]:
+        - listitem [ref=e24]:
+          - link "Início" [ref=e25] [cursor=pointer]:
+            - /url: /
+            - img [ref=e27]
+            - generic [ref=e32]: Início
+        - listitem [ref=e33]:
+          - link "Alunos" [ref=e34] [cursor=pointer]:
+            - /url: /alunos
+            - img [ref=e36]
+            - generic [ref=e41]: Alunos
+        - listitem [ref=e42]:
+          - link "Frequência" [ref=e43] [cursor=pointer]:
+            - /url: /frequencia
+            - img [ref=e45]
+            - generic [ref=e48]: Frequência
+        - listitem [ref=e49]:
+          - link "Financeiro" [ref=e50] [cursor=pointer]:
+            - /url: /financeiro
+            - img [ref=e52]
+            - generic [ref=e54]: Financeiro
+        - listitem [ref=e55]:
+          - button "Abrir mais opções" [ref=e56] [cursor=pointer]:
+            - img [ref=e57]
+            - generic [ref=e61]: Mais
