@@ -179,22 +179,36 @@ export function AppTopbar() {
  */
 function OfflineQueueBadge() {
   const [pending, setPending] = useState(0);
-  const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [online, setOnline] = useState(true); // Começa otimista
 
   useEffect(() => {
     let mounted = true;
+    
+    // Check inicial com pequeno delay para estabilizar
+    const settleTimeout = setTimeout(() => {
+      if (mounted) setOnline(navigator.onLine);
+    }, 2000);
+
     const tick = async () => {
       const n = await getPendingWriteCount();
       if (mounted) setPending(n);
     };
+    
     tick();
     const interval = setInterval(tick, 5000);
+    
     const onOnline = () => { setOnline(true); tick(); };
-    const onOffline = () => setOnline(false);
+    const onOffline = () => {
+      // Só marca como offline se já passou o período de boot
+      setOnline(false);
+    };
+
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
+    
     return () => {
       mounted = false;
+      clearTimeout(settleTimeout);
       clearInterval(interval);
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);

@@ -45,7 +45,10 @@ export function PWAProvider() {
             });
           },
           onOfflineReady() {
-            toast.success("App pronto para uso offline");
+            toast.info("Sistema pronto para uso offline", {
+              description: "Os dados foram cacheados e estão acessíveis sem internet.",
+              duration: 5000,
+            });
           },
         });
       })
@@ -57,33 +60,63 @@ export function PWAProvider() {
   // --- Online/Offline badge ---------------------------------------------
   useEffect(() => {
     if (typeof window === "undefined") return;
+    
     let offlineToastId: string | number | undefined;
+    // Rastreia se o app já mostrou o aviso de offline nesta sessão
+    let hasShownOfflineToast = false;
+    // Período inicial onde ignoramos flutuações de rede (comum ao abrir PWA)
+    let isSettling = true;
 
     const onOffline = () => {
+      if (isSettling) return;
+      if (hasShownOfflineToast) return;
+
+      hasShownOfflineToast = true;
       offlineToastId = toast("Você está offline", {
         description: "Alguns dados podem estar desatualizados.",
         duration: Infinity,
         icon: <WifiOff className="h-4 w-4" />,
       });
     };
+
     const onOnline = () => {
-      if (offlineToastId !== undefined) toast.dismiss(offlineToastId);
-      toast.success("Conexão restaurada", {
-        icon: <Wifi className="h-4 w-4" />,
-        duration: 2000,
-      });
-      // Dá um tempo para o Workbox drenar a fila de escritas e então força
-      // refetch das listas para refletir o que foi sincronizado.
-      setTimeout(() => {
-        queryClient.invalidateQueries();
-      }, 1500);
+      if (offlineToastId !== undefined) {
+        toast.dismiss(offlineToastId);
+        offlineToastId = undefined;
+      }
+
+      // Só mostra o sucesso se realmente mostramos o aviso de offline antes
+      if (hasShownOfflineToast) {
+        toast.success("Conexão restaurada", {
+          icon: <Wifi className="h-4 w-4" />,
+          duration: 2000,
+        });
+        hasShownOfflineToast = false;
+        
+        // Refetch das listas após um pequeno delay para garantir que o SW/Rede estabilizou
+        setTimeout(() => {
+          queryClient.invalidateQueries();
+        }, 1500);
+      }
     };
+
+    // Delay inicial para evitar detectar "offline" momentâneo durante o boot do PWA
+    const settleTimeout = setTimeout(() => {
+      isSettling = false;
+      // Check inicial de fato
+      if (!navigator.onLine) {
+        onOffline();
+      }
+    }, 2000);
 
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
+
     return () => {
+      clearTimeout(settleTimeout);
       window.removeEventListener("offline", onOffline);
       window.removeEventListener("online", onOnline);
+      if (offlineToastId !== undefined) toast.dismiss(offlineToastId);
     };
   }, [queryClient]);
 

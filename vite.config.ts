@@ -66,9 +66,10 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff,woff2}"],
         navigateFallback: "/offline.html",
         navigateFallbackDenylist: [/^\/rows/, /^\/status/, /^\/api/],
+        ignoreURLParametersMatching: [/^source$/, /^version$/],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        skipWaiting: false,
+        skipWaiting: true,
         // Ignora querystring no match (útil para /rows?type=...)
         runtimeCaching: [
           {
@@ -79,7 +80,7 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkFirst",
             options: {
               cacheName: "api-cache",
-              networkTimeoutSeconds: 3,
+              networkTimeoutSeconds: 5,
               // 24h: se offline há tempo, ainda mostra dados
               expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [0, 200] },
