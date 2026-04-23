@@ -1,6 +1,4 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
 
 const STORAGE_KEY = 'gemeos.auth.v1';
 const EXPIRY_KEY = 'gemeos.auth.expiry.v1';
@@ -51,27 +49,6 @@ function isSessionValid(): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isSessionValid());
-  const queryClient = useQueryClient();
-
-  const checkForUpdates = useCallback(async () => {
-    if (!('serviceWorker' in navigator)) return;
-    
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const registration of registrations) {
-        registration.update();
-      }
-      
-      if (registrations.length > 0) {
-        toast("Verificando atualizações...", {
-          description: "Buscando novas versões do sistema.",
-          duration: 2000,
-        });
-      }
-    } catch {
-      // Silencioso
-    }
-  }, []);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -114,8 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
       setIsAuthenticated(true);
-      queryClient.invalidateQueries();
-      checkForUpdates();
       return { ok: true };
     }
 

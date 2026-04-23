@@ -339,10 +339,18 @@ export function AcademiaDataProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (isLoading || didBootstrapSync.current) return;
+    if (didBootstrapSync.current) return;
+    
+    if (isLoading) return;
+    
     didBootstrapSync.current = true;
-    syncMensalidadesParaTodos();
-    syncGraduacoesParaTodos();
+    
+    const timer = setTimeout(() => {
+      syncMensalidadesParaTodos();
+      syncGraduacoesParaTodos();
+    }, 1000);
+    
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
 

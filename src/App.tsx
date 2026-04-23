@@ -161,15 +161,14 @@ const App = () => (
       maxAge: 24 * 60 * 60_000,
       buster: "v1",
       dehydrateOptions: {
-        // Só persiste queries bem-sucedidas para não guardar erros.
         shouldDehydrateQuery: (q) => q.state.status === "success",
       },
     }}
   >
     <TooltipProvider>
       <Sonner />
-      <PWAProvider />
       <AuthProvider>
+        <PWAProvider />
         <BrowserRouter>
           <Suspense fallback={<PageSkeleton />}>
             <Routes>

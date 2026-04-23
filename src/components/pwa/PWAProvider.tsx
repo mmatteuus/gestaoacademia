@@ -86,7 +86,6 @@ export function PWAProvider() {
 
     let unmounted = false;
     let disposeRegistrationSync = () => {};
-    let hasShownUpdateToast = false;
     let hasReloadedForUpdate = false;
 
     import("virtual:pwa-register")
@@ -114,57 +113,7 @@ export function PWAProvider() {
           onRegistered(registration) {
             if (!registration) return;
 
-            const checkForUpdates = () => {
-              if (hasShownUpdateToast || hasReloadedForUpdate) return;
-              
-              registration.update().then((newWorker) => {
-                if (newWorker && !hasShownUpdateToast) {
-                  hasShownUpdateToast = true;
-                  if (document.visibilityState === "visible") {
-                    setTimeout(() => {
-                      toast("Nova versão baixada", {
-                        description: "Reiniciando para aplicar as atualizações...",
-                        duration: 3000,
-                      });
-                      hasReloadedForUpdate = true;
-                      setTimeout(() => window.location.reload(), 2000);
-                    }, 1000);
-                  }
-                }
-              }).catch(() => {});
-            };
-
-            const onVisible = () => {
-              if (document.visibilityState === "visible" && !hasReloadedForUpdate) {
-                checkForUpdates();
-              }
-            };
-
-            const onOnline = () => {
-              if (!hasReloadedForUpdate) {
-                checkForUpdates();
-              }
-            };
-
-            const intervalId = window.setInterval(() => {
-              if (!hasReloadedForUpdate) {
-                checkForUpdates();
-              }
-            }, 10 * 60 * 1000); // 10 minutos - menos agressivo
-            
-            window.addEventListener("visibilitychange", onVisible);
-            window.addEventListener("online", onOnline);
-            window.addEventListener("focus", onVisible);
-
-            disposeRegistrationSync = () => {
-              window.clearInterval(intervalId);
-              window.removeEventListener("visibilitychange", onVisible);
-              window.removeEventListener("online", onOnline);
-              window.removeEventListener("focus", onVisible);
-            };
-
-            // Primeira checagem após 30 segundos (em vez de imediata)
-            setTimeout(checkForUpdates, 30000);
+            disposeRegistrationSync = () => {};
 
             if (unmounted) {
               disposeRegistrationSync();

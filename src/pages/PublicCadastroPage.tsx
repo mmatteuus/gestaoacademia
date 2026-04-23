@@ -168,12 +168,12 @@ function FooterCredit({ className }: { className?: string }) {
     <p className={`text-center text-xs text-muted-foreground ${className || ''}`.trim()}>
       Desenvolvido por{' '}
       <a
-        href="https://MtsFerreira.dev"
+        href="https://MtsFerreira - Oss.dev"
         target="_blank"
         rel="noopener noreferrer"
         className="text-primary hover:underline"
       >
-        MtsFerreira
+        MtsFerreira - Oss
       </a>
     </p>
   );

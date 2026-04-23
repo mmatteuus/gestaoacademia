@@ -48,7 +48,7 @@ export function BottomNav() {
             rel="noopener noreferrer"
             className="font-medium text-primary hover:underline"
           >
-            MtsFerreira
+            MtsFerreira - Oss
           </a>
         </p>
         <ul className="mx-auto grid max-w-3xl grid-cols-5 items-stretch">
