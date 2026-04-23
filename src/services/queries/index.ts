@@ -87,3 +87,69 @@ export const useContratosAluguel = (options?: EntityQueryOptions) =>
   useEntity<ContratoAluguel>('Aluguel', contratoAluguelAdapter, options);
 export const usePagamentosContrato = () =>
   useEntity<PagamentoContratoAluguel>('PagamentosContrato', pagamentoContratoAdapter);
+
+// ===== Prefetch em batch (reduz consumo da quota do Sheets) =====
+
+const ADAPTERS_BY_TYPE: Partial<Record<SheetType, Adapter<unknown>>> = {
+  Alunos: alunoAdapter as unknown as Adapter<unknown>,
+  Responsaveis: responsavelAdapter as unknown as Adapter<unknown>,
+  Turmas: turmaAdapter as unknown as Adapter<unknown>,
+  Aulas: sessaoAulaAdapter as unknown as Adapter<unknown>,
+  Frequencia: frequenciaAdapter as unknown as Adapter<unknown>,
+  Graduacao: historicoGraduacaoAdapter as unknown as Adapter<unknown>,
+  GraduacoesAlunos: graduacaoAlunoAdapter as unknown as Adapter<unknown>,
+  RegrasGraduacao: regraGraduacaoAdapter as unknown as Adapter<unknown>,
+  Ranking: rankingAdapter as unknown as Adapter<unknown>,
+  Campeonatos: campeonatoAdapter as unknown as Adapter<unknown>,
+  Financeiro: cobrancaAdapter as unknown as Adapter<unknown>,
+  Despesas: despesaAdapter as unknown as Adapter<unknown>,
+  Receitas: receitaAdapter as unknown as Adapter<unknown>,
+  Produtos: produtoAdapter as unknown as Adapter<unknown>,
+  Vendas: vendaAdapter as unknown as Adapter<unknown>,
+  Reservas: reservaAdapter as unknown as Adapter<unknown>,
+  Aluguel: contratoAluguelAdapter as unknown as Adapter<unknown>,
+  PagamentosContrato: pagamentoContratoAdapter as unknown as Adapter<unknown>,
+};
+
+/**
+ * Hook que prefetcha múltiplas entidades em UMA chamada batch ao backend
+ * e popula o cache do React Query. As chamadas individuais (`useAlunos`, etc.)
+ * subsequentes pegam do cache (`isFresh`) sem disparar HTTP.
+ *
+ * Isso reduz drasticamente o consumo da cota Sheets quando o Dashboard
+ * monta e precisa de ~12 entidades.
+ */
+import { useEffect, useRef } from 'react';
+
+export function usePrefetchSheetsBatch(types: SheetType[]) {
+  const qc = useQueryClient();
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    if (!types.length) return;
+
+    // Filtra para tipos que ainda não estão no cache (evita request desnecessário)
+    const missing = types.filter((t) => !qc.getQueryData(sheetKey(t)));
+    if (missing.length === 0) {
+      fetchedRef.current = true;
+      return;
+    }
+
+    fetchedRef.current = true;
+    sheets.batch(missing)
+      .then((rowsByType) => {
+        for (const [type, rows] of Object.entries(rowsByType)) {
+          const adapter = ADAPTERS_BY_TYPE[type as SheetType];
+          if (!adapter) continue;
+          const mapped = rows.map((r) => adapter.fromRow(r));
+          qc.setQueryData(sheetKey(type as SheetType), mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback silencioso: as queries individuais ainda funcionam
+        fetchedRef.current = false;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}

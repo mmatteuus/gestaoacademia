@@ -30,12 +30,15 @@ const globalLimiter = createGlobalRateLimiter({
 });
 app.use(globalLimiter);
 
-// Rate limit para mutações (mais restritivo)
+// Rate limit para mutações (mais restritivo).
+// Aplicado globalmente — o middleware já filtra internamente por método (POST/PUT/PATCH/DELETE).
+// Usar `app.use(['/rows','/api'], ...)` antigamente fazia match só nos paths exatos
+// `/rows` e `/api`, escapando `/rows/123` e `/api/sales` (rate limit ineficaz).
 const mutationLimiter = createMutationRateLimiter({
   windowMs: env.rateLimitWindowMs,
   max: env.rateLimitMaxMutations,
 });
-app.use(['/rows', '/api'], mutationLimiter);
+app.use(mutationLimiter);
 
 // API Key (se configurada)
 app.use(apiKeyMiddleware);

@@ -38,4 +38,8 @@ export const sheets = {
     http.put<{ ok: true }>(`/rows/${encodeURIComponent(id)}`, data, { type }),
 
   status: () => http.get<{ status: string; sheets: string[] }>('/status'),
+
+  /** Busca várias abas em UMA chamada Sheets (reduz drasticamente uso de quota). */
+  batch: <T extends SheetRow = SheetRow>(types: SheetType[]) =>
+    http.get<Record<string, T[]>>('/rows/batch', { types: types.join(',') }),
 };

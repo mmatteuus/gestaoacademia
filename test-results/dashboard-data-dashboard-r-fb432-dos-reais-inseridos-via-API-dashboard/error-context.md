@@ -6,13 +6,13 @@
 
 # Test info
 
-- Name: dashboard-data.spec.ts >> verifica que API ainda está limpa de mocks (sem Lucas Mendes/Marina Silva fixos)
-- Location: e2e\dashboard-data.spec.ts:206:1
+- Name: dashboard-data.spec.ts >> dashboard reflete dados reais inseridos via API
+- Location: e2e\dashboard-data.spec.ts:51:1
 
 # Error details
 
 ```
-Error: GET /rows failed: 500
+Error: POST /rows failed 500: {"ok":false,"error":"operation_failed","message":"Internal server error"}
 ```
 
 # Test source
@@ -56,14 +56,14 @@ Error: GET /rows failed: 500
   36  | 
   37  | async function createRow(api: APIRequestContext, body: Record<string, unknown>) {
   38  |   const r = await api.post('http://localhost:3000/rows', { data: body });
-  39  |   if (!r.ok()) throw new Error(`POST /rows failed ${r.status()}: ${await r.text()}`);
+> 39  |   if (!r.ok()) throw new Error(`POST /rows failed ${r.status()}: ${await r.text()}`);
+      |                      ^ Error: POST /rows failed 500: {"ok":false,"error":"operation_failed","message":"Internal server error"}
   40  |   return r.json();
   41  | }
   42  | 
   43  | async function listRows(api: APIRequestContext, type: string) {
   44  |   const r = await api.get(`http://localhost:3000/rows?type=${encodeURIComponent(type)}`);
-> 45  |   if (!r.ok()) throw new Error(`GET /rows failed: ${r.status()}`);
-      |                      ^ Error: GET /rows failed: 500
+  45  |   if (!r.ok()) throw new Error(`GET /rows failed: ${r.status()}`);
   46  |   return (await r.json()) as Array<Record<string, string>>;
   47  | }
   48  | 
@@ -158,10 +158,4 @@ Error: GET /rows failed: 500
   137 | 
   138 |   // Aula com presenças
   139 |   await createRow(request, {
-  140 |     sheet_type: 'Aulas', id: aulaId, turma_id: turmaId, data: TODAY, professor: 'Prof E2E',
-  141 |     presencas: JSON.stringify([{ alunoId, presente: true }]),
-  142 |   });
-  143 | 
-  144 |   // Venda
-  145 |   await createRow(request, {
 ```
