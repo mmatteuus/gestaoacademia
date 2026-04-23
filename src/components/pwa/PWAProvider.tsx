@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Wifi, WifiOff, Download, Loader2 } from "lucide-react";
+import { Wifi, WifiOff, Download, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { haptic } from "@/lib/haptics";
 
 // Tipagem para o evento de instalação do PWA
@@ -39,44 +40,23 @@ function isPWAStandalone() {
  */
 export function PWAProvider() {
   const queryClient = useQueryClient();
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const updateSWRef = useRef<((force?: boolean) => void) | null>(null);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // Detecta se o app foi aberto como PWA (standalone)
-    const isStandalone = isPWAStandalone();
-
-    if (isStandalone) {
-      sessionStorage.setItem('pwa-mode', 'true');
-      console.log('App rodando em modo PWA Standalone');
+  const handleUpdateNow = useCallback(() => {
+    if (updateSWRef.current) {
+      setIsUpdating(true);
+      haptic('medium');
+      updateSWRef.current(true);
     }
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Previne o mini-infobar do Chrome no Android para usarmos nossa UI premium
-      e.preventDefault();
-      window.deferredPWAInstallPrompt = e as BeforeInstallPromptEvent;
-      console.log('PWA: Prompt de instalação capturado');
-      window.dispatchEvent(new CustomEvent("pwa-prompt-available"));
-    };
-
-    const handleAppInstalled = () => {
-      window.deferredPWAInstallPrompt = undefined;
-      toast.success("Aplicativo instalado!", {
-        description: "Gêmeos Academia agora está na sua tela inicial.",
-        duration: 5000,
-      });
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
   }, []);
 
-// --- Registro do SW + detecção de update -------------------------------
+  const handleDismissUpdate = useCallback(() => {
+    setUpdateAvailable(false);
+  }, []);
+
+  // --- SW registration + update detection -------------------------------
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
@@ -85,39 +65,17 @@ export function PWAProvider() {
     if (isLocal && !import.meta.env.VITE_ENABLE_PWA_DEV) return;
 
     let unmounted = false;
-    let disposeRegistrationSync = () => {};
-    let hasReloadedForUpdate = false;
 
     import("virtual:pwa-register")
       .then(({ registerSW }) => {
         const updateSW = registerSW({
           immediate: true,
           onNeedRefresh() {
-            if (hasReloadedForUpdate) return;
-            
-            if (document.visibilityState === "visible") {
-              toast("Nova versão disponível", {
-                description: "Atualize para ter as últimas melhorias e correções.",
-                duration: Infinity,
-                action: {
-                  label: "Atualizar agora",
-                  onClick: () => {
-                    hasReloadedForUpdate = true;
-                    updateSW(true);
-                    haptic('light');
-                  },
-                },
-              });
-            }
+            setUpdateAvailable(true);
+            updateSWRef.current = updateSW;
           },
-          onRegistered(registration) {
-            if (!registration) return;
-
-            disposeRegistrationSync = () => {};
-
-            if (unmounted) {
-              disposeRegistrationSync();
-            }
+          onRegistered() {
+            if (unmounted) return;
           },
           onOfflineReady() {
             toast.info("Pronto para uso offline", {
@@ -136,7 +94,38 @@ export function PWAProvider() {
 
     return () => {
       unmounted = true;
-      disposeRegistrationSync();
+    };
+  }, []);
+
+  // --- PWA standalone detection -----------------------------------------
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isStandalone = isPWAStandalone();
+    if (isStandalone) {
+      sessionStorage.setItem('pwa-mode', 'true');
+    }
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      window.deferredPWAInstallPrompt = e as BeforeInstallPromptEvent;
+      window.dispatchEvent(new CustomEvent("pwa-prompt-available"));
+    };
+
+    const handleAppInstalled = () => {
+      window.deferredPWAInstallPrompt = undefined;
+      toast.success("Aplicativo instalado!", {
+        description: "Gêmeos Academia agora está na sua tela inicial.",
+        duration: 5000,
+      });
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
@@ -198,7 +187,56 @@ export function PWAProvider() {
     };
   }, [queryClient]);
 
-  return null;
+  // --- Render ---------------------------------------------------------------
+  return (
+    <>
+      <Dialog open={updateAvailable} onOpenChange={(open) => {
+        if (!open && !isUpdating) {
+          handleDismissUpdate();
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-primary" />
+              Nova versão disponível
+            </DialogTitle>
+            <DialogDescription>
+              Uma nova versão do sistema foi baixada e está pronta para ser instalada.
+              Actualizar agora para obter as últimas melhorias e correções.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-between gap-2">
+            <Button
+              variant="outline"
+              onClick={handleDismissUpdate}
+              disabled={isUpdating}
+              className="flex-1"
+            >
+              Mais tarde
+            </Button>
+            <Button
+              onClick={handleUpdateNow}
+              disabled={isUpdating}
+              className="flex-1"
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Actualizando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Actualizar agora
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 /**
