@@ -17,28 +17,47 @@ token.json
 # Vercel
 .vercel
 
-# IDE
+# IDE and operating system
 .idea
 .vscode
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs and coverage
 *.log
 npm-debug.log*
-
-# Coverage
 coverage
 
-# Playwright — resultados e rastros de execução não vão para o repo.
-test-results
-playwright-report
-.playwright-mcp
-
-# Lock files (keep only one)
+# Package manager
+bun.lock
 bun.lockb
+
+# Test execution artifacts
+playwright-report
+test-results
+.playwright-mcp
+qa-screenshots
+qa-report.md
+*.timestamp-*.mjs
+.tmp.*
+
+# Local tools and internal working files
+.claude
+.lovable
+.codex-tmp
+.mcp
+SKILL
+scratch
+AGENTS.md
+CLAUDE.md
+CONTEXT.md
+
+# Temporary screenshots
+*-mobile.jpeg
+cadastro-publico.jpeg
+ficha-*.jpeg
+menu-*.jpeg
+relatorios.jpeg
