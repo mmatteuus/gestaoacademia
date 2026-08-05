@@ -1,63 +1,28 @@
-# Dependencies
-node_modules
-
-# Build output
-dist
-
-# Environment variables
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+.next/
+.turbo/
+.vercel/
 .env
 .env.*
 !.env.example
-
-# Google credentials
-client_secret*.json
-credentials.json
-token.json
-
-# Vercel
-.vercel
-
-# IDE and operating system
-.idea
-.vscode
-*.swp
-*.swo
-*~
+*.local
+*.log
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
-
-# Logs and coverage
-*.log
-npm-debug.log*
-coverage
-
-# Package manager
-bun.lock
-bun.lockb
-
-# Test execution artifacts
-playwright-report
-test-results
-.playwright-mcp
-qa-screenshots
-qa-report.md
-*.timestamp-*.mjs
-.tmp.*
-
-# Local tools and internal working files
-.claude
-.lovable
-.codex-tmp
-.mcp
-SKILL
-scratch
-AGENTS.md
-CLAUDE.md
-CONTEXT.md
-
-# Temporary screenshots
-*-mobile.jpeg
-cadastro-publico.jpeg
-ficha-*.jpeg
-menu-*.jpeg
-relatorios.jpeg
+.vscode/
+.idea/
+.claude/
+.lovable/
+.codex-tmp/
+.mcp/
+.playwright-mcp/
+test-results/
+playwright-report/
+output/
+tmp/
+temp/

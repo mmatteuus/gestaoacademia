@@ -1,18 +1,35 @@
-# Gestão Academia
+# Gêmeos Academia
 
-Leia primeiro: `./CONTEXT.md`
+Sistema demonstrativo para gestão de academia, desenvolvido para organizar alunos, planos, pagamentos, frequência e informações operacionais.
 
-Este repositório contém o frontend administrativo + backend API (Google Sheets) do projeto.
+## Funcionalidades
 
-## Ordem recomendada de leitura
+- autenticação demonstrativa;
+- cadastro e acompanhamento de alunos;
+- controle de planos e pagamentos;
+- indicadores de frequência e operação;
+- dashboard administrativo;
+- temas claro e escuro;
+- layout responsivo.
 
-1. `CONTEXT.md` (fonte única de contexto)
-2. `AGENTS.md` (diretrizes operacionais da evolução)
-3. `src/` e `backend/src/` (código real)
+## Tecnologias
 
-## Comandos rápidos
-- `npm run dev`
-- `npm run build`
-- `npm test`
-- `npm run test:backend`
-- `npx playwright test`
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+
+## Executar localmente
+
+```bash
+npm install
+npm run dev
+```
+
+## Acesso demonstrativo
+
+A senha de demonstração é preenchida automaticamente na tela de entrada.
+
+---
+
+Desenvolvido por [MtsFerreira](https://www.mtsferreira.dev/).
