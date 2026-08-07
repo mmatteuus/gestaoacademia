@@ -21,7 +21,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:backend": "vitest run --config vitest.backend.config.js",
-    "test:all": "npm run test && npm run test:backend"
+    "test:all": "npm run test && npm run test:backend",
+    "check:structure": "node scripts/check-structure.mjs",
+    "check:structure:strict": "node scripts/check-structure.mjs --strict"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
